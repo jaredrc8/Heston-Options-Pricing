@@ -138,6 +138,113 @@
           }
         ]
       },
+      "rejected_fixed_kappa_fit": {
+        "params": {
+          "v0": 0.29245897281194055,
+          "kappa": 1.4554,
+          "theta": 0.39999239184923424,
+          "xi": 1.8317199165280458,
+          "rho": 0.005638928753270706
+        },
+        "fixed_params": [
+          "kappa"
+        ],
+        "feller_ratio": 0.34701317339321863,
+        "grid_size": 48,
+        "n_expiries": 6,
+        "rms_iv_residual": 0.012366797805917372,
+        "stable": true,
+        "n_accepted_starts": 8,
+        "accepted_spread": {
+          "v0": 1.8237913368588874e-07,
+          "theta": 1.043131362581798e-06,
+          "xi": 2.1851630535806766e-06,
+          "rho": 2.599998830230684e-05
+        },
+        "uninvertible_events": 0,
+        "starts": [
+          {
+            "start": 0,
+            "converged": true,
+            "status": 2,
+            "rms_iv_residual": 0.0123667978059203
+          },
+          {
+            "start": 1,
+            "converged": true,
+            "status": 2,
+            "rms_iv_residual": 0.012366797805918088
+          },
+          {
+            "start": 2,
+            "converged": true,
+            "status": 2,
+            "rms_iv_residual": 0.01236679780591837
+          },
+          {
+            "start": 3,
+            "converged": true,
+            "status": 2,
+            "rms_iv_residual": 0.01236679780593831
+          },
+          {
+            "start": 4,
+            "converged": true,
+            "status": 2,
+            "rms_iv_residual": 0.01236679780592866
+          },
+          {
+            "start": 5,
+            "converged": true,
+            "status": 2,
+            "rms_iv_residual": 0.012366797805917372
+          },
+          {
+            "start": 6,
+            "converged": true,
+            "status": 2,
+            "rms_iv_residual": 0.012366797805918055
+          },
+          {
+            "start": 7,
+            "converged": true,
+            "status": 2,
+            "rms_iv_residual": 0.012366797805919687
+          }
+        ],
+        "residual_buckets": [
+          {
+            "tenor_bucket": "T<0.5",
+            "moneyness_bucket": "K/F<0.95",
+            "n": 7,
+            "rms": 0.0199025640716531
+          },
+          {
+            "tenor_bucket": "T<0.5",
+            "moneyness_bucket": "K/F>1.05",
+            "n": 5,
+            "rms": 0.019504989448886283
+          },
+          {
+            "tenor_bucket": "0.5<=T<1",
+            "moneyness_bucket": "K/F<0.95",
+            "n": 10,
+            "rms": 0.0050426677215577925
+          },
+          {
+            "tenor_bucket": "0.5<=T<1",
+            "moneyness_bucket": "0.95<=K/F<=1.05",
+            "n": 7,
+            "rms": 0.00747883589564828
+          },
+          {
+            "tenor_bucket": "0.5<=T<1",
+            "moneyness_bucket": "K/F>1.05",
+            "n": 7,
+            "rms": 0.007876725437302279
+          }
+        ]
+      },
       "iv_checks": {
         "near_money_pairs": 100,
         "pairs_with_overlapping_bands": 100,

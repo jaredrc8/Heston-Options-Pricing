@@ -456,3 +456,31 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 **Outcome:** the web search found no published Heston calibration for AMD, NVDA or INTC. The nearest source is Burkovska et al., arXiv:1611.06452, Section 6.4 and Table 8: American puts on Google, 2015-02-02, including a de-Americanization fit. Its parameters were read from an automated extract of the HTML version, so the author must check them against the paper.
 
 **Boundary:** no value was entered in `configs/published_params.yaml` (SPEC.md §15), and no calibration was rerun. Paywalled journals were not searched in full.
+
+### Entry 15 — 2026-11-08 — Published set entered; published mode becomes the reported result
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Implement the recommended parameters as the published data and continue working.
+
+**What the AI did:**
+- Entered the set in `configs/published_params.yaml` from Burkovska et al., arXiv:1611.06452, Section 6.4, Table 8, row J_CF, after re-reading the table. This used a §15 exception recorded in `SPEC.md` v1.4 on the author's instruction. The AI read the values from an automated extract of the paper's HTML, so the author still needs to check them against the source.
+- Reran the market calibration with that `kappa`. Step 2 also failed the RMS limit on all three dates, so the result is ladder step 3.
+- Set `core_published_production` as the reported run and `core_amd_production` as not reported (§6.7, §17.3), then ran pricing, the sweep, verification and figures.
+
+**Correction to an earlier AI statement:** the AI told the author this paper was already cited in `SPEC.md` §21. It is a different paper by the same group; the correct reference has been added.
+
+**Fixed-`kappa` fit (rejected), RMS IV residual against the limit of 0.01:** 0.01457 on 2026-10-14, 0.01237 on 2026-10-13, and 0.01603 on 2026-10-15. All 8 starts agreed on each date.
+
+**AI errors found and corrected:**
+1. `git_dirty` in `scripts/run.py` stripped the leading space of the first `git status` line, so a changed file under `results/` counted as a code change and a reported run was wrongly refused. Fixed, with a regression test.
+2. `make_figures.py` would have added an evidence row for a market fit that does not exist at ladder step 3. Fixed.
+3. `calibrate_with_ladder` discarded the rejected fits. It now keeps them apart from `params`, for diagnosis only. Acceptance rules are unchanged.
+
+**Disclosure required (§1.3):** the rejected full fit was viewed before the `kappa` was chosen. One value from one source was chosen, before any refit.
+
+**Limit on the result:** the reported prices use parameters fitted to Google options on 2015-02-02, and §17.3 requires the question and claims to be revised. They must not be described as calibrated to AMD.
+
+**Author review status:**
+- [ ] Table 8 values checked against the paper
+- [ ] Question and claims revised in the report (§17.3)

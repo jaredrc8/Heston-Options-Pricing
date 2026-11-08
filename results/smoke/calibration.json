@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "data_mode": "synthetic",
+  "snapshot_date": "2026-10-14",
+  "r": 0.03960525459235946,
+  "inputs": [
+    {
+      "dataset": "synthetic_raw_iv",
+      "tickers": [
+        "SYN1"
+      ],
+      "snapshot_date": "2026-10-14",
+      "file_name": "synthetic_raw_iv.csv",
+      "row_count": 1044
+    }
+  ],
+  "assets": {
+    "SYN1": {
+      "q": 0.0,
+      "filter_drops": {
+        "F1": 696,
+        "F2": 0,
+        "F3": 0,
+        "F4": 52,
+        "F5": 148,
+        "F6": 0,
+        "F7": 0,
+        "F8": 0
+      },
+      "mid_mismatch_rows": 0,
+      "params": {
+        "v0": 0.09000000000000269,
+        "kappa": 2.0000000000036904,
+        "theta": 0.10000000000000474,
+        "xi": 0.6000000000009493,
+        "rho": -0.5999999999996346
+      },
+      "fixed_params": [],
+      "feller_ratio": 1.111111111109698,
+      "grid_size": 48,
+      "n_expiries": 6,
+      "rms_iv_residual": 5.101825946448905e-14,
+      "stable": true,
+      "n_accepted_starts": 8,
+      "accepted_spread": {
+        "v0": 8.447872031543571e-12,
+        "kappa": 6.10426154067725e-11,
+        "theta": 1.5175777301476735e-11,
+        "xi": 5.751010778700796e-11,
+        "rho": 4.183579408830911e-11
+      },
+      "uninvertible_events": 0,
+      "starts": [
+        {
+          "start": 0,
+          "converged": true,
+          "status": 1,
+          "rms_iv_residual": 5.295383471741015e-14
+        },
+        {
+          "start": 1,
+          "converged": true,
+          "status": 1,
+          "rms_iv_residual": 2.1769328120700863e-13
+        },
+        {
+          "start": 2,
+          "converged": true,
+          "status": 1,
+          "rms_iv_residual": 5.170464012152726e-14
+        },
+        {
+          "start": 3,
+          "converged": true,
+          "status": 1,
+          "rms_iv_residual": 4.187793592401397e-13
+        },
+        {
+          "start": 4,
+          "converged": true,
+          "status": 1,
+          "rms_iv_residual": 5.1303184656628116e-14
+        },
+        {
+          "start": 5,
+          "converged": true,
+          "status": 1,
+          "rms_iv_residual": 5.1079646518023994e-14
+        },
+        {
+          "start": 6,
+          "converged": true,
+          "status": 1,
+          "rms_iv_residual": 1.1885055428690262e-12
+        },
+        {
+          "start": 7,
+          "converged": true,
+          "status": 1,
+          "rms_iv_residual": 5.101825946448905e-14
+        }
+      ],
+      "residual_buckets": [
+        {
+          "tenor_bucket": "T<0.5",
+          "moneyness_bucket": "K/F<0.95",
+          "n": 11,
+          "rms": 6.558261992973976e-14
+        },
+        {
+          "tenor_bucket": "T<0.5",
+          "moneyness_bucket": "0.95<=K/F<=1.05",
+          "n": 6,
+          "rms": 1.2157470182294198e-14
+        },
+        {
+          "tenor_bucket": "T<0.5",
+          "moneyness_bucket": "K/F>1.05",
+          "n": 7,
+          "rms": 2.448227878328839e-14
+        },
+        {
+          "tenor_bucket": "T>=1",
+          "moneyness_bucket": "K/F<0.95",
+          "n": 6,
+          "rms": 5.937151403102461e-14
+        },
+        {
+          "tenor_bucket": "T>=1",
+          "moneyness_bucket": "0.95<=K/F<=1.05",
+          "n": 5,
+          "rms": 5.817101976460894e-14
+        },
+        {
+          "tenor_bucket": "T>=1",
+          "moneyness_bucket": "K/F>1.05",
+          "n": 5,
+          "rms": 1.3706039359505797e-14
+        }
+      ],
+      "ladder_step": 1
+    }
+  }
+}

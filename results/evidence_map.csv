@@ -1,0 +1,5 @@
+claim_id,location,artifact_type,run_id,result_path,json_pointer,check_ids
+fig_price_summary,figure,figure,core_published_production-b91e3813,runs/core_published_production-b91e3813/result.json,/pooled/bermudan,V-03;V-04;V-11;V-15
+table_seed_robustness,table,table,core_published_production-b91e3813,runs/core_published_production-b91e3813/result.json,/per_seed/0/bermudan,V-11
+fig_convergence,figure,figure,core_published_production,sweeps/core_published_production-b91e3813.json,/rows/0/bermudan,V-09;V-10
+fig_synthetic_surface,figure,figure,synthetic,smoke/calibration.json,/assets/SYN1/rms_iv_residual,V-12
