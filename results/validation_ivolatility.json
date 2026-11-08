@@ -1,0 +1,122 @@
+{
+  "source": "ivolatility",
+  "files": [
+    {
+      "file": "nvda_amd_intc_IV_Oct13-15.csv",
+      "rows": 41256,
+      "rules": [
+        {
+          "rule": "symbol_allowed",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "exchange_non_empty",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "date_allowed",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "stock_price_positive",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "option_symbol_non_empty",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "expiration_not_before_date",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "strike_positive",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "call_put_allowed",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "style_allowed",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "bid_non_negative",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "ask_at_least_bid",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "mean_price_within_quote",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "volume_non_negative",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "open_interest_non_negative",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "stock_price_for_iv_positive",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "delta_range",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "gamma_non_negative",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "vega_non_negative",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "theta_finite",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "rho_finite",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "unique_symbol_date_option",
+          "violations": 0,
+          "row_indices": []
+        },
+        {
+          "rule": "every_symbol_on_all_dates",
+          "violations": 0,
+          "row_indices": []
+        }
+      ],
+      "rows_without_valid_iv": 518
+    }
+  ]
+}

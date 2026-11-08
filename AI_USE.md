@@ -436,6 +436,13 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 
 **Validation of the iVolatility file**, run only through `python/validate_raw.py`, which reports rule names and counts: 41,256 rows, 22 rules, and one rule violated. `expiration_after_date` fails on 518 rows. The file also has 518 rows without a valid IV; the report cannot show whether these are the same rows. `DATA_CONTRACT.md` §1.5 stops the pipeline on this violation, so the AI stopped there and changed no rule, filter or raw file. The decision is the author's. The author then chose to relax the rule to `expiration >= date` with the reasoning recorded in `DATA_CONTRACT.md` v0.4 and `SPEC.md` §22; filter F3 is unchanged.
 
+**Market calibration, run through `scripts/run.py` on 2026-11-08 after contract v0.4.** Validation passed with 0 violations. The result is failure-ladder step 3 on all three dates: no market-calibrated result.
+- Primary date 2026-10-14: 48 grid points, 6 expiries, all 8 starts converged to the same fit, and RMS IV residual 0.01049 against the limit of 0.01. Neighbouring dates: 0.01029 and 0.01163.
+- `kappa` sits at or near its upper bound (20.0 on the primary date), with `xi` about 4.4 and `rho` about -0.04, consistent with Entries 5 and 6. The residual is largest at tenors under 0.5 years.
+- Ladder step 2 could not be tried, because no cited `kappa` has been entered. `scripts/run.py price` refused with `E_CALIB_FAILED`, so no market price, sweep or figure exists.
+- The AI changed `calibrate_with_ladder` to keep the rejected fit under `rejected_full_fit`, for diagnosis only. Acceptance rules did not change. The 0.01 limit was not changed after this result was seen (§1.3).
+- V-14 (b) and (c) inputs: 93 of 94 near-the-money pairs agree; median |own IV - vendor IV| is 0.0012.
+
 **Author review status:**
 - [ ] Spec v1.2 and contract v0.3 read and accepted
 - [ ] `configs/governance.yaml` created
