@@ -1,0 +1,12 @@
+# Rate and dividend inputs (SPEC.md 4.3).
+# U.S. Treasury 1-Year CMT par yield, as a decimal. The code converts it to r = 2 ln(1 + y / 2).
+# Source: U.S. Department of the Treasury, Daily Treasury Par Yield Curve Rates, October 2026
+# (home.treasury.gov). 2026-10-14 was entered by the owner and matches that table.
+treasury_1y_cmt_yield:
+  2026-10-13: 0.0448
+  2026-10-14: 0.0453
+  2026-10-15: 0.0449
+
+# q_AMD = 0 is stated in SPEC.md 4.3.
+dividend_yield:
+  AMD: 0.0

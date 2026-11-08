@@ -1,0 +1,13 @@
+# Reviewer smoke path (SPEC.md 9.1 and 11). Synthetic data only; no licensed data is read.
+schema_version: 1
+run_name: core_smoke
+tier: CORE
+reported: false
+data_mode: synthetic
+assets: [SYN1]
+snapshot_date: 2026-10-14
+market_inputs: tests/fixtures/synthetic_market_inputs.yaml
+params_source: tests/fixtures/synthetic_params.yaml
+contract: {strike: 1.0, maturity: 1.0, n_exercise: 50}
+simulation: {n_paths: 20000, n_substeps: 4, basis_degree: 3}
+seeds: [620001]

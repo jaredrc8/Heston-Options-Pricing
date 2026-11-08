@@ -1,0 +1,22 @@
+name: CI
+
+# No market data and no data-provider secrets are available here (SPEC.md section 13).
+on: [push]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: pip install -r requirements.lock
+      - name: Lint
+        run: ruff check python scripts tests
+      - name: Smoke path, including the fast test set
+        run: bash scripts/smoke.sh
+      - name: Data boundary
+        run: bash scripts/check_no_data.sh

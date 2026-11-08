@@ -1,0 +1,19 @@
+# Published Heston parameters (SPEC.md 5.1). Owner to transcribe from the source paper (OD-5).
+# An AI agent must not fill in these values (SPEC.md 15).
+
+sets:
+  core_default:
+    v0: null
+    kappa: null
+    theta: null
+    xi: null
+    rho: null
+    q: null
+    citation: null
+    table_or_page: null
+
+# The cited kappa used by step 2 of the failure ladder (SPEC.md 6.7).
+kappa_fallback:
+  value: null
+  citation: null
+  table_or_page: null

@@ -6,12 +6,12 @@ This file records every material use of AI tools in this project, as committed t
 
 | Tool | Model | Access mode |
 |---|---|---|
-| Claude Code (VS Code extension) | Claude Opus 5.5 (`claude-opus-5-5`) | Reads the repository and writes files into the working tree when the author asks. Commits nothing. |
+| Claude Code (VS Code extension) | Claude Opus 5.5 (`claude-opus-5-5`) | Reads the repository and writes files into the working tree when the author asks. Since 2026-11-08 it also commits and pushes when asked, under `DATA_CONTRACT.md` §3.3. |
 | Claude (claude.ai chat) | — | Chat only (planned in Table A3; no use logged yet). |
 
 ## Repository access (change from the Table A3 plan)
 
-Table A3 lists *repository write access* as out of bounds and limits the tool to *suggestions in chat, which I read, modify, and test myself*. On 2026-10-06 the author granted Claude Code write access to the working tree. **Only the author commits and pushes to Git.** AI-written files stay uncommitted until the author has reviewed them.
+Table A3 lists *repository write access* as out of bounds and limits the tool to *suggestions in chat, which I read, modify, and test myself*. On 2026-10-06 the author granted Claude Code write access to the working tree. Until 2026-11-08 only the author committed and pushed to Git. On 2026-11-08 the author allowed Claude Code to commit and push when asked, provided `data/` is in `.gitignore` and `scripts/check_no_data.sh` passes immediately before the push (`DATA_CONTRACT.md` §3.3). Owner review of AI-written files may follow the commit, and the review checkboxes in each entry show what has been reviewed.
 
 **Author action:** update Table A3 in the final report to match.
 
@@ -217,3 +217,221 @@ Table A3 lists *repository write access* as out of bounds and limits the tool to
 - [ ] All three `claude_python/` modules read and understood
 - [ ] Simplifications 1–13 accepted, or the old behaviour requested back (record which)
 - [ ] Market-data step removes tiny-price quotes before calibration (simplification 12)
+
+### Entry 4 — 2026-10-18 — Fix the data path in `src/correlation.py`
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** `correlation.py` (written by the author) failed when run from another folder.
+
+**Cause:** the default data root `"../data/nvda_amd_intc_minute"` was relative to the folder the script was run from, not to the script, so DuckDB found no Parquet files.
+
+**Change:** `PACKAGE_ROOT` is now built from the script's own location (`Path(__file__).resolve().parent.parent / "data" / "nvda_amd_intc_minute"`). That is a 3-line edit; no other code changed.
+
+**Check:** ran the script from `/tmp`; it loaded 3,704 daily sessions and printed the correlation tables. The printed correlation values were not reviewed by the AI and are not reported results.
+
+### Entry 5 — 2026-10-18 — Calibration to the 2026-10-15 option snapshot
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Use `heston_calibration.py` and `data/nvda_amd_intc_IV_Oct13-15.csv` to calibrate Heston parameters for a 1-year contract.
+
+**Files written by the AI:**
+- `src/calibrate_market.py` (new)
+- `results/heston_params.csv` (output of running it)
+
+**Quote selection (AI's choices, for the author to review):**
+- latest date in the file only (2026-10-15);
+- maturities 0.08–1.3 years, which bracket T = 1;
+- out-of-the-money options only;
+- strikes 0.7–1.3 × spot;
+- bid > 0 and iv > 0;
+- the provider's `iv` column, treating American out-of-the-money vols as European;
+- r = 5% and q = 0, as in the proposal.
+
+**Outcome:** with all five parameters free, κ ends at its upper bound of 20 for all three tickers, with ξ between 3.5 and 4.3 and RMS implied-vol error 0.0092 (NVDA), 0.0102 (AMD) and 0.0097 (INTC). All 8 starts reach the same cost. Holding κ at 1, 2 or 5 raises the RMS to between 0.011 and 0.018. These numbers come from an AI-run calibration; the author should rerun the script before reporting them.
+
+### Entry 6 — 2026-10-18 — Quote window and fixed κ for the market calibration, moved into `main.py`
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Narrow the quote window until κ is reasonable and the fit is stable. Apply it in `main.py` using `heston_calibration.py`, and save each ticker's parameters as an array or DataFrame.
+
+**Files changed by the AI:**
+- `src/main.py`: replaced the synthetic calibration block with the market calibration; the correlation block is unchanged.
+- `results/heston_params.csv`: regenerated.
+
+`src/calibrate_market.py` from Entry 5 still uses the old window and is now superseded.
+
+**Findings from the AI's scan of quote windows:**
+- Minimum maturity from 0.25 to 0.6 years, maximum from 1.3 to 2.3 years, all parameters free.
+- No window gave a reasonable κ for all three tickers. κ moved between its bounds: 20, or about 0.02 with θ at its bound of 2.
+- The objective is flat along a κ–θ–ξ ridge, so κ is not identified by these surfaces.
+
+**Choice (proposal Table 3 fallback, for the author to review):**
+- Maturities 0.4–1.3 years, which bracket T = 1 and leave out the steep short-dated term structure.
+- κ fixed at 2.0. The author should cite a literature source for this value.
+- In this window, κ = 1, 2 or 3 all give RMS error between 0.0050 and 0.0064, and the free-κ fit is at most 0.0007 better.
+
+**Result:**
+
+| | RMS implied-vol error | Max implied-vol error |
+|---|---|---|
+| NVDA | 0.0059 | 0.016 |
+| AMD | 0.0055 | 0.016 |
+| INTC | 0.0051 | 0.015 |
+
+All 8 starts agree for each ticker. These numbers come from an AI-run calibration; the author should rerun `main.py` before reporting them.
+
+### Entry 7 — 2026-10-18 — Market calibration moved back into `calibrate_market.py`
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Keep the market calibration in `calibrate_market.py`, called by one function from `main.py`, which writes a CSV of parameters per asset. `main.py` then reads the CSV. If the IV data cannot be used (license), the CSV is filled by hand with literature values. Set it up like the correlation step.
+
+**Files changed by the AI:**
+- `src/calibrate_market.py`: rewritten. It now uses the Entry 6 settings (maturities 0.4–1.3 years, κ fixed at 2.0), and a single `main()` writes `results/heston_params.csv` and returns the DataFrame.
+- `src/main.py`: the calibration block was replaced by a `USE_MARKET_DATA` switch. When it is `True`, `main.py` calls `calibrate_market.main()`. Either way it then reads the CSV, keeping only the columns spot, v0, kappa, theta, xi and rho.
+
+**Check:** ran `main.py` from `/tmp`. The parameters are the same as in Entry 6.
+
+### Entry 8 — 2026-10-18 — Plot of simulated Heston paths in `main.py`
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Use `heston_lsmc.py` to simulate and plot each asset's paths in one figure with 3 subplots, with a fixed seed so the result repeats.
+
+**Files changed by the AI:**
+- `src/main.py`: new section "Simulated Heston Paths". It calls `lsmc.simulate_heston_paths` with:
+  - spot prices and parameters from `heston_params.csv`;
+  - the asset correlation matrix from `correlation.main()`, reordered to the CSV's ticker order;
+  - r = 5% and q = 0;
+  - T = 1 year in 252 daily steps;
+  - 20 paths per asset;
+  - `np.random.default_rng(2026)`.
+
+  It plots one subplot per asset, with a dashed line at S0, and saves the figure to `results/simulated_paths.png` before `plt.show()`.
+
+**Check:** ran `main.py` twice from `/tmp`; both runs saved byte-identical figures (same MD5).
+
+### Entry 9 — 2026-10-18 — Single-asset NVDA Bermudan put in `main.py`
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Use `heston_lsmc` to price NVDA with LSMC from inputs of strike, expiry and current price, using the calibrated parameters.
+
+**Files changed by the AI:**
+- `src/main.py`: new section "NVDA Bermudan Put (LSMC)".
+
+**What the section does:**
+- **Inputs:** current price S0 (from the CSV), strike K (default at the money), expiry T (default 1 year), 52 weekly exercise dates, and 10⁵ paths per set.
+- **Pricing:** calls `lsmc.price_bermudan_worst_of_put` with one asset and correlation `[[1]]`, passing the strike as K/S0 and converting the result to dollars by multiplying by S0. It uses the section's `SEED`, r = 5% and q = 0.
+- **Check:** also prints the closed-form European put from `closed_form.heston_price`.
+
+**Check result:** the simulated European put (26.978 ± 0.122) agrees with the closed form (26.997), z = −0.15. These numbers come from an AI run; the author should rerun `main.py` before reporting them.
+
+### Entry 10 — 2026-10-18 — Plot of the NVDA put price as t approaches T
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Plot the fair price as t approaches T, with daily exercise dates so the Bermudan approximates an American.
+
+**Files changed by the AI:**
+- `src/main.py`: new section "NVDA Put Price as t -> T". It reprices the same put at 26 values of elapsed time t (one every two weeks), holding S0 fixed.
+
+**Settings for each point:**
+- time to expiry τ = T − t, with round(252τ) daily exercise dates;
+- 50,000 paths per set, 2 sub-steps;
+- the same `SEED` at every point, so the curve is smooth;
+- the closed-form European put plotted alongside, with a 95% band (±1.96 standard errors) around the Bermudan curve and a line at the intrinsic value.
+
+The figure is saved to `results/nvda_put_price_vs_time.png`. The whole section takes about 17 s.
+
+**Check:** the early-exercise premium shrinks toward expiry, and the Bermudan curve stays above the European curve. These results come from an AI run; the author should rerun `main.py` before reporting them.
+
+### Entry 11 — 2026-10-18 — NVDA pricing and price-curve sections merged
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Don't rerun the analysis to make the plot; run LSMC once in the NVDA section, store the data, and plot it there.
+
+**Clarification:** one LSMC run only prices t = 0, so a curve at fixed S0 needs a repricing for each t. The AI asked how to proceed, and the author chose to keep the repricing.
+
+**Files changed by the AI:**
+- `src/main.py`: the NVDA section is now a single loop over 26 values of elapsed time. It stores the Bermudan, European Monte Carlo, closed-form European and premium prices in arrays. The t = 0 entry is the reported price, and the plot is drawn from the stored arrays.
+
+All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the author's partial merge, which had broken indentation; the separate curve section and the duplicate timing block were removed.
+
+**Check:** ran `main.py` from `/tmp` in about 33 s. At t = 0 the simulated European put (26.948 ± 0.121) agrees with the closed form (26.997). These numbers come from an AI run; the author should rerun `main.py` before reporting them.
+
+### Entry 12 — 2026-11-08 — Spec v1.1 and implementation of the SPEC.md layout
+
+**Tool:** Claude Code, Claude Opus 5.5. Reviewed writes to the working tree (OD-7). The AI made no commits.
+
+**Author's request:** Use the layout in `SPEC.md` and the data contract `DATA_CONTRACT.md`. Edit `SPEC.md` to use plain functions and dictionaries instead of dataclasses, then follow `SPEC.md` to finish the project.
+
+**Files changed by the AI:**
+- `SPEC.md`: §10.1 and §10.2 rewritten for plain dictionaries; references renamed to `DATA_CONTRACT.md`; version 1.1 and a §22 row. No pass rule, tolerance, seed, filter or default changed.
+- Protections: `.gitignore`, `.claude/settings.json`, `scripts/inspect_schema.py`, `scripts/check_no_data.sh`, and the pre-commit hook link.
+- Package: `python/hestonpricer/` (`errors`, `analytic`, `iv`, `tree`, `simulate`, `lsmc`, `surface`, `calibrate`, `correlation`), `python/validate_raw.py`, `python/make_fixtures.py`.
+- Pipeline: `scripts/run.py`, `verify_outputs.py`, `make_figures.py`, `smoke.sh`; `configs/`; `pyproject.toml`; `requirements.lock`; `.github/workflows/ci.yml`; `README.md`.
+- Tests: `tests/test_checks.py`, `tests/test_units.py`, `tests/reference_impl.py`, generated `tests/fixtures/`.
+- Moved, content unchanged: `src/` to `prototype/src/`, `prototype.ipynb` to `prototype/`. The notebook's saved outputs were cleared, as contract §3.1 requires; the originals remain in Git history.
+- `results/smoke/expected.json`, written by `verify_outputs.py --check-smoke --bless`, not by hand.
+
+**Left for the author, as SPEC.md §15 requires.** The AI did not write `configs/governance.yaml`, did not fill in any value in `tests/reference_values.yaml` or `configs/published_params.yaml` (both are empty templates), did not enter the Treasury yield, did not run `market` mode, and did not write the report, slides, reported figures or claims.
+
+**Data boundary in this session.** The AI touched `data/` only by running `scripts/inspect_schema.py`, which printed file names, column names, dtypes, row counts and null counts. No data value was read or printed. Validation on licensed files was not run; that is an owner action.
+
+**Design decisions made by the AI** (for the author to review and either adopt or change):
+1. **Raw header mapping** in `surface.py`, inferred from the header names only: `adjusted close` to `stock_price` and `price` to `mean_price` are the two to confirm (OD-4). `is_settlement` and `*` are not in the contract and are dropped.
+2. **Massive validation** reads the Parquet package on disk, because the contract's daily gzip CSV format does not match what is stored.
+3. **Synthetic parameters** `v0 = 0.09, kappa = 2.0, theta = 0.10, xi = 0.6, rho = -0.6` and yield 4%. These are made up and describe no real stock.
+4. **Residual buckets:** three tenor groups and three moneyness groups.
+5. **V-14(b) "agree":** the call and put bid–ask IV bands overlap.
+6. **Scope gate:** LSMC raises an error for more than one asset, because EXT-A may not start before G1. `simulate` and `estimate_correlation` are multi-asset because §10 makes them public API.
+7. **Extra error code** `E_RUN_EXISTS` (exit 3) for the "do not overwrite a completed run" rule in §14.3.
+
+**AI errors found and corrected during the session:**
+1. An editable `pip install` silently did not work here, because macOS marked the install's `.pth` file as hidden and Python skips hidden `.pth` files. Scripts and tests now add `python/` to the import path themselves.
+2. The first version of the price figure clipped its right axis label; found by viewing the figure.
+
+**Checks the AI ran.** All on synthetic or test inputs. They are not reported results. The verification table was written to a scratch location, and `results/verification_table.csv` remains for the author to generate from a committed tree.
+- Fast set: 39 passed, 1 skipped (V-01, no owner-entered reference values). `smoke.sh` passes in about 18 s.
+- All checks: 9 PASS (V-02, V-03, V-04, V-05, V-07, V-08, V-12, V-16, B1), 0 FAIL, 17 NOT_RUN with reasons. V-16 ran before these files were committed, so it must be rerun.
+- B1 median 0.88 s over 5 repeats on this laptop, against a 30 s budget.
+- An informal pass of V-09, V-10 and V-11 on the made-up synthetic parameters found no problem. It is not evidence for those checks, which need the reported parameter set.
+
+**Findings for the author:**
+- Entries 5 to 11 show that market fits and prices were viewed on 2026-10-18, before spec v1.0. The §22 row for v1.0 and OD-6 ask the author to confirm this.
+- Files in `results/` from before the contract (`heston_params.csv` and two PNG figures) show spot levels, so they are now Git-ignored. They must not be submitted.
+
+**Residual limitations after these checks.** The AI wrote both the engine and most of its tests, so a shared misunderstanding of the spec could pass both. V-01 and V-06 are the checks against outside published numbers, and they have not run. The market-data path has run only on fixtures with the same schema, never on licensed data.
+
+**Author review status:**
+- [ ] `python/hestonpricer/` and `tests/` read and understood
+- [ ] Decisions 1–7 accepted, changed, or rejected (record which)
+- [ ] OD-4 header mapping confirmed against the iVolatility documentation
+- [ ] OD-7 disclosed in the report
+
+### Entry 13 — 2026-11-08 — Authorization, spec v1.2, commits, and the market pipeline run
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Allow Claude to push when `data/` is in `.gitignore`. Enter the 4.53% Treasury rate for 2026-10-14. Record the iVolatility licence position in the data contract. Run the pipeline. Add a visualization plan to `SPEC.md`, including a PyVista surface and numerical-versus-analytical price comparisons. Add an optional call or put on n correlated assets to the scope, keeping the current code.
+
+**Files changed by the AI:**
+- `DATA_CONTRACT.md` v0.3: §2.2 licence and derived-data confirmation; new §3.3 for agent commits, pushes and pipeline runs. Classification is unchanged.
+- `SPEC.md` v1.2: optional n-asset EXT-A (spec only, no code); §12.9 visualization plan (spec only, no code); §5.2 and §15 permissions; OD-1, OD-3 and OD-7; §22 row. No pass rule, tolerance, seed, filter or default changed.
+- `configs/market_inputs.yaml`: yields of 4.48%, 4.53% and 4.49% for 2026-10-13, 14 and 15. The author gave 4.53%; the AI read the other two from the U.S. Treasury's Daily Par Yield Curve table, which also shows 4.53% for 2026-10-14.
+- `configs/core_published_production.yaml`: `reported: false`, because market is the reported mode and no published parameters exist.
+- `scripts/run.py` and `tests/test_units.py`: version numbers only.
+- `README.md`: wording for the changes above.
+
+**Not done, by the author's choice or the spec's rules:** published parameters and the V-01 and V-06 benchmarks remain empty, and the AI did not fill them in. The report, slides and claims remain the author's.
+
+**Blocked:** the AI's attempt to create `configs/governance.yaml` was denied by the Claude Code permission system. The AI did not write the file by another route, so `market` mode remains refused (`E_GOV_UNAUTHORIZED`) until the author creates it or permits the write. Calibration, pricing and sweeps on licensed data have not run.
+
+**Author review status:**
+- [ ] Spec v1.2 and contract v0.3 read and accepted
+- [ ] `configs/governance.yaml` created

@@ -1,0 +1,14 @@
+# Published-parameter CORE result: the fallback if no market-calibrated result exists (SPEC.md 6.7).
+# It MUST NOT be described as calibrated to AMD. Set reported: true if it becomes the reported result.
+schema_version: 1
+run_name: core_published_production
+tier: CORE
+reported: false
+data_mode: published
+assets: [core_default]
+snapshot_date: 2026-10-14
+market_inputs: configs/market_inputs.yaml
+params_source: configs/published_params.yaml
+contract: {strike: 1.0, maturity: 1.0, n_exercise: 50}
+simulation: {n_paths: 100000, n_substeps: 4, basis_degree: 3}
+seeds: [620001, 620002, 620003, 620004, 620005]

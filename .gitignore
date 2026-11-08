@@ -1,0 +1,19 @@
+# Required by DATA_CONTRACT.md section 3.2
+data/
+.env
+
+# Files from before the data contract that show market prices (spot levels).
+# They must never be committed (DATA_CONTRACT.md section 4.2).
+results/heston_params.csv
+results/nvda_put_price_vs_time.png
+results/simulated_paths.png
+
+# Python and tool output
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.DS_Store

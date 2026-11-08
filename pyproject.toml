@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hestonpricer"
+version = "1.0.0"
+description = "Calibrated Heston Bermudan put pricer (ENSF 620 final project)"
+requires-python = ">=3.12"
+dependencies = ["numpy", "scipy", "pandas", "pyyaml", "pyarrow", "matplotlib"]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[tool.setuptools.packages.find]
+where = ["python"]
+include = ["hestonpricer*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["python"]
+junit_family = "xunit1"
+markers = [
+    "fast: runs in CI and in smoke.sh, within budget B3",
+    "slow: run by the owner and recorded by verify_outputs.py",
+]
+
+[tool.ruff]
+line-length = 130
+extend-exclude = ["prototype"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+# These scripts add python/ to sys.path before importing the package.
+"scripts/*.py" = ["E402"]
+"python/validate_raw.py" = ["E402"]
