@@ -1,9 +1,9 @@
-# Published-parameter CORE result: the fallback if no market-calibrated result exists (SPEC.md 6.7).
-# It MUST NOT be described as calibrated to AMD. Set reported: true if it becomes the reported result.
+# Published-parameter CORE result: the reported result, because the market calibration
+# ended at ladder step 3 (SPEC.md 6.7 and 17.3). It MUST NOT be described as calibrated to AMD.
 schema_version: 1
 run_name: core_published_production
 tier: CORE
-reported: false
+reported: true
 data_mode: published
 assets: [core_default]
 snapshot_date: 2026-10-14

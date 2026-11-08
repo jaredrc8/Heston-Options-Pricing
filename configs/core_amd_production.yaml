@@ -2,7 +2,7 @@
 schema_version: 1
 run_name: core_amd_production
 tier: CORE
-reported: true
+reported: false   # no accepted market fit (ladder step 3); set true if one is obtained
 data_mode: market
 assets: [AMD]
 snapshot_date: 2026-10-14

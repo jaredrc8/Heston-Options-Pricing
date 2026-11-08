@@ -169,11 +169,12 @@ def calibrate_with_ladder(grid, r, q, fallback_kappa, cfg=None):
     if fit_acceptable(full_fit):
         return {**full_fit, "ladder_step": 1}
 
+    fixed_fit = None
     if fallback_kappa is not None:
-        result = attempt({"kappa": float(fallback_kappa)})
-        if fit_acceptable(result):
-            return {**result, "ladder_step": 2}
+        fixed_fit = attempt({"kappa": float(fallback_kappa)})
+        if fit_acceptable(fixed_fit):
+            return {**fixed_fit, "ladder_step": 2}
 
-    # No accepted fit. The rejected full fit is kept apart from "params", for diagnosis only.
+    # No accepted fit. The rejected fits are kept apart from "params", for diagnosis only.
     return {"ladder_step": 3, "params": None, "stable": False, "fixed_params": [],
-            "rejected_full_fit": full_fit}
+            "rejected_full_fit": full_fit, "rejected_fixed_kappa_fit": fixed_fit}
