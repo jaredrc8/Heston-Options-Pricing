@@ -1,19 +1,21 @@
-# Published Heston parameters (SPEC.md 5.1). Owner to transcribe from the source paper (OD-5).
-# An AI agent must not fill in these values (SPEC.md 15).
+# Published Heston parameters (SPEC.md 5.1).
+# Entered by Claude Code on the owner's instruction of 2026-11-08 (SPEC.md 15, AI_USE.md Entry 15).
+# These parameters were fitted to Google options on 2015-02-02. A result using them
+# MUST NOT be described as calibrated to AMD.
 
 sets:
   core_default:
-    v0: null
-    kappa: null
-    theta: null
-    xi: null
-    rho: null
-    q: null
-    citation: null
-    table_or_page: null
+    v0: 0.0546       # the paper's nu_0; its SDE treats nu as the variance
+    kappa: 1.4554
+    theta: 0.0580    # the paper's gamma
+    xi: 0.3927
+    rho: -0.6518
+    q: 0.0           # the paper's model has no dividend term; it states Google pays no dividends
+    citation: "Burkovska, Glau, Mahlstedt and Wohlmuth, Model reduction for calibration of American options, arXiv:1611.06452"
+    table_or_page: "Section 6.4, Table 8, row J_CF (de-Americanization with closed-form solution)"
 
 # The cited kappa used by step 2 of the failure ladder (SPEC.md 6.7).
 kappa_fallback:
-  value: null
-  citation: null
-  table_or_page: null
+  value: 1.4554
+  citation: "Burkovska, Glau, Mahlstedt and Wohlmuth, Model reduction for calibration of American options, arXiv:1611.06452"
+  table_or_page: "Section 6.4, Table 8, row J_CF (de-Americanization with closed-form solution)"

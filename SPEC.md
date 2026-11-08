@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | ENSF 620 Fall 2026 final project (individual) |
 | **Owner** | Jared Crebo |
-| **Spec version** | 1.3 (2026-11-08) |
+| **Spec version** | 1.4 (2026-11-08) |
 | **Companion document** | `DATA_CONTRACT.md` v0.4 |
 | **Audience** | Engineers and AI coding agents writing implementation code and automated tests |
 
@@ -646,7 +646,7 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
 ```json
 {
   "schema_version": 1,
-  "spec_version": "1.3",
+  "spec_version": "1.4",
   "data_contract_version": "0.4",
   "run_id": "core_amd_production-1a2b3c4d",
   "git_commit": "<full hash>",
@@ -913,7 +913,7 @@ An agent MUST NOT:
 - Set `market_use_authorized` or write `configs/governance.yaml` without the owner's recorded instruction.
 - Run `market` mode by any means other than the committed scripts listed below.
 - Hand-edit `results/**`. Those files are written only by pipeline scripts.
-- Generate, recall, or fill in reference values in `tests/reference_values.yaml` or `configs/published_params.yaml`. The owner transcribes them from the cited source and records the table or page.
+- Generate, recall, or fill in reference values in `tests/reference_values.yaml` or `configs/published_params.yaml`. The owner transcribes them from the cited source and records the table or page. One exception: on 2026-11-08 the owner instructed the agent to enter the set in `configs/published_params.yaml` from Burkovska et al. (arXiv:1611.06452, Table 8). The owner remains responsible for checking it against the source.
 - Write the report, slides, or claims. Reported results and figures come only from pipeline scripts.
 - Change a pass rule, threshold, seed, or data filter (§1.3).
 - Access credentials or commit anything under `data/`.
@@ -1043,7 +1043,7 @@ Each item needs an owner decision. Defaults apply until changed through §1.3.
 | OD-2 | High | Confirm AMD as the CORE asset. It pays no dividend, so `q = 0` holds and call quotes are effectively European. | AMD |
 | OD-3 | Resolved 2026-11-08 | Treasury 1-Year CMT yields from the official table: 4.48% (2026-10-13), 4.53% (2026-10-14), 4.49% (2026-10-15). The proposal's fixed `r = 5%` is withdrawn. | Values in `configs/market_inputs.yaml` |
 | OD-4 | High | Compare `DATA_CONTRACT.md` §1.2 with the actual iVolatility header. Confirm that `stock_price_for_iv` is synchronous with the quotes. | Contract schema, unverified |
-| OD-5 | High | Choose the published parameter set and the literature `kappa` for §6.7, and enter both from their source papers. | Empty until the owner transcribes it |
+| OD-5 | Resolved 2026-11-08 | No published calibration for AMD, NVDA, or INTC was found. The owner chose the Google 2015-02-02 set in Burkovska et al. (arXiv:1611.06452, Table 8, de-Americanization with closed-form solution) as the published parameter set and its `kappa` for §6.7. | Values in `configs/published_params.yaml` |
 | OD-6 | Medium | Confirm contract terms `K = 1.00`, `T = 1.00`, `M = 50`, and primary date `2026-10-14`. If any fit or price has already been viewed, record that in §22. | Values in §4.1 and §5.3 |
 | OD-7 | Medium | The proposal barred repository write access. The owner now allows agent writes, commits, and pushes under `DATA_CONTRACT.md` §3.3. Disclose this change in `AI_USE.md` and the report. | Agent writes, commits, and pushes allowed |
 | OD-8 | Medium | Raw-file hashes were removed from the data contract. Traceability currently relies on file name and row count. Hashes are not values and would strengthen the provenance evidence. | No raw-file hashes |
@@ -1112,6 +1112,7 @@ Proposal Tables 2, 3, A2, and A3 and its evidence list cite V10–V14, which Tab
 Citations follow the proposal unless marked.
 
 - Albrecher, H., Mayer, P., Schoutens, W., & Tistaert, J. (2007). The little Heston trap. *Wilmott Magazine*, January, 83–92.
+- Burkovska, O., Glau, K., Mahlstedt, M., & Wohlmuth, B. Model reduction for calibration of American options. arXiv:1611.06452. Source of the published parameter set and the ladder-step-2 `kappa`.
 - Burkovska, E., et al. (2018). Calibration to American options: numerical investigation of the de-Americanization method. *Quantitative Finance*. Added here; verify the full citation before use.
 - Clarke, N., & Parrott, K. (1999). Multigrid for American option pricing with stochastic volatility. *Applied Mathematical Finance*, 6(3), 177–195.
 - Cox, J. C., Ross, S. A., & Rubinstein, M. (1979). Option pricing: A simplified approach. *Journal of Financial Economics*, 7(3), 229–263.
@@ -1131,3 +1132,4 @@ Citations follow the proposal unless marked.
 | 1.1 | 2026-11-08 | §10.1 and §10.2 use plain functions and dictionaries instead of dataclasses; references renamed to `DATA_CONTRACT.md` | Owner request: the owner must be able to read and explain the code. API representation only; no pass rule, tolerance, seed, filter, or default changed | Not applicable: no main result is affected by this change |
 | 1.2 | 2026-11-08 | Optional n-asset EXT-A with worst-of and basket calls and puts (§2.2, §4.1, §8.2, §10.1, §16.2, §17.2); visualization plan (§12.9); agent commits, pushes, and market runs through committed scripts (§5.2, §15); OD-1 and OD-3 resolved | Owner instructions. No pass rule, tolerance, seed, filter, or default changed | No result under this spec had been viewed. Market fits and prices viewed on 2026-10-18 predate v1.0 (`AI_USE.md` Entries 5 to 11; OD-6) |
 | 1.3 | 2026-11-08 | Follows `DATA_CONTRACT.md` v0.4, which relaxes the raw-data rule on `expiration` from `> date` to `>= date` | Owner decision after validation flagged 518 rows. Disclosed because the rule changed in response to a failed check. Same-day expiries are normal listed contracts, and filter F3 is unchanged, so the quotes used for calibration are unchanged | No market-calibrated result had been produced under this spec. Earlier fits are noted in the 1.2 row |
+| 1.4 | 2026-11-08 | OD-5 resolved; §15 exception for the agent entering the published set on the owner's instruction; reference added to §21 | The full five-parameter market fit missed the RMS limit (ladder step 3), and no cited `kappa` existed. The 0.01 limit and all rules are unchanged | Yes. The rejected fit's residual and parameters were viewed before this `kappa` was chosen; it MUST be disclosed in the report (§1.3). One value was chosen, from one source, before any refit |

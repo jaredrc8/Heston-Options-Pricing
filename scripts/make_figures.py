@@ -209,8 +209,8 @@ def market_fit_table(results_root, out_dir):
     if not calibration_file.exists():
         return []
     document = json.loads(calibration_file.read_text())
-    if document["data_mode"] != "market":
-        return []
+    if document["data_mode"] != "market" or document["assets"]["AMD"]["ladder_step"] == 3:
+        return []    # no accepted market fit to report
     rows = []
     for asset, entry in document["assets"].items():
         for bucket in entry.get("residual_buckets", []):

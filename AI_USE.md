@@ -446,3 +446,13 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 **Author review status:**
 - [ ] Spec v1.2 and contract v0.3 read and accepted
 - [ ] `configs/governance.yaml` created
+
+### Entry 14 — 2026-11-08 — Literature search for published Heston parameters
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Search for `kappa` values for AMD, NVDA and INTC, and preferably a full parameter set for each.
+
+**Outcome:** the web search found no published Heston calibration for AMD, NVDA or INTC. The nearest source is Burkovska et al., arXiv:1611.06452, Section 6.4 and Table 8: American puts on Google, 2015-02-02, including a de-Americanization fit. Its parameters were read from an automated extract of the HTML version, so the author must check them against the paper.
+
+**Boundary:** no value was entered in `configs/published_params.yaml` (SPEC.md §15), and no calibration was rerun. Paywalled journals were not searched in full.

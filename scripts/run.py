@@ -39,7 +39,7 @@ from hestonpricer.iv import bs_implied_vol
 from hestonpricer.lsmc import price_bermudan
 from hestonpricer.tree import crr_price
 
-SPEC_VERSION = "1.3"
+SPEC_VERSION = "1.4"
 DATA_CONTRACT_VERSION = "0.4"
 RAW_IV_MARKET = ROOT / "data" / "nvda_amd_intc_IV_Oct13-15.csv"
 RAW_IV_SYNTHETIC = ROOT / "tests" / "fixtures" / "synthetic_raw_iv.csv"
