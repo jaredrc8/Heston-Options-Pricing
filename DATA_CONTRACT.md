@@ -2,7 +2,7 @@
 
 **Project:** Pricing a Bermudan put under calibrated Heston stochastic volatility
 **Owner:** Jared Crebo
-**Contract version:** 0.3 · **Last updated:** 2026-11-08
+**Contract version:** 0.4 · **Last updated:** 2026-11-08
 
 This contract governs two licensed datasets and everything derived from them:
 
@@ -52,7 +52,7 @@ End-of-day records, one row per listed option contract per trading day, as deliv
 | `date` | date | 2026-10-13, 2026-10-14, or 2026-10-15 | Trading date of the record. |
 | `stock_price` | float64 | `> 0` | Underlying close (USD). |
 | `option_symbol` | string | Non-empty; unique within `(symbol, date)` | Contract identifier. |
-| `expiration` | date | `> date` | Contract expiry. |
+| `expiration` | date | `>= date` | Contract expiry. A contract may expire on its trade date: same-day expiries are normal listed contracts, so `> date` was too strict. They cannot reach calibration, because filter F3 in `SPEC.md` §6.2 requires 21 to 511 days to expiry. An expiry before the trade date is still a violation. |
 | `strike` | float64 | `> 0` | USD. |
 | `call_put` | string | `C` or `P` | |
 | `style` | string | `A` (American) or `E` (European) | U.S. single-stock options are expected to be `A`. |

@@ -62,7 +62,7 @@ def check_iv_table(df, tickers):
         rule_entry("date_allowed", ~date_text.isin(IV_DATES)),
         rule_entry("stock_price_positive", ~(df["stock_price"] > 0)),
         rule_entry("option_symbol_non_empty", df["option_symbol"].isna() | (df["option_symbol"].astype(str) == "")),
-        rule_entry("expiration_after_date", ~(df["expiration"] > df["date"])),
+        rule_entry("expiration_not_before_date", ~(df["expiration"] >= df["date"])),
         rule_entry("strike_positive", ~(df["strike"] > 0)),
         rule_entry("call_put_allowed", ~df["call_put"].isin(["C", "P"])),
         rule_entry("style_allowed", ~df["style"].isin(["A", "E"])),

@@ -4,8 +4,8 @@
 |---|---|
 | **Project** | ENSF 620 Fall 2026 final project (individual) |
 | **Owner** | Jared Crebo |
-| **Spec version** | 1.2 (2026-11-08) |
-| **Companion document** | `DATA_CONTRACT.md` v0.3 |
+| **Spec version** | 1.3 (2026-11-08) |
+| **Companion document** | `DATA_CONTRACT.md` v0.4 |
 | **Audience** | Engineers and AI coding agents writing implementation code and automated tests |
 
 The key words MUST, MUST NOT, SHOULD, and MAY are normative. Requirements are binding until changed through §1.3.
@@ -646,8 +646,8 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
 ```json
 {
   "schema_version": 1,
-  "spec_version": "1.2",
-  "data_contract_version": "0.3",
+  "spec_version": "1.3",
+  "data_contract_version": "0.4",
   "run_id": "core_amd_production-1a2b3c4d",
   "git_commit": "<full hash>",
   "git_dirty": false,
@@ -1130,3 +1130,4 @@ Citations follow the proposal unless marked.
 | 1.0 | 2026-11-03 | Initial spec | Consolidates proposal, instructor feedback, and data contract v0.2. Pass rules were spot-checked on a throwaway prototype using test parameters, not market data | Owner to confirm (OD-6) |
 | 1.1 | 2026-11-08 | §10.1 and §10.2 use plain functions and dictionaries instead of dataclasses; references renamed to `DATA_CONTRACT.md` | Owner request: the owner must be able to read and explain the code. API representation only; no pass rule, tolerance, seed, filter, or default changed | Not applicable: no main result is affected by this change |
 | 1.2 | 2026-11-08 | Optional n-asset EXT-A with worst-of and basket calls and puts (§2.2, §4.1, §8.2, §10.1, §16.2, §17.2); visualization plan (§12.9); agent commits, pushes, and market runs through committed scripts (§5.2, §15); OD-1 and OD-3 resolved | Owner instructions. No pass rule, tolerance, seed, filter, or default changed | No result under this spec had been viewed. Market fits and prices viewed on 2026-10-18 predate v1.0 (`AI_USE.md` Entries 5 to 11; OD-6) |
+| 1.3 | 2026-11-08 | Follows `DATA_CONTRACT.md` v0.4, which relaxes the raw-data rule on `expiration` from `> date` to `>= date` | Owner decision after validation flagged 518 rows. Disclosed because the rule changed in response to a failed check. Same-day expiries are normal listed contracts, and filter F3 is unchanged, so the quotes used for calibration are unchanged | No market-calibrated result had been produced under this spec. Earlier fits are noted in the 1.2 row |
