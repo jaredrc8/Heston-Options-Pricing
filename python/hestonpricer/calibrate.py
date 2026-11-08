@@ -121,6 +121,12 @@ def calibrate_asset(grid, r, q, cfg):
     params = best["params"]
     final_residuals = residuals(np.array([params[name] for name in free_names]))
 
+    # Relative spread of each free parameter over the accepted starts (section 6.6)
+    spread = {}
+    for name in free_names:
+        values = np.array([item["params"][name] for item in accepted])
+        spread[name] = float((values.max() - values.min()) / abs(np.median(values)))
+
     return {
         "params": {name: params[name] for name in PARAM_NAMES},
         "fixed_params": sorted(fixed),
@@ -129,6 +135,8 @@ def calibrate_asset(grid, r, q, cfg):
         "n_expiries": int(grid["expiration"].nunique()),
         "rms_iv_residual": best["rms_iv_residual"],
         "stable": is_stable(accepted, free_names),
+        "n_accepted_starts": len(accepted),
+        "accepted_spread": spread,
         "uninvertible_events": uninvertible["events"],
         "starts": [{key: item[key] for key in
                     ("start", "converged", "status", "rms_iv_residual")} for item in results],
@@ -157,13 +165,15 @@ def calibrate_with_ladder(grid, r, q, fallback_kappa, cfg=None):
                 return None
             raise
 
-    result = attempt({})
-    if fit_acceptable(result):
-        return {**result, "ladder_step": 1}
+    full_fit = attempt({})
+    if fit_acceptable(full_fit):
+        return {**full_fit, "ladder_step": 1}
 
     if fallback_kappa is not None:
         result = attempt({"kappa": float(fallback_kappa)})
         if fit_acceptable(result):
             return {**result, "ladder_step": 2}
 
-    return {"ladder_step": 3, "params": None, "stable": False, "fixed_params": []}
+    # No accepted fit. The rejected full fit is kept apart from "params", for diagnosis only.
+    return {"ladder_step": 3, "params": None, "stable": False, "fixed_params": [],
+            "rejected_full_fit": full_fit}
