@@ -432,6 +432,10 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 
 **Blocked:** the AI's attempt to create `configs/governance.yaml` was denied by the Claude Code permission system. The AI did not write the file by another route, so `market` mode remains refused (`E_GOV_UNAUTHORIZED`) until the author creates it or permits the write. Calibration, pricing and sweeps on licensed data have not run.
 
+**Checks the AI ran from commit `b6206f9`.** 10 PASS (V-02, V-03, V-04, V-05, V-07, V-08, V-12, V-16, V-17, B1), 0 FAIL, 16 NOT_RUN with reasons. The table was written to a scratch location, because it should be regenerated after the market runs.
+
+**Validation of the iVolatility file**, run only through `python/validate_raw.py`, which reports rule names and counts: 41,256 rows, 22 rules, and one rule violated. `expiration_after_date` fails on 518 rows. The file also has 518 rows without a valid IV; the report cannot show whether these are the same rows. `DATA_CONTRACT.md` §1.5 stops the pipeline on this violation, so the AI stopped there and changed no rule, filter or raw file. The decision is the author's.
+
 **Author review status:**
 - [ ] Spec v1.2 and contract v0.3 read and accepted
 - [ ] `configs/governance.yaml` created
