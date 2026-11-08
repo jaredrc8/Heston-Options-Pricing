@@ -159,7 +159,8 @@ def load_params(cfg, results_root):
 
 def git_output(*arguments):
     result = subprocess.run(["git", *arguments], cwd=ROOT, capture_output=True, text=True)
-    return result.stdout.strip() if result.returncode == 0 else ""
+    # rstrip only: `git status --porcelain` lines can begin with a meaningful space
+    return result.stdout.rstrip() if result.returncode == 0 else ""
 
 
 def git_commit():

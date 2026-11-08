@@ -235,6 +235,20 @@ def test_reported_run_refuses_a_dirty_tree(tmp_path, monkeypatch):
     assert caught.value.code == "E_DIRTY_TREE"
 
 
+@pytest.mark.parametrize("status, dirty", [(" M results/calibration.json\n", False),
+                                           (" M results/a.json\n M python/b.py\n", True),
+                                           (" M python/b.py\n", True),
+                                           ("", False)])
+def test_only_changes_outside_results_make_the_tree_dirty(monkeypatch, status, dirty):
+    run = load_run_module()
+
+    def fake_git(*args, **kwargs):
+        return subprocess.CompletedProcess(args, 0, stdout=status, stderr="")
+
+    monkeypatch.setattr(run.subprocess, "run", fake_git)
+    assert run.git_dirty() is dirty
+
+
 def test_completed_run_is_not_overwritten(tmp_path):
     arguments = [sys.executable, "scripts/run.py", "price", "--config", "configs/smoke.yaml", "--results-root", str(tmp_path)]
     assert subprocess.run(arguments, cwd=ROOT, capture_output=True).returncode == 0
