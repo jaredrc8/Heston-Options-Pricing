@@ -238,20 +238,24 @@ def render_surface(params, r, q, heading, footnote, path):
         k_over_s = k_over_f * np.exp((r - q) * tenor)
         vols[j] = model_implied_vols(params, k_over_s, np.full(len(k_over_f), tenor), r, q)
 
-    x, y = np.meshgrid(k_over_f, tenors)
-    grid = pv.StructuredGrid(x, y, vols)
-    grid["Implied volatility"] = grid.points[:, 2].copy()
+    # The geometry is drawn in a unit box so the surface is readable; the axis labels
+    # below show the true values, and the colour scale uses the true implied volatility.
+    low, high = float(vols.min()), float(vols.max())
+    x, y = np.meshgrid((k_over_f - 0.80) / 0.40, (tenors - 0.10) / 1.15)
+    grid = pv.StructuredGrid(x, y, 0.7 * (vols - low) / max(high - low, 1e-6))
+    # Read the colour values back from the points, so they cannot be misordered against the geometry
+    grid["Implied volatility"] = low + grid.points[:, 2] / 0.7 * (high - low)
 
     plotter = pv.Plotter(off_screen=True, window_size=(1500, 1050))
     plotter.set_background(SURFACE)
-    plotter.add_mesh(grid, scalars="Implied volatility", cmap="Blues", clim=[vols.min() - 0.5 * np.ptp(vols), vols.max()],
+    plotter.add_mesh(grid, scalars="Implied volatility", cmap="Blues", clim=[low - 0.5 * (high - low), high],
                      show_edges=True, edge_color="#ffffff", line_width=0.4, lighting=False,
-                     scalar_bar_args={"title": "Implied volatility (annualized)", "color": INK, "n_labels": 5,
-                                      "fmt": "%.2f", "vertical": True, "position_x": 0.88, "position_y": 0.3})
-    plotter.set_scale(xscale=1.0 / 0.4, yscale=1.0 / 1.15, zscale=0.7 / max(np.ptp(vols), 1e-6))
-    plotter.show_grid(xtitle="Strike / forward", ytitle="Tenor (years)", ztitle="Implied vol", color=MUTED, font_size=11)
-    plotter.camera_position = [(3.6, -2.8, plotter.bounds[5] + 1.6),
-                               (2.5, 0.5, 0.5 * (plotter.bounds[4] + plotter.bounds[5])), (0, 0, 1)]
+                     scalar_bar_args={"title": "Implied vol", "color": INK, "n_labels": 5, "fmt": "%.2f",
+                                      "vertical": True, "position_x": 0.87, "position_y": 0.3})
+    plotter.show_bounds(axes_ranges=[0.80, 1.20, 0.10, 1.25, low, high], xtitle="Strike / forward", ytitle="Tenor (years)",
+                        ztitle="Implied vol", color=MUTED, font_size=12, grid="back", location="outer", n_xlabels=5,
+                        n_ylabels=5, n_zlabels=4, fmt="%.2f")
+    plotter.camera_position = [(1.85, -1.75, 1.35), (0.5, 0.5, 0.3), (0, 0, 1)]
     plotter.add_text(heading, position="upper_left", font_size=12, color=INK)
     plotter.add_text(footnote, position="lower_left", font_size=8, color=MUTED)
     plotter.screenshot(str(path))
@@ -270,10 +274,13 @@ def rejected_surface_figure(results_root, out_dir):
         return []
 
     p = rejected["params"]
+    at_bound = " (at its upper bound)" if p["kappa"] >= 19.999 else ""
     heading = (f"REJECTED FIT: AMD Heston surface, {document['snapshot_date']}\n"
-               f"Failed acceptance: RMS IV residual {rejected['rms_iv_residual']:.4f} above the 0.01 limit. Not used for pricing.")
-    footnote = (f"Model surface from rejected parameters; no market data points shown. v0 {p['v0']:.4f}, kappa {p['kappa']:.2f} "
-                f"(at bound), theta {p['theta']:.4f}, xi {p['xi']:.3f}, rho {p['rho']:.3f}.\n"
+               f"Failed acceptance: RMS IV residual {rejected['rms_iv_residual']:.4f} "
+               "above the 0.01 limit. Not used for pricing.")
+    footnote = (f"Model surface from rejected parameters; no market data points shown. "
+                f"v0 {p['v0']:.4f}, kappa {p['kappa']:.2f}{at_bound}, "
+                f"theta {p['theta']:.4f}, xi {p['xi']:.3f}, rho {p['rho']:.3f}.\n"
                 f"Fit: {rejected['grid_size']} grid points, 8 starts; no uncertainty band. Exclusions: filters F1 to F8. "
                 f"Source calibration.json. Code {CODE}.")
     path = out_dir / "surface_amd_rejected.png"
@@ -324,7 +331,7 @@ def comparison_figures(comparison_file, results_root, out_dir):
         right.axhline(level, color=MUTED, linewidth=1, linestyle="--")
     right.set_xlabel("Strike (fraction of spot)")
     right.set_ylabel("(Monte Carlo - analytic) / SE")
-    right.legend(frameon=False, ncol=3, fontsize=7, loc="lower center")
+    right.legend(frameon=False, ncol=3, fontsize=7, loc="upper center", bbox_to_anchor=(0.5, 0.9))
     inside = int((rows["z"].abs() <= 3).sum())
     fig.suptitle(f"European puts: {inside} of {len(rows)} Monte Carlo prices lie within 3 SE of the semi-analytic price",
                  fontsize=10, x=0.01, ha="left")
