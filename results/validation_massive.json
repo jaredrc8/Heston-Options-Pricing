@@ -4,6 +4,7 @@
     {
       "file": "year=2011/month=11",
       "rows": 37695,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -75,6 +76,7 @@
     {
       "file": "year=2011/month=12",
       "rows": 36532,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -146,6 +148,7 @@
     {
       "file": "year=2012/month=1",
       "rows": 36485,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -217,6 +220,7 @@
     {
       "file": "year=2012/month=10",
       "rows": 37963,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -288,6 +292,7 @@
     {
       "file": "year=2012/month=11",
       "rows": 36411,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -359,6 +364,7 @@
     {
       "file": "year=2012/month=12",
       "rows": 34089,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -430,6 +436,7 @@
     {
       "file": "year=2012/month=2",
       "rows": 34851,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -501,6 +508,7 @@
     {
       "file": "year=2012/month=3",
       "rows": 37366,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -572,6 +580,7 @@
     {
       "file": "year=2012/month=4",
       "rows": 35012,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -643,6 +652,7 @@
     {
       "file": "year=2012/month=5",
       "rows": 38262,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -714,6 +724,7 @@
     {
       "file": "year=2012/month=6",
       "rows": 36113,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -785,6 +796,7 @@
     {
       "file": "year=2012/month=7",
       "rows": 36102,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -856,6 +868,7 @@
     {
       "file": "year=2012/month=8",
       "rows": 39294,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -927,6 +940,7 @@
     {
       "file": "year=2012/month=9",
       "rows": 34037,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -998,6 +1012,7 @@
     {
       "file": "year=2013/month=1",
       "rows": 37734,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1069,6 +1084,7 @@
     {
       "file": "year=2013/month=10",
       "rows": 40994,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1140,6 +1156,7 @@
     {
       "file": "year=2013/month=11",
       "rows": 33247,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1211,6 +1228,7 @@
     {
       "file": "year=2013/month=12",
       "rows": 34656,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1282,6 +1300,7 @@
     {
       "file": "year=2013/month=2",
       "rows": 33494,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1353,6 +1372,7 @@
     {
       "file": "year=2013/month=3",
       "rows": 34445,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1424,6 +1444,7 @@
     {
       "file": "year=2013/month=4",
       "rows": 38531,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1495,6 +1516,7 @@
     {
       "file": "year=2013/month=5",
       "rows": 40072,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1566,6 +1588,7 @@
     {
       "file": "year=2013/month=6",
       "rows": 35765,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1637,6 +1660,7 @@
     {
       "file": "year=2013/month=7",
       "rows": 38976,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1708,6 +1732,7 @@
     {
       "file": "year=2013/month=8",
       "rows": 37100,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1779,6 +1804,7 @@
     {
       "file": "year=2013/month=9",
       "rows": 34248,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1850,6 +1876,7 @@
     {
       "file": "year=2014/month=1",
       "rows": 38474,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1921,6 +1948,7 @@
     {
       "file": "year=2014/month=10",
       "rows": 50298,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -1992,6 +2020,7 @@
     {
       "file": "year=2014/month=11",
       "rows": 38257,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2063,6 +2092,7 @@
     {
       "file": "year=2014/month=12",
       "rows": 44486,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2134,6 +2164,7 @@
     {
       "file": "year=2014/month=2",
       "rows": 32292,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2205,6 +2236,7 @@
     {
       "file": "year=2014/month=3",
       "rows": 35429,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2276,6 +2308,7 @@
     {
       "file": "year=2014/month=4",
       "rows": 45608,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2347,6 +2380,7 @@
     {
       "file": "year=2014/month=5",
       "rows": 43099,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2418,6 +2452,7 @@
     {
       "file": "year=2014/month=6",
       "rows": 43946,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2489,6 +2524,7 @@
     {
       "file": "year=2014/month=7",
       "rows": 46399,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2560,6 +2596,7 @@
     {
       "file": "year=2014/month=8",
       "rows": 42931,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2631,6 +2668,7 @@
     {
       "file": "year=2014/month=9",
       "rows": 42676,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2702,6 +2740,7 @@
     {
       "file": "year=2015/month=1",
       "rows": 43261,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2773,6 +2812,7 @@
     {
       "file": "year=2015/month=10",
       "rows": 46563,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2844,6 +2884,7 @@
     {
       "file": "year=2015/month=11",
       "rows": 40057,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2915,6 +2956,7 @@
     {
       "file": "year=2015/month=12",
       "rows": 44592,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -2986,6 +3028,7 @@
     {
       "file": "year=2015/month=2",
       "rows": 39306,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3057,6 +3100,7 @@
     {
       "file": "year=2015/month=3",
       "rows": 45966,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3128,6 +3172,7 @@
     {
       "file": "year=2015/month=4",
       "rows": 44506,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3199,6 +3244,7 @@
     {
       "file": "year=2015/month=5",
       "rows": 41289,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3270,6 +3316,7 @@
     {
       "file": "year=2015/month=6",
       "rows": 45624,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3341,6 +3388,7 @@
     {
       "file": "year=2015/month=7",
       "rows": 48016,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3412,6 +3460,7 @@
     {
       "file": "year=2015/month=8",
       "rows": 45276,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3483,6 +3532,7 @@
     {
       "file": "year=2015/month=9",
       "rows": 43755,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3554,6 +3604,7 @@
     {
       "file": "year=2016/month=1",
       "rows": 41559,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3625,6 +3676,7 @@
     {
       "file": "year=2016/month=10",
       "rows": 46022,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3696,6 +3748,7 @@
     {
       "file": "year=2016/month=11",
       "rows": 46704,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3767,6 +3820,7 @@
     {
       "file": "year=2016/month=12",
       "rows": 48538,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3838,6 +3892,7 @@
     {
       "file": "year=2016/month=2",
       "rows": 43323,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3909,6 +3964,7 @@
     {
       "file": "year=2016/month=3",
       "rows": 45397,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -3980,6 +4036,7 @@
     {
       "file": "year=2016/month=4",
       "rows": 45390,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4051,6 +4108,7 @@
     {
       "file": "year=2016/month=5",
       "rows": 43735,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4122,6 +4180,7 @@
     {
       "file": "year=2016/month=6",
       "rows": 46738,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4193,6 +4252,7 @@
     {
       "file": "year=2016/month=7",
       "rows": 43574,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4264,6 +4324,7 @@
     {
       "file": "year=2016/month=8",
       "rows": 47941,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4335,6 +4396,7 @@
     {
       "file": "year=2016/month=9",
       "rows": 45087,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4406,6 +4468,7 @@
     {
       "file": "year=2017/month=1",
       "rows": 46318,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4477,6 +4540,7 @@
     {
       "file": "year=2017/month=10",
       "rows": 55505,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4548,6 +4612,7 @@
     {
       "file": "year=2017/month=11",
       "rows": 50809,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4619,6 +4684,7 @@
     {
       "file": "year=2017/month=12",
       "rows": 47365,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4690,6 +4756,7 @@
     {
       "file": "year=2017/month=2",
       "rows": 46424,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4761,6 +4828,7 @@
     {
       "file": "year=2017/month=3",
       "rows": 54780,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4832,6 +4900,7 @@
     {
       "file": "year=2017/month=4",
       "rows": 44613,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4903,6 +4972,7 @@
     {
       "file": "year=2017/month=5",
       "rows": 53938,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -4974,6 +5044,7 @@
     {
       "file": "year=2017/month=6",
       "rows": 56325,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5045,6 +5116,7 @@
     {
       "file": "year=2017/month=7",
       "rows": 50446,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5116,6 +5188,7 @@
     {
       "file": "year=2017/month=8",
       "rows": 56609,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5187,6 +5260,7 @@
     {
       "file": "year=2017/month=9",
       "rows": 49521,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5258,6 +5332,7 @@
     {
       "file": "year=2018/month=1",
       "rows": 55775,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5329,6 +5404,7 @@
     {
       "file": "year=2018/month=10",
       "rows": 62721,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5400,6 +5476,7 @@
     {
       "file": "year=2018/month=11",
       "rows": 54566,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5471,6 +5548,7 @@
     {
       "file": "year=2018/month=12",
       "rows": 48672,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5542,6 +5620,7 @@
     {
       "file": "year=2018/month=2",
       "rows": 51020,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5613,6 +5692,7 @@
     {
       "file": "year=2018/month=3",
       "rows": 54745,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5684,6 +5764,7 @@
     {
       "file": "year=2018/month=4",
       "rows": 55068,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5755,6 +5836,7 @@
     {
       "file": "year=2018/month=5",
       "rows": 54239,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5826,6 +5908,7 @@
     {
       "file": "year=2018/month=6",
       "rows": 52549,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5896,7 +5979,10 @@
     },
     {
       "file": "year=2018/month=7",
-      "rows": 51465,
+      "rows": 51464,
+      "excluded_rows": [
+        2090
+      ],
       "rules": [
         {
           "rule": "columns_exact",
@@ -5945,10 +6031,8 @@
         },
         {
           "rule": "window_start_in_session_hours",
-          "violations": 1,
-          "row_indices": [
-            2090
-          ]
+          "violations": 0,
+          "row_indices": []
         },
         {
           "rule": "transactions_non_negative",
@@ -5970,6 +6054,7 @@
     {
       "file": "year=2018/month=8",
       "rows": 57775,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6041,6 +6126,7 @@
     {
       "file": "year=2018/month=9",
       "rows": 48818,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6112,6 +6198,7 @@
     {
       "file": "year=2019/month=1",
       "rows": 56868,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6183,6 +6270,7 @@
     {
       "file": "year=2019/month=10",
       "rows": 57240,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6254,6 +6342,7 @@
     {
       "file": "year=2019/month=11",
       "rows": 48481,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6325,6 +6414,7 @@
     {
       "file": "year=2019/month=12",
       "rows": 50183,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6396,6 +6486,7 @@
     {
       "file": "year=2019/month=2",
       "rows": 48662,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6467,6 +6558,7 @@
     {
       "file": "year=2019/month=3",
       "rows": 52181,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6538,6 +6630,7 @@
     {
       "file": "year=2019/month=4",
       "rows": 53289,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6609,6 +6702,7 @@
     {
       "file": "year=2019/month=5",
       "rows": 57700,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6680,6 +6774,7 @@
     {
       "file": "year=2019/month=6",
       "rows": 51833,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6751,6 +6846,7 @@
     {
       "file": "year=2019/month=7",
       "rows": 55483,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6822,6 +6918,7 @@
     {
       "file": "year=2019/month=8",
       "rows": 57136,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6893,6 +6990,7 @@
     {
       "file": "year=2019/month=9",
       "rows": 48116,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -6964,6 +7062,7 @@
     {
       "file": "year=2020/month=1",
       "rows": 55962,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7035,6 +7134,7 @@
     {
       "file": "year=2020/month=10",
       "rows": 60847,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7106,6 +7206,7 @@
     {
       "file": "year=2020/month=11",
       "rows": 53072,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7177,6 +7278,7 @@
     {
       "file": "year=2020/month=12",
       "rows": 53494,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7248,6 +7350,7 @@
     {
       "file": "year=2020/month=2",
       "rows": 53450,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7319,6 +7422,7 @@
     {
       "file": "year=2020/month=3",
       "rows": 65579,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7390,6 +7494,7 @@
     {
       "file": "year=2020/month=4",
       "rows": 59918,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7461,6 +7566,7 @@
     {
       "file": "year=2020/month=5",
       "rows": 53990,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7532,6 +7638,7 @@
     {
       "file": "year=2020/month=6",
       "rows": 57853,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7603,6 +7710,7 @@
     {
       "file": "year=2020/month=7",
       "rows": 60052,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7674,6 +7782,7 @@
     {
       "file": "year=2020/month=8",
       "rows": 57132,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7745,6 +7854,7 @@
     {
       "file": "year=2020/month=9",
       "rows": 58824,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7816,6 +7926,7 @@
     {
       "file": "year=2021/month=1",
       "rows": 52526,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7887,6 +7998,7 @@
     {
       "file": "year=2021/month=10",
       "rows": 57074,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -7958,6 +8070,7 @@
     {
       "file": "year=2021/month=11",
       "rows": 59662,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8029,6 +8142,7 @@
     {
       "file": "year=2021/month=12",
       "rows": 62304,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8100,6 +8214,7 @@
     {
       "file": "year=2021/month=2",
       "rows": 49940,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8171,6 +8286,7 @@
     {
       "file": "year=2021/month=3",
       "rows": 59073,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8242,6 +8358,7 @@
     {
       "file": "year=2021/month=4",
       "rows": 54692,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8313,6 +8430,7 @@
     {
       "file": "year=2021/month=5",
       "rows": 51210,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8384,6 +8502,7 @@
     {
       "file": "year=2021/month=6",
       "rows": 54804,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8455,6 +8574,7 @@
     {
       "file": "year=2021/month=7",
       "rows": 56695,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8526,6 +8646,7 @@
     {
       "file": "year=2021/month=8",
       "rows": 57035,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8597,6 +8718,7 @@
     {
       "file": "year=2021/month=9",
       "rows": 53532,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8668,6 +8790,7 @@
     {
       "file": "year=2022/month=1",
       "rows": 61230,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8739,6 +8862,7 @@
     {
       "file": "year=2022/month=10",
       "rows": 72597,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8810,6 +8934,7 @@
     {
       "file": "year=2022/month=11",
       "rows": 67988,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8881,6 +9006,7 @@
     {
       "file": "year=2022/month=12",
       "rows": 63895,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -8952,6 +9078,7 @@
     {
       "file": "year=2022/month=2",
       "rows": 59956,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9023,6 +9150,7 @@
     {
       "file": "year=2022/month=3",
       "rows": 67672,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9094,6 +9222,7 @@
     {
       "file": "year=2022/month=4",
       "rows": 59250,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9165,6 +9294,7 @@
     {
       "file": "year=2022/month=5",
       "rows": 63490,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9236,6 +9366,7 @@
     {
       "file": "year=2022/month=6",
       "rows": 61278,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9307,6 +9438,7 @@
     {
       "file": "year=2022/month=7",
       "rows": 65250,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9378,6 +9510,7 @@
     {
       "file": "year=2022/month=8",
       "rows": 75706,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9449,6 +9582,7 @@
     {
       "file": "year=2022/month=9",
       "rows": 70819,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9520,6 +9654,7 @@
     {
       "file": "year=2023/month=1",
       "rows": 66592,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9591,6 +9726,7 @@
     {
       "file": "year=2023/month=10",
       "rows": 72691,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9662,6 +9798,7 @@
     {
       "file": "year=2023/month=11",
       "rows": 66511,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9733,6 +9870,7 @@
     {
       "file": "year=2023/month=12",
       "rows": 67148,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9804,6 +9942,7 @@
     {
       "file": "year=2023/month=2",
       "rows": 69327,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9875,6 +10014,7 @@
     {
       "file": "year=2023/month=3",
       "rows": 78507,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -9946,6 +10086,7 @@
     {
       "file": "year=2023/month=4",
       "rows": 63166,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10017,6 +10158,7 @@
     {
       "file": "year=2023/month=5",
       "rows": 75882,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10088,6 +10230,7 @@
     {
       "file": "year=2023/month=6",
       "rows": 73131,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10159,6 +10302,7 @@
     {
       "file": "year=2023/month=7",
       "rows": 68712,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10230,6 +10374,7 @@
     {
       "file": "year=2023/month=8",
       "rows": 77518,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10301,6 +10446,7 @@
     {
       "file": "year=2023/month=9",
       "rows": 62854,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10372,6 +10518,7 @@
     {
       "file": "year=2024/month=1",
       "rows": 75871,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10443,6 +10590,7 @@
     {
       "file": "year=2024/month=10",
       "rows": 87369,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10514,6 +10662,7 @@
     {
       "file": "year=2024/month=11",
       "rows": 74608,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10585,6 +10734,7 @@
     {
       "file": "year=2024/month=12",
       "rows": 81777,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10656,6 +10806,7 @@
     {
       "file": "year=2024/month=2",
       "rows": 74129,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10727,6 +10878,7 @@
     {
       "file": "year=2024/month=3",
       "rows": 74592,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10798,6 +10950,7 @@
     {
       "file": "year=2024/month=4",
       "rows": 79910,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10869,6 +11022,7 @@
     {
       "file": "year=2024/month=5",
       "rows": 75881,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -10940,6 +11094,7 @@
     {
       "file": "year=2024/month=6",
       "rows": 66594,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11011,6 +11166,7 @@
     {
       "file": "year=2024/month=7",
       "rows": 80709,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11082,6 +11238,7 @@
     {
       "file": "year=2024/month=8",
       "rows": 84286,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11153,6 +11310,7 @@
     {
       "file": "year=2024/month=9",
       "rows": 74759,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11224,6 +11382,7 @@
     {
       "file": "year=2025/month=1",
       "rows": 79031,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11295,6 +11454,7 @@
     {
       "file": "year=2025/month=10",
       "rows": 95191,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11366,6 +11526,7 @@
     {
       "file": "year=2025/month=11",
       "rows": 79437,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11437,6 +11598,7 @@
     {
       "file": "year=2025/month=12",
       "rows": 83650,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11508,6 +11670,7 @@
     {
       "file": "year=2025/month=2",
       "rows": 78544,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11579,6 +11742,7 @@
     {
       "file": "year=2025/month=3",
       "rows": 84124,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11650,6 +11814,7 @@
     {
       "file": "year=2025/month=4",
       "rows": 87214,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11721,6 +11886,7 @@
     {
       "file": "year=2025/month=5",
       "rows": 86995,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11792,6 +11958,7 @@
     {
       "file": "year=2025/month=6",
       "rows": 81687,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11863,6 +12030,7 @@
     {
       "file": "year=2025/month=7",
       "rows": 87420,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -11934,6 +12102,7 @@
     {
       "file": "year=2025/month=8",
       "rows": 83705,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -12005,6 +12174,7 @@
     {
       "file": "year=2025/month=9",
       "rows": 83451,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -12076,6 +12246,7 @@
     {
       "file": "year=2026/month=1",
       "rows": 82115,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -12147,6 +12318,7 @@
     {
       "file": "year=2026/month=2",
       "rows": 78058,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -12218,6 +12390,7 @@
     {
       "file": "year=2026/month=3",
       "rows": 86746,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -12289,6 +12462,7 @@
     {
       "file": "year=2026/month=4",
       "rows": 86700,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -12360,6 +12534,7 @@
     {
       "file": "year=2026/month=5",
       "rows": 89991,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -12431,6 +12606,7 @@
     {
       "file": "year=2026/month=6",
       "rows": 93331,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",
@@ -12502,6 +12678,7 @@
     {
       "file": "year=2026/month=7",
       "rows": 82758,
+      "excluded_rows": [],
       "rules": [
         {
           "rule": "columns_exact",

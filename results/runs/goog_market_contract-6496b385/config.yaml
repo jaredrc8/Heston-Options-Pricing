@@ -1,0 +1,15 @@
+# One listed GOOG put priced for comparison with its market quote (SPEC.md 8.4).
+# Strike 280 / spot 283.93 and T = 406 / 365. Daily exercise approximates American exercise.
+# Uses the published Google parameters from 2015; not a calibration to today's market.
+schema_version: 1
+run_name: goog_market_contract
+tier: CORE
+reported: true
+data_mode: published
+assets: [GOOG]
+snapshot_date: 2026-11-06
+market_inputs: configs/market_inputs.yaml
+params_source: configs/published_params.yaml
+contract: {strike: 0.98615856, maturity: 1.112328767, n_exercise: 280}
+simulation: {n_paths: 100000, n_substeps: 1, basis_degree: 3}
+seeds: [620001, 620002, 620003, 620004, 620005]

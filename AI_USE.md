@@ -527,3 +527,27 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 **Author review status:**
 - [ ] Decision on the out-of-hours bar
 - [ ] GOOG question and `q = 0` limitation reflected in the report
+
+### Entry 18 — 2026-11-08 — Benchmarks, correlations, and a GOOG market comparison
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Omit the one out-of-hours bar. Find published option prices for V-01 and V-06. Answer how much more IV data calibration would need, and whether shared parameters are meaningful. Select a real contract to price for comparison, and keep GOOG as a single-asset put until NVDA, AMD and INTC can be calibrated.
+
+**What the AI did:**
+- Omitted the named bar in `python/validate_raw.py` and recorded it in `DATA_CONTRACT.md` v0.6. Validation then passed: 177 months, 9,953,348 rows, 0 violations.
+- Ran `scripts/estimate_correlations.py` on licensed data, writing `results/estimates.json` (aggregates only).
+- Entered the V-01 and V-06 reference values on the author's instruction (`SPEC.md` §15 exception), read through automated extracts of the papers.
+- Chose `GOOG271217P00280000` as the market-comparison contract, priced it, and wrote `results/market_comparison.json`.
+
+**Benchmark choice:** the spec named Clarke and Parrott for V-06, but their prices at spots 10 to 12 are 2% to 11% above four later studies. The AI raised this before V-06 ran, and the author chose Ikonen and Toivanen. V-01 uses calls, because no published Heston put table was found. Neither benchmark uses Google's parameters, so they test the engine and not the GOOG parameter set.
+
+**Market comparison, model against the public quote:** model $20.29 ± $0.04 against bid $31.50 and ask $36.50, which is 40% below the mid of $34.00. Implied volatility is 23.1% for the model and 35.3% for the mid. There is no pass rule. The gap reflects at least the Feb 2015 parameters, and it does not show that the engine is right or wrong.
+
+**Data boundary:** the AI read `data/` only through committed scripts. The Cboe quote is public, cited reference data (`DATA_CONTRACT.md` §2.4). The AI did not check Cboe's terms of use beyond storing this one cited quote.
+
+**Checks:** the outcome of each is in `results/verification_table.csv`.
+
+**Author review status:**
+- [ ] V-01 and V-06 values checked against the papers
+- [ ] Market comparison reviewed for the report
