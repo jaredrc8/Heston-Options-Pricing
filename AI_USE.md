@@ -551,3 +551,21 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 **Author review status:**
 - [ ] V-01 and V-06 values checked against the papers
 - [ ] Market comparison reviewed for the report
+
+### Entry 19 — 2026-11-08 — Cboe terms of use, and the dividend
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Check the Cboe terms of use and try calibrating GOOG to the current surface. Include the dividend in the pricing.
+
+**Cboe terms (cboe.com/terms, Section 2):** one copy of the Materials may be viewed, printed and downloaded for personal, non-commercial use. Copying, storing in an electronic retrieval system, creating a derivative work, publishing, distributing, or otherwise using the Materials needs Cboe's prior written consent. The terms do not address delayed quotes specifically, and the AI could not read Cboe's Market Data Policies PDF. This is the AI's reading of the page and is not legal advice.
+
+**Outcome:** the AI did not download the Cboe chain and did not calibrate to it, because a calibration used in a report would need that consent.
+
+**AI error disclosed:** in Entry 18 the AI stored and pushed one Cboe quote (`configs/market_quote_goog.yaml`, `results/market_comparison.json`, `SPEC.md` §8.4) and labelled it Public in `DATA_CONTRACT.md` §2.4 before reading these terms. That label may be wrong. The author must decide what to do. Until then the AI has not pushed anything further, and the updated `results/market_comparison.json` is left uncommitted.
+
+**Dividend:** `q = 0.0031`, from Alphabet's declared $0.22 quarterly dividend. The run is `goog_market_contract-90258c0b`. The model price moved from $20.29 to $20.51, and the mid quote is $34.00, so the model is 39.7% below the mid.
+
+**Author review status:**
+- [ ] Decision on the stored Cboe quote
+- [ ] Source of GOOG option data for calibration
