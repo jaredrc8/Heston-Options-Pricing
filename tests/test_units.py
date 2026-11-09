@@ -225,6 +225,28 @@ def test_correlations_on_the_fixture_recover_the_known_values(tmp_path):
     assert "close" not in json.dumps(document) and "log_return" not in json.dumps(document)
 
 
+def test_market_comparison_converts_prices_correctly(tmp_path):
+    result = tmp_path / "result.json"
+    result.write_text(json.dumps({"run_id": "test", "data_mode": "published", "assets": ["GOOG"],
+                                  "contract": {"strike": 280.0 / 283.93, "maturity": 406.0 / 365.0, "n_exercise": 280},
+                                  "pooled": {"bermudan": 0.10, "se_bermudan": 0.001, "european_analytic": 0.09}}))
+    output = tmp_path / "comparison.json"
+    subprocess.run([sys.executable, "scripts/compare_to_market.py", "--result", str(result), "--output", str(output)],
+                   cwd=ROOT, check=True, capture_output=True)
+    document = json.loads(output.read_text())
+    assert document["model"]["bermudan_usd"] == pytest.approx(28.393)
+    assert document["market"]["mid_usd"] == pytest.approx(34.0)
+    assert document["difference"]["model_minus_mid_usd"] == pytest.approx(28.393 - 34.0)
+    assert document["difference"]["model_inside_bid_ask"] is False
+
+
+def test_named_bad_bar_is_the_only_exclusion():
+    sys.path.insert(0, str(ROOT / "python"))
+    import validate_raw
+
+    assert validate_raw.EXCLUDED_BARS == {"year=2018/month=7": [2090]}
+
+
 # --- pipeline, governance and data boundary (SPEC.md 12, 14 and 15) ---
 
 def test_unknown_config_key_exits_2(tmp_path):
@@ -299,7 +321,7 @@ def test_run_writes_the_required_files_and_fields(tmp_path):
     assert result["units"] == "fraction_of_initial_spot" and result["data_mode"] == "synthetic"
     assert len(result["diagnostics"]["exercise_fraction_by_date"]) == 50
     manifest = json.loads((run_dir / "manifest.json").read_text())
-    assert manifest["spec_version"] == "1.6" and manifest["data_contract_version"] == "0.5"
+    assert manifest["spec_version"] == "1.7" and manifest["data_contract_version"] == "0.6"
 
 
 def test_compare_writes_each_comparison(tmp_path):

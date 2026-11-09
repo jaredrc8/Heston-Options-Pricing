@@ -178,7 +178,7 @@ def test_V05_one_exercise_date_is_european(record_property):
 
 
 @pytest.mark.slow
-def test_V06_clarke_parrott_benchmark(record_property):
+def test_V06_american_benchmark(record_property):
     section = reference_section("V-06")
     if not section["benchmarks"]:
         pytest.skip("V-06 has no benchmark spots entered")

@@ -4,8 +4,8 @@
 |---|---|
 | **Project** | ENSF 620 Fall 2026 final project (individual) |
 | **Owner** | Jared Crebo |
-| **Spec version** | 1.6 (2026-11-08) |
-| **Companion document** | `DATA_CONTRACT.md` v0.5 |
+| **Spec version** | 1.7 (2026-11-08) |
+| **Companion document** | `DATA_CONTRACT.md` v0.6 |
 | **Audience** | Engineers and AI coding agents writing implementation code and automated tests |
 
 The key words MUST, MUST NOT, SHOULD, and MAY are normative. Requirements are binding until changed through §1.3.
@@ -90,7 +90,7 @@ The headline value is a **model-implied, low-biased Monte Carlo estimate** for t
 | Standard error | `SE = s / sqrt(N)`, where `s` is the sample standard deviation with `ddof=1` over `N` independent evaluation paths |
 | Paired SE | SE of the path-by-path difference on the same evaluation paths |
 | Pooled result over R seeds | `mean(V_r)`, with `SE = sqrt(sum(SE_r^2)) / R` |
-| Absolute prices | Absolute market prices MUST NOT appear in `results/`, logs, figures, or submitted files (§15) |
+| Absolute prices | Absolute market prices MUST NOT appear in `results/`, logs, figures, or submitted files (§15). The one public, cited quote in §8.4 is the only exception |
 
 ---
 
@@ -403,6 +403,24 @@ CORE reports two baselines:
 
 EXT-A has only the Monte Carlo European comparator.
 
+### 8.4 Market comparison contract
+
+One listed GOOG put is priced for comparison with the market. There is no pass rule: the comparison is reported as it comes out. Its inputs are in `configs/market_quote_goog.yaml` and `configs/goog_market_contract.yaml`.
+
+| Term | Value |
+|---|---|
+| Option | `GOOG271217P00280000`, American put |
+| Valuation date | 2026-11-06 |
+| Expiry | 2027-12-17 (406 days, `T = 406/365`) |
+| Spot and strike | $283.93 and $280.00 (`K/S = 0.98615856`) |
+| Market quote | Bid $31.50, ask $36.50, mid $34.00 (Cboe delayed quotes) |
+| Rate | From the 1-Year CMT yield of 4.33% on 2026-11-06 (§4.3) |
+| Dividend | `q = 0` (§4.3) |
+| Exercise | `M = 280` daily dates with `n_sub = 1`, approximating American exercise |
+| Parameters | Published Google set, fitted on 2015-02-02 |
+
+`scripts/compare_to_market.py` writes `results/market_comparison.json`. A gap to the market reflects, at least in part, the 2015 parameters and `q = 0`. The comparison MUST NOT be described as a calibration or as evidence that the engine is correct.
+
 ---
 
 ## 9. Precision, workload, and runtime
@@ -586,6 +604,7 @@ python scripts/run.py calibrate --config configs/<name>.yaml
 python scripts/run.py price     --config configs/<name>.yaml [--results-root <dir>]
 python scripts/run.py sweep     --config configs/<name>.yaml
 python scripts/run.py compare   --config configs/<name>.yaml
+python scripts/compare_to_market.py
 python scripts/verify_outputs.py
 python scripts/make_figures.py
 bash   scripts/smoke.sh
@@ -652,8 +671,8 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
 ```json
 {
   "schema_version": 1,
-  "spec_version": "1.6",
-  "data_contract_version": "0.5",
+  "spec_version": "1.7",
+  "data_contract_version": "0.6",
   "run_id": "core_amd_production-1a2b3c4d",
   "git_commit": "<full hash>",
   "git_dirty": false,
@@ -921,7 +940,7 @@ An agent MUST NOT:
 - Set `market_use_authorized` or write `configs/governance.yaml` without the owner's recorded instruction.
 - Run `market` mode by any means other than the committed scripts listed below.
 - Hand-edit `results/**`. Those files are written only by pipeline scripts.
-- Generate, recall, or fill in reference values in `tests/reference_values.yaml` or `configs/published_params.yaml`. The owner transcribes them from the cited source and records the table or page. One exception: on 2026-11-08 the owner instructed the agent to enter the set in `configs/published_params.yaml` from Burkovska et al. (arXiv:1611.06452, Table 8). The owner remains responsible for checking it against the source.
+- Generate, recall, or fill in reference values in `tests/reference_values.yaml` or `configs/published_params.yaml`. The owner transcribes them from the cited source and records the table or page. Two exceptions, both on the owner's instruction of 2026-11-08: the agent entered the set in `configs/published_params.yaml` from Burkovska et al. (arXiv:1611.06452, Table 8), and the V-01 and V-06 values in `tests/reference_values.yaml`. The owner remains responsible for checking them against the sources.
 - Write the report, slides, or claims. Reported results and figures come only from pipeline scripts.
 - Change a pass rule, threshold, seed, or data filter (§1.3).
 - Access credentials or commit anything under `data/`.
@@ -956,7 +975,7 @@ The report and README MUST state what the checks establish and what they do not.
 | V-03 | Heston European MC vs. analytic, `T` in `{0.25, 0.5, 1, 1.5, 2}` × 8 evenly spaced `K/S` in `[0.80, 1.25]`, `Δ = 1/400`, `200_000` paths | At least 38 of 40 options within 3 SE | Proposal V1 |
 | V-04 | GBM reduction (`xi = 0`, `v0 = theta`): LSMC Bermudan vs. 5,000-step CRR tree on the same exercise dates, for `(sigma, K)` in `{(0.3, 1.0), (0.5, 1.0), (0.5, 0.9), (0.3, 1.1)}` | Difference `<= 3 SE` for each pair | New |
 | V-05 | `M = 1` vs. semi-analytic European | Difference `<= 3 SE` | Proposal V4 |
-| V-06 | Heston Bermudan vs. Clarke–Parrott American benchmark `B` at each published spot, `M` in `{25, 50, 100}`, `200_000` paths | At `M = 100`: `\|V - B\| <= max(0.01 B, 3 SE)` and `V - B <= 3 SE`. For each rise in `M`: `V_low - V_high <= 3 sqrt(SE_low^2 + SE_high^2)` | New |
+| V-06 | Heston Bermudan vs. Ikonen–Toivanen American benchmark `B` at each published spot, `M` in `{25, 50, 100}`, `200_000` paths | At `M = 100`: `\|V - B\| <= max(0.01 B, 3 SE)` and `V - B <= 3 SE`. For each rise in `M`: `V_low - V_high <= 3 sqrt(SE_low^2 + SE_high^2)` | New |
 | V-07 | Vectorized LSMC vs. independent scalar implementation in `tests/reference_impl.py` on `tests/fixtures/shared_normals.npz` | Relative difference `<= 1e-10` | Replaces proposal V7 for CORE |
 | V-08 | Repeat run with same config, seed, commit, and environment, in a new `--results-root` | Numeric fields of `result.json` identical, excluding `wall_seconds` | New |
 | V-09 | Basis degree 2 vs. 3, and 3 vs. 4, on identical paths | Pooled price difference `<= 2 SE` of the higher-degree run | Proposal risk table |
@@ -1124,9 +1143,11 @@ Citations follow the proposal unless marked.
 - Burkovska, O., Glau, K., Mahlstedt, M., & Wohlmuth, B. Model reduction for calibration of American options. arXiv:1611.06452. Source of the published parameter set and the ladder-step-2 `kappa`.
 - Burkovska, E., et al. (2018). Calibration to American options: numerical investigation of the de-Americanization method. *Quantitative Finance*. Added here; verify the full citation before use.
 - Clarke, N., & Parrott, K. (1999). Multigrid for American option pricing with stochastic volatility. *Applied Mathematical Finance*, 6(3), 177–195.
+- Chan, T. L. Singular Fourier-Padé series expansion of European option prices. arXiv:1706.06709. Table 10 reproduces the Fang and Oosterlee Heston values used in V-01.
 - Cox, J. C., Ross, S. A., & Rubinstein, M. (1979). Option pricing: A simplified approach. *Journal of Financial Economics*, 7(3), 229–263.
 - Fang, F., & Oosterlee, C. W. (2008). A novel pricing method for European options based on Fourier-cosine series expansions. *SIAM Journal on Scientific Computing*, 31(2), 826–848.
 - Glasserman, P. (2004). *Monte Carlo Methods in Financial Engineering*. Springer.
+- Haentjens, T., & in 't Hout, K. J. (2015). ADI schemes for pricing American options under the Heston model. *Applied Mathematical Finance*. arXiv:1309.0110. Table 2 tabulates the V-06 values of Ikonen and Toivanen and the values of Clarke and Parrott.
 - Heston, S. L. (1993). A closed-form solution for options with stochastic volatility with applications to bond and currency options. *The Review of Financial Studies*, 6(2), 327–343.
 - Longstaff, F. A., & Schwartz, E. S. (2001). Valuing American options by simulation: A simple least-squares approach. *The Review of Financial Studies*, 14(1), 113–147.
 - Lord, R., Koekkoek, R., & van Dijk, D. (2010). A comparison of biased simulation schemes for stochastic volatility models. *Quantitative Finance*, 10(2), 177–194.
@@ -1144,3 +1165,4 @@ Citations follow the proposal unless marked.
 | 1.4 | 2026-11-08 | OD-5 resolved; §15 exception for the agent entering the published set on the owner's instruction; reference added to §21 | The full five-parameter market fit missed the RMS limit (ladder step 3), and no cited `kappa` existed. The 0.01 limit and all rules are unchanged | Yes. The rejected fit's residual and parameters were viewed before this `kappa` was chosen; it MUST be disclosed in the report (§1.3). One value was chosen, from one source, before any refit |
 | 1.5 | 2026-11-08 | §12.9 VZ-1 split into a rejected-fit AMD surface and a published Google surface; `run.py compare` added (§11) | Owner instruction. The market fit ended at ladder step 3, so no accepted AMD surface exists. No pass rule, tolerance, seed, filter, or default changed | Yes. Figures are generated from results already viewed and do not change them |
 | 1.6 | 2026-11-08 | Primary question revised to GOOG under the published parameters (§2.1, §17.3); Massive dataset replaced to add GOOG and GOOGL; four-ticker correlations allowed before G1 (§5.4); `q_GOOG = 0`; OD-2 and OD-11 | Owner instruction, after the AMD fit failed acceptance. No pass rule, tolerance, seed, filter, or default changed | Yes. The AMD fit and the published-parameter price had been viewed; this MUST be disclosed in the report (§1.3) |
+| 1.7 | 2026-11-08 | V-06 benchmark changed from Clarke and Parrott to Ikonen and Toivanen; V-01 and V-06 values entered by the agent on the owner's instruction (§15); market comparison contract (§8.4, §3); one named out-of-hours bar omitted (`DATA_CONTRACT.md` §1.1) | Clarke and Parrott's prices at spots 10 to 12 are 2% to 11% above four later independent studies, so a correct engine could fail V-06 against them. Decided by the owner before V-06 had been run. No pass rule, tolerance, seed, or filter changed | V-06 had not been run. Other results had been viewed; none is affected by this change |

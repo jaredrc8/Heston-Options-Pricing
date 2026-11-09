@@ -1,27 +1,36 @@
-# Reference values for V-01 and V-06. Owner to transcribe from the cited source.
-# An AI agent must not fill in these values (SPEC.md 15 and 16).
+# Reference values for V-01 and V-06.
+# Entered by Claude Code on the owner's instruction of 2026-11-08 (SPEC.md 15), read through
+# automated extracts of the cited papers. The owner remains responsible for checking them.
 
 V-01:
-  citation: null
-  table_or_page: null
-  # One entry per published value, for example:
-  #   - {kind: call, s0: ..., strike: ..., maturity: ..., r: ..., q: ...,
-  #      v0: ..., kappa: ..., theta: ..., xi: ..., rho: ...,
-  #      value: ..., last_digit: 0.000001}   # last_digit is the size of the last published digit
-  cases: []
+  citation: "Chan, Singular Fourier-Pade series expansion of European option prices, arXiv:1706.06709, reproducing Fang and Oosterlee (2008)"
+  table_or_page: "Table 10; parameter set Heston-Para1 in Section 8.2"
+  # Published as calls. No published Heston put table was found; V-02 tests put-call parity.
+  cases:
+    - {kind: call, s0: 100.0, strike: 100.0, maturity: 1.0, r: 0.0, q: 0.0,
+       v0: 0.0175, kappa: 1.5768, theta: 0.0398, xi: 0.5751, rho: -0.5711,
+       value: 5.785155450, last_digit: 0.000000001}
+    - {kind: call, s0: 100.0, strike: 100.0, maturity: 10.0, r: 0.0, q: 0.0,
+       v0: 0.0175, kappa: 1.5768, theta: 0.0398, xi: 0.5751, rho: -0.5711,
+       value: 22.318945791, last_digit: 0.000000001}
 
 V-06:
-  citation: null
-  table_or_page: null
-  # strike, maturity, r, q and the Heston parameters of the benchmark, as published
-  strike: null
-  maturity: null
-  r: null
-  q: null
-  v0: null
-  kappa: null
-  theta: null
-  xi: null
-  rho: null
-  # One entry per published spot:  - {spot: ..., value: ...}
-  benchmarks: []
+  citation: "Ikonen and Toivanen values, as tabulated in Haentjens and in 't Hout (2015), ADI schemes for pricing American options under the Heston model, arXiv:1309.0110"
+  table_or_page: "Table 2, row RK-IT; parameter set (5.2), V0 = 0.0625"
+  strike: 10.0
+  maturity: 0.25
+  r: 0.1
+  q: 0.0
+  v0: 0.0625
+  kappa: 5.0
+  theta: 0.16
+  xi: 0.9
+  rho: 0.1
+  benchmarks:
+    - {spot: 8.0, value: 2.0000}
+    - {spot: 9.0, value: 1.1076}
+    - {spot: 10.0, value: 0.5199}
+    - {spot: 11.0, value: 0.2135}
+    - {spot: 12.0, value: 0.0820}
+  # For information only; not used by the pass rule (SPEC.md 22, version 1.7).
+  clarke_parrott_values: {8: 2.0000, 9: 1.1080, 10: 0.5316, 11: 0.2261, 12: 0.0907}

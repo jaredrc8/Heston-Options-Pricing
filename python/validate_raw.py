@@ -28,6 +28,8 @@ REAL_BAR_TICKERS = REAL_TICKERS | {"GOOG", "GOOGL"}
 FIXTURE_TICKERS = {"SYN1", "SYN2", "SYN3"}
 IV_DATES = {"2026-10-13", "2026-10-14", "2026-10-15"}
 BAR_COLUMNS = ["ticker", "volume", "open", "close", "high", "low", "window_start", "transactions"]
+# Named rows omitted by the owner (DATA_CONTRACT.md section 1.1)
+EXCLUDED_BARS = {"year=2018/month=7": [2090]}
 MAX_INDICES = 1000    # keeps the report small; the violation count is always complete
 
 IV_FIXTURE = ROOT / "tests" / "fixtures" / "synthetic_raw_iv.csv"
@@ -139,11 +141,13 @@ def validate_iv(path, tickers):
 
 def validate_bars(path, tickers):
     df, columns_ok = read_bars(path)
+    label = f"{path.parent.name}/{path.name}" if path.is_dir() else path.name
+    excluded = EXCLUDED_BARS.get(label, [])
+    df = df.drop(index=excluded).reset_index(drop=True)
     rules = [table_rule("columns_exact", columns_ok)]
     if columns_ok:
         rules += check_bar_table(df, tickers)
-    label = f"{path.parent.name}/{path.name}" if path.is_dir() else path.name
-    return {"file": label, "rows": int(len(df)), "rules": rules}
+    return {"file": label, "rows": int(len(df)), "excluded_rows": excluded, "rules": rules}
 
 
 def sanitized(function, path, tickers):

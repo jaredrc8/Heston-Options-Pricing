@@ -6,6 +6,7 @@ treasury_1y_cmt_yield:
   2026-10-13: 0.0448
   2026-10-14: 0.0453
   2026-10-15: 0.0449
+  2026-11-06: 0.0433    # for the GOOG market comparison (SPEC.md 8.4)
 
 # q_AMD = 0 is stated in SPEC.md 4.3.
 dividend_yield:

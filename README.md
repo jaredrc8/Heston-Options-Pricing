@@ -59,6 +59,7 @@ python scripts/run.py calibrate --config configs/<name>.yaml
 python scripts/run.py price     --config configs/<name>.yaml
 python scripts/run.py sweep     --config configs/<name>.yaml
 python scripts/run.py compare   --config configs/<name>.yaml
+python scripts/compare_to_market.py                              # one listed GOOG put against its public quote
 
 bash   scripts/smoke.sh                                          # reviewer smoke path
 python scripts/verify_outputs.py                                 # run checks, write the table
@@ -76,6 +77,7 @@ Exit codes: `0` success, `1` internal error, `2` input or schema failure, `3` a 
 |---|---|
 | `results/runs/<run_id>/` | `config.yaml`, `manifest.json`, `result.json`, `run.log` |
 | `results/calibration.json` | Fitted parameters and aggregate fit statistics |
+| `results/market_comparison.json` | One listed GOOG put: model against its public quote |
 | `results/estimates.json` | Correlations and realized volatility for 126, 252 and 504-day windows |
 | `results/sweeps/` | Convergence sweep summaries |
 | `results/verification_table.csv` | PASS, FAIL or NOT_RUN for each check |

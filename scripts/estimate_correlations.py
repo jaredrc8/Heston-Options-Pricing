@@ -49,7 +49,10 @@ def read_month(folder):
     table = pa.concat_tables([pq.ParquetFile(part).read(columns=columns) for part in sorted(folder.glob("*.parquet"))])
     table = table.filter(pc.is_in(table["ticker"], value_set=pa.array(MARKET_TICKERS)))
     table = table.set_column(3, "close", table["close"].cast(pa.float64(), safe=False))
-    return table.to_pandas().rename(columns={"session_date": "date", "exchange_local_timestamp": "local_time"})
+    bars = table.to_pandas().rename(columns={"session_date": "date", "exchange_local_timestamp": "local_time"})
+    # Bars outside 04:00-20:00 are omitted (DATA_CONTRACT.md section 1.1)
+    minutes = bars["local_time"].dt.hour * 60 + bars["local_time"].dt.minute
+    return bars[minutes.between(240, 1200)]
 
 
 def market_closes():
