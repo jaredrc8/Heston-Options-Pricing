@@ -221,6 +221,169 @@ def market_fit_table(results_root, out_dir):
              "json_pointer": "/assets/AMD/rms_iv_residual", "check_ids": "V-13"}]
 
 
+def newest_comparison(run_name, results_root):
+    """The newest comparison summary for this run name, or None."""
+    files = sorted(Path(results_root).glob(f"comparisons/{run_name}-*.json"), key=lambda p: p.stat().st_mtime)
+    return files[-1] if files else None
+
+
+def render_surface(params, r, q, heading, footnote, path):
+    """PyVista 3D surface of the model implied volatility. Model values only."""
+    import pyvista as pv
+
+    k_over_f = np.linspace(0.80, 1.20, 41)
+    tenors = np.linspace(0.10, 1.25, 47)
+    vols = np.zeros((len(tenors), len(k_over_f)))
+    for j, tenor in enumerate(tenors):
+        k_over_s = k_over_f * np.exp((r - q) * tenor)
+        vols[j] = model_implied_vols(params, k_over_s, np.full(len(k_over_f), tenor), r, q)
+
+    x, y = np.meshgrid(k_over_f, tenors)
+    grid = pv.StructuredGrid(x, y, vols)
+    grid["Implied volatility"] = grid.points[:, 2].copy()
+
+    plotter = pv.Plotter(off_screen=True, window_size=(1500, 1050))
+    plotter.set_background(SURFACE)
+    plotter.add_mesh(grid, scalars="Implied volatility", cmap="Blues", clim=[vols.min() - 0.5 * np.ptp(vols), vols.max()],
+                     show_edges=True, edge_color="#ffffff", line_width=0.4, lighting=False,
+                     scalar_bar_args={"title": "Implied volatility (annualized)", "color": INK, "n_labels": 5,
+                                      "fmt": "%.2f", "vertical": True, "position_x": 0.88, "position_y": 0.3})
+    plotter.set_scale(xscale=1.0 / 0.4, yscale=1.0 / 1.15, zscale=0.7 / max(np.ptp(vols), 1e-6))
+    plotter.show_grid(xtitle="Strike / forward", ytitle="Tenor (years)", ztitle="Implied vol", color=MUTED, font_size=11)
+    plotter.camera_position = [(3.6, -2.8, plotter.bounds[5] + 1.6),
+                               (2.5, 0.5, 0.5 * (plotter.bounds[4] + plotter.bounds[5])), (0, 0, 1)]
+    plotter.add_text(heading, position="upper_left", font_size=12, color=INK)
+    plotter.add_text(footnote, position="lower_left", font_size=8, color=MUTED)
+    plotter.screenshot(str(path))
+    plotter.close()
+
+
+def rejected_surface_figure(results_root, out_dir):
+    """VZ-1a: the rejected full AMD fit. It is the only AMD surface, and it is labelled as rejected."""
+    calibration_file = Path(results_root) / "calibration.json"
+    if not calibration_file.exists():
+        return []
+    document = json.loads(calibration_file.read_text())
+    entry = document["assets"]["AMD"]
+    rejected = entry.get("rejected_full_fit")
+    if document["data_mode"] != "market" or rejected is None:
+        return []
+
+    p = rejected["params"]
+    heading = (f"REJECTED FIT: AMD Heston surface, {document['snapshot_date']}\n"
+               f"Failed acceptance: RMS IV residual {rejected['rms_iv_residual']:.4f} above the 0.01 limit. Not used for pricing.")
+    footnote = (f"Model surface from rejected parameters; no market data points shown. v0 {p['v0']:.4f}, kappa {p['kappa']:.2f} "
+                f"(at bound), theta {p['theta']:.4f}, xi {p['xi']:.3f}, rho {p['rho']:.3f}.\n"
+                f"Fit: {rejected['grid_size']} grid points, 8 starts; no uncertainty band. Exclusions: filters F1 to F8. "
+                f"Source calibration.json. Code {CODE}.")
+    path = out_dir / "surface_amd_rejected.png"
+    render_surface(p, document["r"], entry["q"], heading, footnote, path)
+    return [{"claim_id": "fig_surface_amd_rejected", "location": "figure", "artifact_type": "figure",
+             "run_id": "market-rejected", "result_path": relative(calibration_file, results_root),
+             "json_pointer": "/assets/AMD/rejected_full_fit/rms_iv_residual", "check_ids": "V-13"}]
+
+
+def published_surface_figure(comparison_file, results_root, out_dir):
+    """VZ-1b: the surface implied by the published Google parameters."""
+    document = json.loads(comparison_file.read_text())
+    if document["data_mode"] != "published":
+        return []
+    p = document["params"]
+    source = document["inputs"][0]
+    heading = ("PUBLISHED PARAMETERS: Google options, 2015-02-02\n"
+               "Not calibrated to AMD, NVDA or INTC.")
+    footnote = (f"Model surface; no market data points shown. v0 {p['v0']:.4f}, kappa {p['kappa']:.4f}, theta {p['theta']:.4f}, "
+                f"xi {p['xi']:.4f}, rho {p['rho']:.4f}. No uncertainty band.\n"
+                f"Source: {source['citation']}, {source['table_or_page']}. Code {CODE}.")
+    path = out_dir / "surface_google_published.png"
+    render_surface(p, document["r"], document["q"], heading, footnote, path)
+    return [{"claim_id": "fig_surface_google_published", "location": "figure", "artifact_type": "figure",
+             "run_id": document["run_name"], "result_path": relative(comparison_file, results_root),
+             "json_pointer": "/params/kappa", "check_ids": "V-02"}]
+
+
+def comparison_figures(comparison_file, results_root, out_dir):
+    """VZ-2, VZ-3 and VZ-4: numerical against analytical prices."""
+    document = json.loads(comparison_file.read_text())
+    mode = document["data_mode"]
+    source = relative(comparison_file, results_root)
+    rows = pd.DataFrame(document["mc_vs_analytic"])
+
+    # VZ-2: Monte Carlo against semi-analytic European puts
+    fig, (left, right) = plt.subplots(1, 2, figsize=(8.5, 3.9))
+    left.plot([0, rows["analytic"].max()], [0, rows["analytic"].max()], "--", color=MUTED, linewidth=1, label="Equal")
+    left.plot(rows["analytic"], rows["mc"], "o", color=BLUE, markersize=4, label="40 options")
+    left.set_xlabel("Semi-analytic price (fraction of spot)")
+    left.set_ylabel("Monte Carlo price (fraction of spot)")
+    left.legend(frameon=False)
+    markers = ["o", "s", "^", "D", "v"]
+    for marker, maturity in zip(markers, sorted(rows["maturity"].unique())):
+        part = rows[rows["maturity"] == maturity]
+        right.plot(part["strike"], part["z"], marker, color=BLUE, markersize=5, markerfacecolor="none", label=f"T = {maturity:g}")
+    for level in (-3, 3):
+        right.axhline(level, color=MUTED, linewidth=1, linestyle="--")
+    right.set_xlabel("Strike (fraction of spot)")
+    right.set_ylabel("(Monte Carlo - analytic) / SE")
+    right.legend(frameon=False, ncol=3, fontsize=7, loc="lower center")
+    inside = int((rows["z"].abs() <= 3).sum())
+    fig.suptitle(f"European puts: {inside} of {len(rows)} Monte Carlo prices lie within 3 SE of the semi-analytic price",
+                 fontsize=10, x=0.01, ha="left")
+    fig.tight_layout(rect=(0, 0.08, 1, 0.97))
+    add_footnote(fig, f"Mode {mode}. {2 * document['n_paths']} paths, step 1/400, seed {document['comparison_seed']}, "
+                      f"same paths across strikes. Dashed lines: +/- 3 SE. Source {source}. Code {CODE}.")
+    fig.savefig(out_dir / "compare_mc_vs_analytic.png", dpi=180)
+    plt.close(fig)
+
+    # VZ-3: LSMC against the binomial tree
+    cases = pd.DataFrame(document["lsmc_vs_tree"])
+    fig, ax = plt.subplots(figsize=(7.0, 3.2))
+    y = np.arange(len(cases))[::-1]
+    ax.errorbar(cases["lsmc"], y, xerr=3 * cases["se"], fmt="o", color=BLUE, markersize=6, capsize=3, label="LSMC, +/- 3 SE")
+    ax.plot(cases["tree"], y, "s", color=ORANGE, markersize=6, markerfacecolor="none", markeredgewidth=1.5, label="CRR tree")
+    ax.set_yticks(y, [f"sigma {a:g}, K {b:g}" for a, b in zip(cases["sigma"], cases["strike"])])
+    ax.set_xlabel("Bermudan put (fraction of spot)")
+    ax.legend(frameon=False, loc="lower right")
+    worst = ((cases["lsmc"] - cases["tree"]).abs() / cases["se"]).max()
+    fig.suptitle(f"Constant-volatility test: largest LSMC to tree gap is {worst:.2f} SE", fontsize=10, x=0.01, ha="left")
+    fig.tight_layout(rect=(0, 0.09, 1, 0.97))
+    add_footnote(fig, f"Test model (xi = 0), not the reported parameters. {document['n_paths']} paths per set, 50 dates, "
+                      f"seed {document['comparison_seed']}; tree 5,000 steps. Source {source}. Code {CODE}.")
+    fig.savefig(out_dir / "compare_lsmc_vs_tree.png", dpi=180)
+    plt.close(fig)
+
+    # VZ-4: prices across strikes, and the gaps to the European price
+    profile = pd.DataFrame(document["strike_profile"])
+    fig, (left, right) = plt.subplots(1, 2, figsize=(8.5, 3.7))
+    left.errorbar(profile["strike"], profile["bermudan"], yerr=1.96 * profile["se_bermudan"], fmt="o-", color=BLUE,
+                  markersize=5, capsize=2, linewidth=1.5, label="Heston Bermudan")
+    left.plot(profile["strike"], profile["european_analytic"], "s--", color=ORANGE, markersize=5, linewidth=1.5,
+              label="European (semi-analytic)")
+    left.set_xlabel("Strike (fraction of spot)")
+    left.set_ylabel("Put price (fraction of spot)")
+    left.legend(frameon=False)
+    right.errorbar(profile["strike"], profile["premium"], yerr=1.96 * profile["se_premium"], fmt="o-", color=BLUE,
+                   markersize=5, capsize=2, linewidth=1.5, label="Heston premium (paired)")
+    right.plot(profile["strike"], profile["baseline_const_vol_bermudan"] - profile["european_analytic"], "^:", color=ORANGE,
+               markersize=5, linewidth=1.5, label="Constant-vol premium")
+    right.set_xlabel("Strike (fraction of spot)")
+    right.set_ylabel("Early-exercise premium (fraction of spot)")
+    right.legend(frameon=False)
+    largest = profile.loc[profile["premium"].idxmax()]
+    fig.suptitle(f"Largest early-exercise premium: {largest['premium']:.4f} of spot at strike {largest['strike']:g}",
+                 fontsize=10, x=0.01, ha="left")
+    fig.tight_layout(rect=(0, 0.08, 1, 0.97))
+    add_footnote(fig, f"Mode {mode}. {document['n_paths']} paths per set, {len(document['seeds'])} seed(s), 50 dates. "
+                      f"Bars: 95% interval. Source {source}. Code {CODE}.")
+    fig.savefig(out_dir / "compare_strike_profile.png", dpi=180)
+    plt.close(fig)
+
+    return [{"claim_id": name, "location": "figure", "artifact_type": "figure", "run_id": document["run_name"],
+             "result_path": source, "json_pointer": pointer, "check_ids": checks}
+            for name, pointer, checks in (("fig_compare_mc_vs_analytic", "/mc_vs_analytic/0/z", "V-03"),
+                                          ("fig_compare_lsmc_vs_tree", "/lsmc_vs_tree/0/lsmc", "V-04"),
+                                          ("fig_compare_strike_profile", "/strike_profile/0/bermudan", "V-11"))]
+
+
 def main():
     parser = argparse.ArgumentParser(description="Make figures from Public and Internal outputs")
     parser.add_argument("--results-root", default=str(ROOT / "results"))
@@ -241,6 +404,11 @@ def main():
         evidence += price_figure(run_dir, results_root, out_dir)
         evidence += seed_table(run_dir, results_root, out_dir)
         evidence += convergence_figure(run_name, results_root, out_dir)
+        comparison_file = newest_comparison(run_name, results_root)
+        if comparison_file is not None:
+            evidence += comparison_figures(comparison_file, results_root, out_dir)
+            evidence += published_surface_figure(comparison_file, results_root, out_dir)
+    evidence += rejected_surface_figure(results_root, out_dir)
     evidence += surface_figure(results_root, out_dir)
     evidence += market_fit_table(results_root, out_dir)
 

@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | ENSF 620 Fall 2026 final project (individual) |
 | **Owner** | Jared Crebo |
-| **Spec version** | 1.4 (2026-11-08) |
+| **Spec version** | 1.5 (2026-11-08) |
 | **Companion document** | `DATA_CONTRACT.md` v0.4 |
 | **Audience** | Engineers and AI coding agents writing implementation code and automated tests |
 
@@ -580,6 +580,7 @@ python scripts/inspect_schema.py <path-under-data>
 python scripts/run.py calibrate --config configs/<name>.yaml
 python scripts/run.py price     --config configs/<name>.yaml [--results-root <dir>]
 python scripts/run.py sweep     --config configs/<name>.yaml
+python scripts/run.py compare   --config configs/<name>.yaml
 python scripts/verify_outputs.py
 python scripts/make_figures.py
 bash   scripts/smoke.sh
@@ -646,7 +647,7 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
 ```json
 {
   "schema_version": 1,
-  "spec_version": "1.4",
+  "spec_version": "1.5",
   "data_contract_version": "0.4",
   "run_id": "core_amd_production-1a2b3c4d",
   "git_commit": "<full hash>",
@@ -784,7 +785,8 @@ This is the plan for the figures in the report and the eight-minute presentation
 
 | ID | Figure | Source | Class | Report | Slides |
 |---|---|---|---|---|---|
-| VZ-1 | PyVista 3D surface of the calibrated Heston implied-volatility surface | Fitted parameters in `results/calibration.json` | Internal | Yes | Yes |
+| VZ-1a | PyVista 3D surface of the rejected full AMD fit, labelled as rejected | `rejected_full_fit` in `results/calibration.json` | Internal | Yes | Yes |
+| VZ-1b | PyVista 3D surface of the published Google parameters | Parameters in the comparison summary | Public | Yes | Yes |
 | VZ-2 | Monte Carlo European vs. semi-analytic prices over the V-03 grid of strikes and maturities, with the difference in SE | Comparison run on the reported parameters | Internal | Yes | Yes |
 | VZ-3 | LSMC Bermudan vs. CRR tree on the V-04 cases | Comparison run | Public | Yes | Yes |
 | VZ-4 | Heston Bermudan, European, and constant-volatility Bermudan across strikes | Comparison run on the reported parameters | Internal | Yes | No |
@@ -795,17 +797,18 @@ This is the plan for the figures in the report and the eight-minute presentation
 
 **VZ-1 requirements.**
 
-- Evaluate `sigma_Heston` with `model_implied_vols` on a dense regular grid of `K/F` in `[0.80, 1.20]` and tenor in `[0.10, 1.25]`, using the fitted parameters only.
+- Applies to VZ-1a and VZ-1b. VZ-1a is the only AMD surface available, because the market fit ended at ladder step 3 (§6.7). It MUST carry the word REJECTED and the failed limit in the figure itself, and it MUST NOT be used for pricing.
+- Evaluate `sigma_Heston` with `model_implied_vols` on a dense regular grid of `K/F` in `[0.80, 1.20]` and tenor in `[0.10, 1.25]`, using the stated parameters only.
 - Show `K/F`, tenor, and implied volatility as labelled axes, with height encoding implied volatility and a single-hue colour ramp with a labelled scale, so the figure does not rely on colour alone.
 - Render off-screen with PyVista to a PNG for the report and slides.
-- Label it as a fitted model surface and state the data mode and snapshot date.
+- Label it as a model surface and state the source of its parameters and their date.
 - It MUST NOT overlay market implied-volatility points, quotes, or per-contract residuals (`DATA_CONTRACT.md` §4.3).
 
-**Comparison runs.** VZ-2, VZ-3, and VZ-4 use a pipeline command that prices the listed contracts and writes Internal summaries under `results/comparisons/`. All values are fractions of initial spot. Numerical-versus-analytical figures test the engine on known answers and do not show that Heston fits AMD (§16).
+**Comparison runs.** VZ-2, VZ-3, and VZ-4 use `scripts/run.py compare`, which prices the listed contracts and writes Internal summaries under `results/comparisons/`. All values are fractions of initial spot. Numerical-versus-analytical figures test the engine on known answers and do not show that Heston fits AMD (§16).
 
 **Presentation order.** Question and contract; data boundary; VZ-1; VZ-3 and VZ-2 as engine checks; one VZ-5 panel; VZ-6 as the result; limitations.
 
-**Implementation.** PyVista and the comparison command are added to the lock file and pipeline when this plan is implemented. The report's conclusions and narrative are written by the owner.
+**Implementation.** The report's conclusions and narrative are written by the owner.
 
 ---
 
@@ -1133,3 +1136,4 @@ Citations follow the proposal unless marked.
 | 1.2 | 2026-11-08 | Optional n-asset EXT-A with worst-of and basket calls and puts (§2.2, §4.1, §8.2, §10.1, §16.2, §17.2); visualization plan (§12.9); agent commits, pushes, and market runs through committed scripts (§5.2, §15); OD-1 and OD-3 resolved | Owner instructions. No pass rule, tolerance, seed, filter, or default changed | No result under this spec had been viewed. Market fits and prices viewed on 2026-10-18 predate v1.0 (`AI_USE.md` Entries 5 to 11; OD-6) |
 | 1.3 | 2026-11-08 | Follows `DATA_CONTRACT.md` v0.4, which relaxes the raw-data rule on `expiration` from `> date` to `>= date` | Owner decision after validation flagged 518 rows. Disclosed because the rule changed in response to a failed check. Same-day expiries are normal listed contracts, and filter F3 is unchanged, so the quotes used for calibration are unchanged | No market-calibrated result had been produced under this spec. Earlier fits are noted in the 1.2 row |
 | 1.4 | 2026-11-08 | OD-5 resolved; §15 exception for the agent entering the published set on the owner's instruction; reference added to §21 | The full five-parameter market fit missed the RMS limit (ladder step 3), and no cited `kappa` existed. The 0.01 limit and all rules are unchanged | Yes. The rejected fit's residual and parameters were viewed before this `kappa` was chosen; it MUST be disclosed in the report (§1.3). One value was chosen, from one source, before any refit |
+| 1.5 | 2026-11-08 | §12.9 VZ-1 split into a rejected-fit AMD surface and a published Google surface; `run.py compare` added (§11) | Owner instruction. The market fit ended at ladder step 3, so no accepted AMD surface exists. No pass rule, tolerance, seed, filter, or default changed | Yes. Figures are generated from results already viewed and do not change them |

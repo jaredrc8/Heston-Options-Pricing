@@ -4,6 +4,7 @@ The pipeline commands (SPEC.md sections 11 and 12).
     python scripts/run.py calibrate --config configs/<name>.yaml [--results-root <dir>]
     python scripts/run.py price     --config configs/<name>.yaml [--results-root <dir>]
     python scripts/run.py sweep     --config configs/<name>.yaml [--results-root <dir>]
+    python scripts/run.py compare   --config configs/<name>.yaml [--results-root <dir>]
 
 Output never contains a market price, quote or row of Restricted data.
 """
@@ -37,14 +38,16 @@ from hestonpricer.calibrate import calibrate_with_ladder
 from hestonpricer.errors import EXIT_CODES, HestonError
 from hestonpricer.iv import bs_implied_vol
 from hestonpricer.lsmc import price_bermudan
+from hestonpricer.simulate import simulate
 from hestonpricer.tree import crr_price
 
-SPEC_VERSION = "1.4"
+SPEC_VERSION = "1.5"
 DATA_CONTRACT_VERSION = "0.4"
 RAW_IV_MARKET = ROOT / "data" / "nvda_amd_intc_IV_Oct13-15.csv"
 RAW_IV_SYNTHETIC = ROOT / "tests" / "fixtures" / "synthetic_raw_iv.csv"
 GRID_FILE = ROOT / "data" / "derived" / "calibration_grid.parquet"
 ALL_DATES = ["2026-10-13", "2026-10-14", "2026-10-15"]
+COMPARISON_SEED = 620100
 
 CONFIG_KEYS = {"schema_version", "run_name", "tier", "reported", "data_mode", "assets", "snapshot_date",
                "market_inputs", "params_source", "contract", "simulation", "seeds"}
@@ -475,10 +478,77 @@ def run_sweep(cfg, results_root, command):
 
 
 # ----------------------------------------------------------------------
+# compare
+# ----------------------------------------------------------------------
+
+def run_compare(cfg, results_root, command):
+    """Numerical against analytical prices, for the figures in SPEC.md 12.9."""
+    check_governance(cfg)
+    if cfg["reported"] and git_dirty():
+        raise HestonError("E_DIRTY_TREE", "commit your changes before a reported run")
+
+    commit = git_commit()
+    out = Path(results_root) / "comparisons" / f"{cfg['run_name']}-{commit[:8]}.json"
+    if out.exists():
+        raise HestonError("E_RUN_EXISTS", f"{out.name} exists; use --results-root for a new location")
+
+    params, q, inputs = load_params(cfg, results_root)
+    r = load_rate(cfg)
+    market = {"r": r, "q": [q]}
+    n_paths = int(cfg["simulation"]["n_paths"])
+    base = cfg["contract"]
+
+    # 1. Monte Carlo European against semi-analytic, on the V-03 grid
+    mc_rows = []
+    for maturity in [0.25, 0.5, 1.0, 1.5, 2.0]:
+        contract = {"strike": 1.0, "maturity": maturity, "n_exercise": 1}
+        sim = {"n_paths": 2 * n_paths, "n_substeps": int(round(maturity * 400))}
+        rng = np.random.Generator(np.random.PCG64(COMPARISON_SEED))
+        terminal = simulate([params], [[1.0]], market, contract, sim, rng)["S"][:, 1, 0]
+        for strike in np.linspace(0.80, 1.25, 8):
+            payoff = math.exp(-r * maturity) * np.maximum(strike - terminal, 0.0)
+            mc, se = float(payoff.mean()), float(payoff.std(ddof=1) / math.sqrt(len(payoff)))
+            analytic = heston_european("put", 1.0, strike, maturity, params, r, q)
+            mc_rows.append({"maturity": maturity, "strike": float(strike), "mc": mc, "se": se,
+                            "analytic": analytic, "z": (mc - analytic) / max(se, 1e-12)})
+
+    # 2. LSMC against the CRR tree, on the V-04 cases (a test model, not the reported parameters)
+    tree_rows = []
+    for sigma, strike in [(0.3, 1.0), (0.5, 1.0), (0.5, 0.9), (0.3, 1.1)]:
+        gbm = {"v0": sigma**2, "kappa": 1.0, "theta": sigma**2, "xi": 0.0, "rho": 0.0}
+        contract = {"strike": strike, "maturity": 1.0, "n_exercise": 50}
+        outcome = price_bermudan([gbm], [[1.0]], {"r": r, "q": [0.0]}, contract,
+                                 {**cfg["simulation"], "master_seed": COMPARISON_SEED})
+        tree = crr_price("put", 1.0, strike, 1.0, sigma, r, 0.0, 5000,
+                         exercise_steps=[100 * k for k in range(1, 51)])
+        tree_rows.append({"sigma": sigma, "strike": strike, "lsmc": outcome["bermudan"],
+                          "se": outcome["se_bermudan"], "tree": tree})
+
+    # 3. Bermudan, European and constant-volatility Bermudan across strikes
+    profile = []
+    for strike in [0.80, 0.90, 1.00, 1.10, 1.20]:
+        contract = {**base, "strike": strike}
+        per_seed = [price_bermudan([params], [[1.0]], market, contract,
+                                   {**cfg["simulation"], "master_seed": seed}) for seed in cfg["seeds"]]
+        pooled, _ = pool_results(per_seed, params, r, q, contract)
+        profile.append({"strike": strike, **pooled})
+
+    document = {"schema_version": 1, "run_name": cfg["run_name"], "data_mode": cfg["data_mode"],
+                "commit": commit, "command": command, "units": "fraction_of_initial_spot",
+                "r": r, "q": q, "params": params, "inputs": inputs, "comparison_seed": COMPARISON_SEED,
+                "seeds": cfg["seeds"], "n_paths": n_paths,
+                "mc_vs_analytic": mc_rows, "lsmc_vs_tree": tree_rows, "strike_profile": profile}
+    assert_all_finite(document)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(document, indent=2))
+    print(f"comparison written: {out.name}")
+
+
+# ----------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description="Heston Bermudan put pipeline")
-    parser.add_argument("command", choices=["calibrate", "price", "sweep"])
+    parser.add_argument("command", choices=["calibrate", "price", "sweep", "compare"])
     parser.add_argument("--config", required=True)
     parser.add_argument("--results-root", default=None)
     args = parser.parse_args()
@@ -491,6 +561,8 @@ def main():
             run_calibrate(cfg, results_root, args.results_root is not None)
         elif args.command == "price":
             price_run(cfg, args.config, results_root, command)
+        elif args.command == "compare":
+            run_compare(cfg, results_root, command)
         else:
             run_sweep(cfg, results_root, command)
     except HestonError as error:

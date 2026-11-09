@@ -272,7 +272,16 @@ def test_run_writes_the_required_files_and_fields(tmp_path):
     assert result["units"] == "fraction_of_initial_spot" and result["data_mode"] == "synthetic"
     assert len(result["diagnostics"]["exercise_fraction_by_date"]) == 50
     manifest = json.loads((run_dir / "manifest.json").read_text())
-    assert manifest["spec_version"] == "1.4" and manifest["data_contract_version"] == "0.4"
+    assert manifest["spec_version"] == "1.5" and manifest["data_contract_version"] == "0.4"
+
+
+def test_compare_writes_each_comparison(tmp_path):
+    subprocess.run([sys.executable, "scripts/run.py", "compare", "--config", "configs/smoke.yaml",
+                    "--results-root", str(tmp_path)], cwd=ROOT, check=True, capture_output=True)
+    document = json.loads(next(tmp_path.glob("comparisons/*.json")).read_text())
+    assert len(document["mc_vs_analytic"]) == 40
+    assert len(document["lsmc_vs_tree"]) == 4
+    assert len(document["strike_profile"]) == 5
 
 
 def test_validator_accepts_the_fixtures(tmp_path):

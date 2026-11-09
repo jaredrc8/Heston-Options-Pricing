@@ -7,7 +7,7 @@ name = "hestonpricer"
 version = "1.0.0"
 description = "Calibrated Heston Bermudan put pricer (ENSF 620 final project)"
 requires-python = ">=3.12"
-dependencies = ["numpy", "scipy", "pandas", "pyyaml", "pyarrow", "matplotlib"]
+dependencies = ["numpy", "scipy", "pandas", "pyyaml", "pyarrow", "matplotlib", "pyvista"]
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
