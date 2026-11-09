@@ -240,6 +240,13 @@ def test_market_comparison_converts_prices_correctly(tmp_path):
     assert document["difference"]["model_inside_bid_ask"] is False
 
 
+def test_market_inputs_can_set_a_published_assets_dividend():
+    run = load_run_module()
+    config = yaml.safe_load((ROOT / "configs" / "goog_market_contract.yaml").read_text())
+    _, q, _ = run.load_params(config, ROOT / "results")
+    assert q == 0.0031
+
+
 def test_named_bad_bar_is_the_only_exclusion():
     sys.path.insert(0, str(ROOT / "python"))
     import validate_raw
@@ -321,7 +328,7 @@ def test_run_writes_the_required_files_and_fields(tmp_path):
     assert result["units"] == "fraction_of_initial_spot" and result["data_mode"] == "synthetic"
     assert len(result["diagnostics"]["exercise_fraction_by_date"]) == 50
     manifest = json.loads((run_dir / "manifest.json").read_text())
-    assert manifest["spec_version"] == "1.7" and manifest["data_contract_version"] == "0.6"
+    assert manifest["spec_version"] == "1.8" and manifest["data_contract_version"] == "0.6"
 
 
 def test_compare_writes_each_comparison(tmp_path):

@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | ENSF 620 Fall 2026 final project (individual) |
 | **Owner** | Jared Crebo |
-| **Spec version** | 1.7 (2026-11-08) |
+| **Spec version** | 1.8 (2026-11-08) |
 | **Companion document** | `DATA_CONTRACT.md` v0.6 |
 | **Audience** | Engineers and AI coding agents writing implementation code and automated tests |
 
@@ -147,7 +147,7 @@ These values live in `configs/market_inputs.yaml`.
 
 - **Rate.** Let `y` be the U.S. Treasury 1-Year CMT par yield on the snapshot date as a decimal. Then `r = 2 ln(1 + y / 2)`.
 - **Term structure.** The same flat `r` is used for implied-volatility conversion, calibration, and pricing. Ignoring the term structure is a stated limitation.
-- **CORE dividend yield.** `q_GOOG = 0`, the assumption of the paper the parameters come from. Alphabet has paid a dividend since 2024, so this is a stated limitation. `q_AMD = 0`.
+- **CORE dividend yield.** `q_GOOG = 0`, the assumption of the paper the parameters come from. Alphabet has paid a dividend since 2024, so this is a stated limitation for the Oct 14 run; the market comparison in §8.4 uses the declared dividend. `q_AMD = 0`.
 - **EXT-A dividend yields.** `q_AMD = 0`. `q_INTC = 0` unless the owner records otherwise. `q_NVDA` is the annualized declared dividend divided by the snapshot spot, rounded to the nearest `0.0001` before any use.
 - **Discrete dividends.** They are approximated by this continuous yield in both the tree and the simulation.
 
@@ -415,11 +415,11 @@ One listed GOOG put is priced for comparison with the market. There is no pass r
 | Spot and strike | $283.93 and $280.00 (`K/S = 0.98615856`) |
 | Market quote | Bid $31.50, ask $36.50, mid $34.00 (Cboe delayed quotes) |
 | Rate | From the 1-Year CMT yield of 4.33% on 2026-11-06 (§4.3) |
-| Dividend | `q = 0` (§4.3) |
+| Dividend | `q = 0.0031`: Alphabet's declared $0.22 quarterly dividend, annualized, divided by spot and rounded to 0.0001 (§4.3) |
 | Exercise | `M = 280` daily dates with `n_sub = 1`, approximating American exercise |
 | Parameters | Published Google set, fitted on 2015-02-02 |
 
-`scripts/compare_to_market.py` writes `results/market_comparison.json`. A gap to the market reflects, at least in part, the 2015 parameters and `q = 0`. The comparison MUST NOT be described as a calibration or as evidence that the engine is correct.
+`scripts/compare_to_market.py` writes `results/market_comparison.json`. A gap to the market reflects, at least in part, the 2015 parameters. The comparison MUST NOT be described as a calibration or as evidence that the engine is correct.
 
 ---
 
@@ -671,7 +671,7 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
 ```json
 {
   "schema_version": 1,
-  "spec_version": "1.7",
+  "spec_version": "1.8",
   "data_contract_version": "0.6",
   "run_id": "core_amd_production-1a2b3c4d",
   "git_commit": "<full hash>",
@@ -1166,3 +1166,4 @@ Citations follow the proposal unless marked.
 | 1.5 | 2026-11-08 | §12.9 VZ-1 split into a rejected-fit AMD surface and a published Google surface; `run.py compare` added (§11) | Owner instruction. The market fit ended at ladder step 3, so no accepted AMD surface exists. No pass rule, tolerance, seed, filter, or default changed | Yes. Figures are generated from results already viewed and do not change them |
 | 1.6 | 2026-11-08 | Primary question revised to GOOG under the published parameters (§2.1, §17.3); Massive dataset replaced to add GOOG and GOOGL; four-ticker correlations allowed before G1 (§5.4); `q_GOOG = 0`; OD-2 and OD-11 | Owner instruction, after the AMD fit failed acceptance. No pass rule, tolerance, seed, filter, or default changed | Yes. The AMD fit and the published-parameter price had been viewed; this MUST be disclosed in the report (§1.3) |
 | 1.7 | 2026-11-08 | V-06 benchmark changed from Clarke and Parrott to Ikonen and Toivanen; V-01 and V-06 values entered by the agent on the owner's instruction (§15); market comparison contract (§8.4, §3); one named out-of-hours bar omitted (`DATA_CONTRACT.md` §1.1) | Clarke and Parrott's prices at spots 10 to 12 are 2% to 11% above four later independent studies, so a correct engine could fail V-06 against them. Decided by the owner before V-06 had been run. No pass rule, tolerance, seed, or filter changed | V-06 had not been run. Other results had been viewed; none is affected by this change |
+| 1.8 | 2026-11-08 | Market comparison (§8.4) uses `q = 0.0031` from Alphabet's declared dividend | Owner instruction. No pass rule, tolerance, seed, or filter changed | Yes. The `q = 0` comparison had been viewed; the report MUST disclose this |

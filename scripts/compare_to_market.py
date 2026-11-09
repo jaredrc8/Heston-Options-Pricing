@@ -20,7 +20,7 @@ import yaml
 from hestonpricer.iv import american_implied_vol
 
 QUOTE_FILE = ROOT / "configs" / "market_quote_goog.yaml"
-MARKET_INPUTS = ROOT / "configs" / "market_inputs.yaml"
+MARKET_INPUTS = ROOT / "configs" / "market_inputs_goog_contract.yaml"
 
 
 def newest_result():
@@ -46,7 +46,7 @@ def main():
     strike_fraction = float(quote["strike"]) / spot
     maturity = float(result["contract"]["maturity"])
     r = 2.0 * math.log(1.0 + float(yields[str(quote["valuation_date"])]) / 2.0)
-    q = 0.0
+    q = float(inputs["dividend_yield"]["GOOG"])
 
     if abs(float(result["contract"]["strike"]) - strike_fraction) > 1e-6:
         raise SystemExit("the run's strike does not match the quote")
@@ -63,7 +63,7 @@ def main():
         "schema_version": 1,
         "run_id": result["run_id"],
         "data_mode": result["data_mode"],
-        "note": "Published Google parameters from 2015-02-02 and q = 0; not a calibration to this market.",
+        "note": "Published Google parameters from 2015-02-02; not a calibration to this market.",
         "quote_file": QUOTE_FILE.name,
         "contract": {key: str(quote[key]) if key in ("valuation_date", "expiry") else quote[key]
                      for key in ("option", "style", "valuation_date", "expiry", "strike")},

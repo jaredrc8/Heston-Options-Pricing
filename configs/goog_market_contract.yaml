@@ -8,7 +8,7 @@ reported: true
 data_mode: published
 assets: [GOOG]
 snapshot_date: 2026-11-06
-market_inputs: configs/market_inputs.yaml
+market_inputs: configs/market_inputs_goog_contract.yaml
 params_source: configs/published_params.yaml
 contract: {strike: 0.98615856, maturity: 1.112328767, n_exercise: 280}
 simulation: {n_paths: 100000, n_substeps: 1, basis_degree: 3}

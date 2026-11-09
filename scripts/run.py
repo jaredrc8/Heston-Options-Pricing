@@ -41,7 +41,7 @@ from hestonpricer.lsmc import price_bermudan
 from hestonpricer.simulate import simulate
 from hestonpricer.tree import crr_price
 
-SPEC_VERSION = "1.7"
+SPEC_VERSION = "1.8"
 DATA_CONTRACT_VERSION = "0.6"
 RAW_IV_MARKET = ROOT / "data" / "nvda_amd_intc_IV_Oct13-15.csv"
 RAW_IV_SYNTHETIC = ROOT / "tests" / "fixtures" / "synthetic_raw_iv.csv"
@@ -143,7 +143,9 @@ def load_params(cfg, results_root):
         params = {name: float(entry[name]) for name in ("v0", "kappa", "theta", "xi", "rho")}
         inputs = [{"dataset": "published_params", "tickers": [asset], "file_name": source.name,
                    "citation": entry["citation"], "table_or_page": entry["table_or_page"]}]
-        return params, float(entry["q"]), inputs
+        # A run's market_inputs file may set the dividend yield for this asset
+        dividends = yaml.safe_load((ROOT / cfg["market_inputs"]).read_text()).get("dividend_yield", {})
+        return params, float(dividends.get(asset, entry["q"])), inputs
 
     # Market mode: the fitted parameters in the Internal calibration summary
     calibration_file = Path(results_root) / Path(cfg["params_source"]).name
