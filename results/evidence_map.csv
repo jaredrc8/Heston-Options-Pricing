@@ -1,10 +1,10 @@
 claim_id,location,artifact_type,run_id,result_path,json_pointer,check_ids
-fig_price_summary,figure,figure,core_published_production-b91e3813,runs/core_published_production-b91e3813/result.json,/pooled/bermudan,V-03;V-04;V-11;V-15
-table_seed_robustness,table,table,core_published_production-b91e3813,runs/core_published_production-b91e3813/result.json,/per_seed/0/bermudan,V-11
-fig_convergence,figure,figure,core_published_production,sweeps/core_published_production-b91e3813.json,/rows/0/bermudan,V-09;V-10
-fig_compare_mc_vs_analytic,figure,figure,core_published_production,comparisons/core_published_production-f15f228c.json,/mc_vs_analytic/0/z,V-03
-fig_compare_lsmc_vs_tree,figure,figure,core_published_production,comparisons/core_published_production-f15f228c.json,/lsmc_vs_tree/0/lsmc,V-04
-fig_compare_strike_profile,figure,figure,core_published_production,comparisons/core_published_production-f15f228c.json,/strike_profile/0/bermudan,V-11
-fig_surface_google_published,figure,figure,core_published_production,comparisons/core_published_production-f15f228c.json,/params/kappa,V-02
+fig_price_summary,figure,figure,core_goog_production-a13deb05,runs/core_goog_production-a13deb05/result.json,/pooled/bermudan,V-03;V-04;V-11;V-15
+table_seed_robustness,table,table,core_goog_production-a13deb05,runs/core_goog_production-a13deb05/result.json,/per_seed/0/bermudan,V-11
+fig_convergence,figure,figure,core_goog_production,sweeps/core_goog_production-a13deb05.json,/rows/0/bermudan,V-09;V-10
+fig_compare_mc_vs_analytic,figure,figure,core_goog_production,comparisons/core_goog_production-a13deb05.json,/mc_vs_analytic/0/z,V-03
+fig_compare_lsmc_vs_tree,figure,figure,core_goog_production,comparisons/core_goog_production-a13deb05.json,/lsmc_vs_tree/0/lsmc,V-04
+fig_compare_strike_profile,figure,figure,core_goog_production,comparisons/core_goog_production-a13deb05.json,/strike_profile/0/bermudan,V-11
+fig_surface_google_published,figure,figure,core_goog_production,comparisons/core_goog_production-a13deb05.json,/params/kappa,V-02
 fig_surface_amd_rejected,figure,figure,market-rejected,calibration.json,/assets/AMD/rejected_full_fit/rms_iv_residual,V-13
 fig_synthetic_surface,figure,figure,synthetic,smoke/calibration.json,/assets/SYN1/rms_iv_residual,V-12

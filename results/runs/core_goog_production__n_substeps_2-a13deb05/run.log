@@ -1,0 +1,8 @@
+run_id core_goog_production__n_substeps_2-a13deb05
+data_mode published
+seeds [620001, 620002, 620003, 620004, 620005]
+seed 620001 finished in 0.60 s
+seed 620002 finished in 0.59 s
+seed 620003 finished in 0.60 s
+seed 620004 finished in 0.59 s
+seed 620005 finished in 0.59 s

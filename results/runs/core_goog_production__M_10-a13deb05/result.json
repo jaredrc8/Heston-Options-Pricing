@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "run_id": "core_goog_production__M_10-a13deb05",
+  "tier": "CORE",
+  "data_mode": "published",
+  "units": "fraction_of_initial_spot",
+  "assets": [
+    "GOOG"
+  ],
+  "contract": {
+    "strike": 1.0,
+    "maturity": 1.0,
+    "n_exercise": 10
+  },
+  "simulation": {
+    "n_paths": 100000,
+    "n_substeps": 20,
+    "basis_degree": 3
+  },
+  "per_seed": [
+    {
+      "seed": 620001,
+      "bermudan": 0.07322583186911691,
+      "se_bermudan": 0.00032790784617249725,
+      "european": 0.06945945496205969,
+      "se_european": 0.00038420207812278986,
+      "premium": 0.0037663769070572397,
+      "se_premium": 0.0002280229329616506,
+      "in_sample_bermudan": 0.07311122777362508,
+      "wall_seconds": 0.5090029580005648
+    },
+    {
+      "seed": 620002,
+      "bermudan": 0.0728865509204343,
+      "se_bermudan": 0.00032829406424488233,
+      "european": 0.06896689357508702,
+      "se_european": 0.00038380497441908114,
+      "premium": 0.003919657345347286,
+      "se_premium": 0.00022766098995565266,
+      "in_sample_bermudan": 0.07282649819844596,
+      "wall_seconds": 0.5082746249991033
+    },
+    {
+      "seed": 620003,
+      "bermudan": 0.07333469408329793,
+      "se_bermudan": 0.0003282050378364724,
+      "european": 0.0695465218104876,
+      "se_european": 0.0003857140928589134,
+      "premium": 0.0037881722728103375,
+      "se_premium": 0.00022922796670266974,
+      "in_sample_bermudan": 0.07283497486192396,
+      "wall_seconds": 0.5103115839992824
+    },
+    {
+      "seed": 620004,
+      "bermudan": 0.07259274847405096,
+      "se_bermudan": 0.0003266866150069481,
+      "european": 0.06878657370115643,
+      "se_european": 0.0003814894155153237,
+      "premium": 0.0038061747728945464,
+      "se_premium": 0.00022618798237965086,
+      "in_sample_bermudan": 0.07354699437067029,
+      "wall_seconds": 0.5066525830006867
+    },
+    {
+      "seed": 620005,
+      "bermudan": 0.07281913352143017,
+      "se_bermudan": 0.000329574624897945,
+      "european": 0.0689090572208611,
+      "se_european": 0.00038501215285295426,
+      "premium": 0.003910076300569082,
+      "se_premium": 0.00022627486586667024,
+      "in_sample_bermudan": 0.07321999997495895,
+      "wall_seconds": 0.5110344580007222
+    }
+  ],
+  "pooled": {
+    "bermudan": 0.07297179177366606,
+    "se_bermudan": 0.0001467464034124814,
+    "european_mc": 0.06913370025393037,
+    "se_european": 0.00017175114423460081,
+    "european_analytic": 0.06915652492085753,
+    "baseline_const_vol_bermudan": 0.07314434333769992,
+    "premium": 0.003838091519735698,
+    "se_premium": 0.00010173116795134484,
+    "premium_ci95": [
+      0.0036386984305510624,
+      0.004037484608920334
+    ],
+    "premium_resolved": true
+  },
+  "diagnostics": {
+    "exercise_fraction_by_date": [
+      0.002872,
+      0.022546,
+      0.03794,
+      0.04571000000000001,
+      0.04203,
+      0.041032,
+      0.03895,
+      0.036882000000000005,
+      0.040136,
+      0.119584
+    ],
+    "min_itm_count": 39909,
+    "skipped_dates": 0,
+    "rank_deficient_dates": 0,
+    "feller_ratio": [
+      1.0947590833448921
+    ]
+  },
+  "precision": {
+    "T1": true,
+    "T2": true
+  },
+  "sweep": {
+    "factor": "M",
+    "value": 10
+  }
+}

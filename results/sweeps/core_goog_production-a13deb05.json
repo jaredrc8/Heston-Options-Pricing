@@ -1,0 +1,191 @@
+{
+  "schema_version": 1,
+  "run_name": "core_goog_production",
+  "data_mode": "published",
+  "commit": "a13deb058da9a8e524325e9b766522b6d94c5074",
+  "wall_seconds_this_invocation": 72.20613599999888,
+  "wall_seconds_total": 71.88065729400114,
+  "budget_b2_seconds": 21600,
+  "rows": [
+    {
+      "factor": "n_paths",
+      "value": 20000,
+      "run_id": "core_goog_production__n_paths_20000-a13deb05",
+      "wall_seconds": 0.8381813750002038,
+      "bermudan": 0.0733736692992141,
+      "se_bermudan": 0.0003198398017146002,
+      "premium": 0.004302385441538247,
+      "se_premium": 0.0002382165288205148
+    },
+    {
+      "factor": "n_paths",
+      "value": 50000,
+      "run_id": "core_goog_production__n_paths_50000-a13deb05",
+      "wall_seconds": 1.9613042080000014,
+      "bermudan": 0.07323620016565488,
+      "se_bermudan": 0.00020394063457273307,
+      "premium": 0.00365429142285483,
+      "se_premium": 0.0001496770986253115
+    },
+    {
+      "factor": "n_paths",
+      "value": 100000,
+      "run_id": "core_goog_production__n_paths_100000-a13deb05",
+      "wall_seconds": 4.072276332999536,
+      "bermudan": 0.07333809623196033,
+      "se_bermudan": 0.00014264292859321646,
+      "premium": 0.004204395978029985,
+      "se_premium": 0.00010764978485084153
+    },
+    {
+      "factor": "n_paths",
+      "value": 200000,
+      "run_id": "core_goog_production__n_paths_200000-a13deb05",
+      "wall_seconds": 8.500923917001273,
+      "bermudan": 0.07339442091393239,
+      "se_bermudan": 0.00010197680774705182,
+      "premium": 0.004338302931911597,
+      "se_premium": 7.492581728001914e-05
+    },
+    {
+      "factor": "n_substeps",
+      "value": 1,
+      "run_id": "core_goog_production__n_substeps_1-a13deb05",
+      "wall_seconds": 2.3505882080007723,
+      "bermudan": 0.0731848158174692,
+      "se_bermudan": 0.00014449805662162008,
+      "premium": 0.004025245454142834,
+      "se_premium": 0.00010531310162679318
+    },
+    {
+      "factor": "n_substeps",
+      "value": 2,
+      "run_id": "core_goog_production__n_substeps_2-a13deb05",
+      "wall_seconds": 2.982229916999131,
+      "bermudan": 0.07325002420070385,
+      "se_bermudan": 0.000144586383428346,
+      "premium": 0.004053171282140676,
+      "se_premium": 0.00010515211854150296
+    },
+    {
+      "factor": "n_substeps",
+      "value": 4,
+      "run_id": "core_goog_production__n_substeps_4-a13deb05",
+      "wall_seconds": 4.083582000001115,
+      "bermudan": 0.07333809623196033,
+      "se_bermudan": 0.00014264292859321646,
+      "premium": 0.004204395978029985,
+      "se_premium": 0.00010764978485084153
+    },
+    {
+      "factor": "n_substeps",
+      "value": 8,
+      "run_id": "core_goog_production__n_substeps_8-a13deb05",
+      "wall_seconds": 6.3620005839984515,
+      "bermudan": 0.07333503826162482,
+      "se_bermudan": 0.00014345913916427813,
+      "premium": 0.004191011615506101,
+      "se_premium": 0.00010679215500766911
+    },
+    {
+      "factor": "M",
+      "value": 10,
+      "run_id": "core_goog_production__M_10-a13deb05",
+      "wall_seconds": 2.560569833000045,
+      "bermudan": 0.07297179177366606,
+      "se_bermudan": 0.0001467464034124814,
+      "premium": 0.003838091519735698,
+      "se_premium": 0.00010173116795134484
+    },
+    {
+      "factor": "M",
+      "value": 25,
+      "run_id": "core_goog_production__M_25-a13deb05",
+      "wall_seconds": 3.141401541999585,
+      "bermudan": 0.07327341155729536,
+      "se_bermudan": 0.00014418948474077944,
+      "premium": 0.0041397113033650014,
+      "se_premium": 0.0001056046103535101
+    },
+    {
+      "factor": "M",
+      "value": 50,
+      "run_id": "core_goog_production__M_50-a13deb05",
+      "wall_seconds": 4.132597874999192,
+      "bermudan": 0.07333809623196033,
+      "se_bermudan": 0.00014264292859321646,
+      "premium": 0.004204395978029985,
+      "se_premium": 0.00010764978485084153
+    },
+    {
+      "factor": "M",
+      "value": 100,
+      "run_id": "core_goog_production__M_100-a13deb05",
+      "wall_seconds": 5.911809999999605,
+      "bermudan": 0.07333094760296005,
+      "se_bermudan": 0.00014123681967047878,
+      "premium": 0.004197247349029697,
+      "se_premium": 0.00010927304903200232
+    },
+    {
+      "factor": "basis_degree",
+      "value": 2,
+      "run_id": "core_goog_production__basis_degree_2-a13deb05",
+      "wall_seconds": 3.7746849169998313,
+      "bermudan": 0.07312238331734049,
+      "se_bermudan": 0.0001427692221039671,
+      "premium": 0.003988683063410121,
+      "se_premium": 0.00010697062621407331
+    },
+    {
+      "factor": "basis_degree",
+      "value": 3,
+      "run_id": "core_goog_production__basis_degree_3-a13deb05",
+      "wall_seconds": 4.214388959000644,
+      "bermudan": 0.07333809623196033,
+      "se_bermudan": 0.00014264292859321646,
+      "premium": 0.004204395978029985,
+      "se_premium": 0.00010764978485084153
+    },
+    {
+      "factor": "basis_degree",
+      "value": 4,
+      "run_id": "core_goog_production__basis_degree_4-a13deb05",
+      "wall_seconds": 4.677874958999382,
+      "bermudan": 0.07336445378298288,
+      "se_bermudan": 0.00014263745671530943,
+      "premium": 0.004230753529052517,
+      "se_premium": 0.00010763480134420656
+    },
+    {
+      "factor": "r_shift",
+      "value": 0.0,
+      "run_id": "core_goog_production__r_shift_0.0-a13deb05",
+      "wall_seconds": 4.118578500001604,
+      "bermudan": 0.07333809623196033,
+      "se_bermudan": 0.00014264292859321646,
+      "premium": 0.004204395978029985,
+      "se_premium": 0.00010764978485084153
+    },
+    {
+      "factor": "r_shift",
+      "value": 0.01,
+      "run_id": "core_goog_production__r_shift_0.01-a13deb05",
+      "wall_seconds": 4.069487583999944,
+      "bermudan": 0.07064461860461176,
+      "se_bermudan": 0.00013797803520758804,
+      "premium": 0.0052377233184335015,
+      "se_premium": 0.00010880216810844462
+    },
+    {
+      "factor": "r_shift",
+      "value": -0.01,
+      "run_id": "core_goog_production__r_shift_-0.01-a13deb05",
+      "wall_seconds": 4.128176583000823,
+      "bermudan": 0.07616894291667939,
+      "se_bermudan": 0.00014745342509063102,
+      "premium": 0.003112890047990517,
+      "se_premium": 0.00010598625747769213
+    }
+  ]
+}

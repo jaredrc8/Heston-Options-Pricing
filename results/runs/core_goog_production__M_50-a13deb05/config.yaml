@@ -1,0 +1,24 @@
+schema_version: 1
+run_name: core_goog_production__M_50
+tier: CORE
+reported: true
+data_mode: published
+assets:
+- GOOG
+snapshot_date: '2026-10-14'
+market_inputs: configs/market_inputs.yaml
+params_source: configs/published_params.yaml
+contract:
+  strike: 1.0
+  maturity: 1.0
+  n_exercise: 50
+simulation:
+  n_paths: 100000
+  n_substeps: 4
+  basis_degree: 3
+seeds:
+- 620001
+- 620002
+- 620003
+- 620004
+- 620005

@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "spec_version": "1.6",
+  "data_contract_version": "0.5",
+  "run_id": "core_goog_production__r_shift_0.0-a13deb05",
+  "git_commit": "a13deb058da9a8e524325e9b766522b6d94c5074",
+  "git_dirty": false,
+  "command": "python scripts/run.py sweep --config configs/core_goog_production.yaml",
+  "config_sha256": "6ed59fbe58724892c1b907de1c43280cf733902f77f50c7937c100a4844acb28",
+  "data_mode": "published",
+  "seeds": [
+    620001,
+    620002,
+    620003,
+    620004,
+    620005
+  ],
+  "environment": {
+    "python": "3.14.3",
+    "packages": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "pandas": "3.1.1"
+    },
+    "os": "macOS-26.2-arm64-arm-64bit-Mach-O",
+    "cpu": "arm",
+    "cores": 14,
+    "ram_gb": 24.0
+  },
+  "inputs": [
+    {
+      "dataset": "published_params",
+      "tickers": [
+        "GOOG"
+      ],
+      "file_name": "published_params.yaml",
+      "citation": "Burkovska, Glau, Mahlstedt and Wohlmuth, Model reduction for calibration of American options, arXiv:1611.06452",
+      "table_or_page": "Section 6.4, Table 8, row J_CF (de-Americanization with closed-form solution)"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "result.json",
+      "sha256": "503e07f0b24917a6f2ae73236788a3779555b33797a13c15ac0990782dc15390"
+    },
+    {
+      "path": "config.yaml",
+      "sha256": "6ed59fbe58724892c1b907de1c43280cf733902f77f50c7937c100a4844acb28"
+    },
+    {
+      "path": "run.log",
+      "sha256": "4f77baebaf90b9f4f6182cdfb8510d86c9623d2d49db640a2b982a0037e70c81"
+    }
+  ],
+  "started_at": "2026-11-09T03:04:58.212670+00:00",
+  "finished_at": "2026-11-09T03:05:02.331236+00:00",
+  "wall_seconds": 4.118578500001604
+}

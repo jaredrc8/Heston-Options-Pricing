@@ -499,3 +499,31 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 3. Commit `f15f228` was pushed with one line-length lint error, because a pipe hid the lint exit code. Fixed in the next commit.
 
 **Not done:** the Google four-stock analysis. It needs Google price data, which is not in the licensed datasets, and EXT-A remains closed by gate G1. The AI raised this with the author, along with its concern about the shared-parameter assumption.
+
+### Entry 17 — 2026-11-08 — Google data, four-ticker correlation code, and GOOG as the pricing target
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Read the new `nvda_amd_intc_goog_minute` dataset instead of the old one, include Google in `DATA_CONTRACT.md` and `SPEC.md`, find the correlation between the four tickers, and build the pricer for GOOG only until NVDA, AMD and INTC can be calibrated properly.
+
+**Author's decisions:** `q_GOOG = 0`, disclosed as a limitation; the dataset comes from Massive under the same licence. GOOGL is validated but left out of the correlations (AI's reading of "4 tickers").
+
+**What the AI did:**
+- `DATA_CONTRACT.md` v0.5 and `SPEC.md` v1.6: added Google, revised the primary question to GOOG, recorded the Parquet format and the dataset replacement. No pass rule, tolerance, seed, filter or default changed.
+- `python/validate_raw.py` reads the new folder and validates each month's part files together.
+- Added split adjustment, session closes and daily returns to `hestonpricer/correlation.py`, plus `scripts/estimate_correlations.py` and `configs/splits.yaml`.
+- Replaced the published run with `core_goog_production`, and ran pricing, the sweep, comparisons and figures.
+
+**Data boundary:** the AI saw `data/` only through `scripts/inspect_schema.py` and `python/validate_raw.py`. A shell command that listed `data/` directly was declined and was not repeated.
+
+**Validation of the Massive dataset:** 177 months and 9,953,349 rows. One rule was violated once: `window_start_in_session_hours`, in `year=2018/month=7`, row index 2090. `DATA_CONTRACT.md` §1.5 stops the pipeline on a violation, so `estimate_correlations.py` was **not run** on licensed data and `results/estimates.json` does not exist. The decision is the author's.
+
+**Check on the GOOG run:** its pooled values are identical to the earlier published run, as expected from the same parameters, seeds and rate.
+
+**AI errors found and corrected:** a check of the smoke result in a shell command used bash syntax under zsh, so the first commit attempt did not happen. Nothing incorrect was committed.
+
+**Sources for `configs/splits.yaml`:** the 2022 GOOG split is widely reported. Public sources disagree on the exact date and ratio of the 2014 Class C issue, so that entry is approximate and is noted as such in the file.
+
+**Author review status:**
+- [ ] Decision on the out-of-hours bar
+- [ ] GOOG question and `q = 0` limitation reflected in the report
