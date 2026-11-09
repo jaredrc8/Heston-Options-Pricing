@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | ENSF 620 Fall 2026 final project (individual) |
 | **Owner** | Jared Crebo |
-| **Spec version** | 1.8 (2026-11-08) |
+| **Spec version** | 1.9 (2026-11-08) |
 | **Companion document** | `DATA_CONTRACT.md` v0.6 |
 | **Audience** | Engineers and AI coding agents writing implementation code and automated tests |
 
@@ -671,7 +671,7 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
 ```json
 {
   "schema_version": 1,
-  "spec_version": "1.8",
+  "spec_version": "1.9",
   "data_contract_version": "0.6",
   "run_id": "core_amd_production-1a2b3c4d",
   "git_commit": "<full hash>",
@@ -810,7 +810,7 @@ This is the plan for the figures in the report and the eight-minute presentation
 | ID | Figure | Source | Class | Report | Slides |
 |---|---|---|---|---|---|
 | VZ-1a | PyVista 3D surface of the rejected full AMD fit, labelled as rejected | `rejected_full_fit` in `results/calibration.json` | Internal | Yes | Yes |
-| VZ-1b | PyVista 3D surface of the published Google parameters | Parameters in the comparison summary | Public | Yes | Yes |
+| VZ-1b | PyVista 3D surface of the GOOG 2015 Heston model: the published Google parameters fitted on 2015-02-02 | Parameters in the comparison summary | Public | Yes | Yes |
 | VZ-2 | Monte Carlo European vs. semi-analytic prices over the V-03 grid of strikes and maturities, with the difference in SE | Comparison run on the reported parameters | Internal | Yes | Yes |
 | VZ-3 | LSMC Bermudan vs. CRR tree on the V-04 cases | Comparison run | Public | Yes | Yes |
 | VZ-4 | Heston Bermudan, European, and constant-volatility Bermudan across strikes | Comparison run on the reported parameters | Internal | Yes | No |
@@ -822,7 +822,8 @@ This is the plan for the figures in the report and the eight-minute presentation
 **VZ-1 requirements.**
 
 - Applies to VZ-1a and VZ-1b. VZ-1a is the only AMD surface available, because the market fit ended at ladder step 3 (§6.7). It MUST carry the word REJECTED and the failed limit in the figure itself, and it MUST NOT be used for pricing.
-- Evaluate `sigma_Heston` with `model_implied_vols` on a dense regular grid of `K/F` in `[0.80, 1.20]` and tenor in `[0.10, 1.25]`, using the stated parameters only.
+- Evaluate `sigma_Heston` with `model_implied_vols` on a dense regular grid of `K/F` in `[0.80, 1.20]`, using the stated parameters only. Tenor is `[0.10, 1.25]` for VZ-1a. For VZ-1b it is `[0.20, 1.97]`, the maturity range of the source paper's Google options, with `r = 0.15%` and `q = 0` as in that paper.
+- VZ-1b MUST state that its parameters date from 2015-02-02 and that it is not a surface for today's market.
 - Show `K/F`, tenor, and implied volatility as labelled axes, with height encoding implied volatility and a single-hue colour ramp with a labelled scale, so the figure does not rely on colour alone.
 - Render off-screen with PyVista to a PNG for the report and slides.
 - Label it as a model surface and state the source of its parameters and their date.
@@ -1167,3 +1168,4 @@ Citations follow the proposal unless marked.
 | 1.6 | 2026-11-08 | Primary question revised to GOOG under the published parameters (§2.1, §17.3); Massive dataset replaced to add GOOG and GOOGL; four-ticker correlations allowed before G1 (§5.4); `q_GOOG = 0`; OD-2 and OD-11 | Owner instruction, after the AMD fit failed acceptance. No pass rule, tolerance, seed, filter, or default changed | Yes. The AMD fit and the published-parameter price had been viewed; this MUST be disclosed in the report (§1.3) |
 | 1.7 | 2026-11-08 | V-06 benchmark changed from Clarke and Parrott to Ikonen and Toivanen; V-01 and V-06 values entered by the agent on the owner's instruction (§15); market comparison contract (§8.4, §3); one named out-of-hours bar omitted (`DATA_CONTRACT.md` §1.1) | Clarke and Parrott's prices at spots 10 to 12 are 2% to 11% above four later independent studies, so a correct engine could fail V-06 against them. Decided by the owner before V-06 had been run. No pass rule, tolerance, seed, or filter changed | V-06 had not been run. Other results had been viewed; none is affected by this change |
 | 1.8 | 2026-11-08 | Market comparison (§8.4) uses `q = 0.0031` from Alphabet's declared dividend | Owner instruction. No pass rule, tolerance, seed, or filter changed | Yes. The `q = 0` comparison had been viewed; the report MUST disclose this |
+| 1.9 | 2026-11-08 | VZ-1b (§12.9) defined as the GOOG 2015 Heston model surface over the source paper's maturity range | Owner instruction. No pass rule, tolerance, seed, or filter changed | Yes. The figure is drawn from parameters already viewed and does not change them |

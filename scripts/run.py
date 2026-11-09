@@ -41,7 +41,7 @@ from hestonpricer.lsmc import price_bermudan
 from hestonpricer.simulate import simulate
 from hestonpricer.tree import crr_price
 
-SPEC_VERSION = "1.8"
+SPEC_VERSION = "1.9"
 DATA_CONTRACT_VERSION = "0.6"
 RAW_IV_MARKET = ROOT / "data" / "nvda_amd_intc_IV_Oct13-15.csv"
 RAW_IV_SYNTHETIC = ROOT / "tests" / "fixtures" / "synthetic_raw_iv.csv"
@@ -397,8 +397,9 @@ def run_calibrate(cfg, results_root, root_given):
     assert_all_finite(document)
     (results_root / "calibration.json").write_text(json.dumps(document, indent=2))
 
-    # The Restricted grid is written only in market mode, and only under data/
-    if market and grid is not None:
+    # The Restricted grid is written only in market mode, only under data/, and only for
+    # the default results location, so a redirected run cannot overwrite the reported grid
+    if market and grid is not None and not root_given:
         GRID_FILE.parent.mkdir(parents=True, exist_ok=True)
         grid[["symbol", "date", "strike", "expiration", "call_put", "iv"]].to_parquet(GRID_FILE)
 

@@ -227,12 +227,12 @@ def newest_comparison(run_name, results_root):
     return files[-1] if files else None
 
 
-def render_surface(params, r, q, heading, footnote, path):
+def render_surface(params, r, q, heading, footnote, path, tenor_low=0.10, tenor_high=1.25):
     """PyVista 3D surface of the model implied volatility. Model values only."""
     import pyvista as pv
 
     k_over_f = np.linspace(0.80, 1.20, 41)
-    tenors = np.linspace(0.10, 1.25, 47)
+    tenors = np.linspace(tenor_low, tenor_high, 47)
     vols = np.zeros((len(tenors), len(k_over_f)))
     for j, tenor in enumerate(tenors):
         k_over_s = k_over_f * np.exp((r - q) * tenor)
@@ -241,7 +241,7 @@ def render_surface(params, r, q, heading, footnote, path):
     # The geometry is drawn in a unit box so the surface is readable; the axis labels
     # below show the true values, and the colour scale uses the true implied volatility.
     low, high = float(vols.min()), float(vols.max())
-    x, y = np.meshgrid((k_over_f - 0.80) / 0.40, (tenors - 0.10) / 1.15)
+    x, y = np.meshgrid((k_over_f - 0.80) / 0.40, (tenors - tenor_low) / (tenor_high - tenor_low))
     grid = pv.StructuredGrid(x, y, 0.7 * (vols - low) / max(high - low, 1e-6))
     # Read the colour values back from the points, so they cannot be misordered against the geometry
     grid["Implied volatility"] = low + grid.points[:, 2] / 0.7 * (high - low)
@@ -252,7 +252,8 @@ def render_surface(params, r, q, heading, footnote, path):
                      show_edges=True, edge_color="#ffffff", line_width=0.4, lighting=False,
                      scalar_bar_args={"title": "Implied vol", "color": INK, "n_labels": 5, "fmt": "%.2f",
                                       "vertical": True, "position_x": 0.87, "position_y": 0.3})
-    plotter.show_bounds(axes_ranges=[0.80, 1.20, 0.10, 1.25, low, high], xtitle="Strike / forward", ytitle="Tenor (years)",
+    plotter.show_bounds(axes_ranges=[0.80, 1.20, tenor_low, tenor_high, low, high],
+                        xtitle="Strike / forward", ytitle="Tenor (years)",
                         ztitle="Implied vol", color=MUTED, font_size=12, grid="back", location="outer", n_xlabels=5,
                         n_ylabels=5, n_zlabels=4, fmt="%.2f")
     plotter.camera_position = [(1.85, -1.75, 1.35), (0.5, 0.5, 0.3), (0, 0, 1)]
@@ -297,13 +298,14 @@ def published_surface_figure(comparison_file, results_root, out_dir):
         return []
     p = document["params"]
     source = document["inputs"][0]
-    heading = ("PUBLISHED PARAMETERS: Google options, 2015-02-02\n"
-               "Not calibrated to AMD, NVDA or INTC.")
-    footnote = (f"Model surface; no market data points shown. v0 {p['v0']:.4f}, kappa {p['kappa']:.4f}, theta {p['theta']:.4f}, "
+    heading = ("GOOG 2015 HESTON MODEL: implied-volatility surface\n"
+               "Parameters fitted to Google American puts on 2015-02-02. Not a surface for today's market.")
+    footnote = (f"Model surface; no market data points shown. Tenors span the paper's maturities; r = 0.15%, q = 0. "
+                f"v0 {p['v0']:.4f}, kappa {p['kappa']:.4f}, theta {p['theta']:.4f}, "
                 f"xi {p['xi']:.4f}, rho {p['rho']:.4f}. No uncertainty band.\n"
                 f"Source: {source['citation']}, {source['table_or_page']}. Code {CODE}.")
     path = out_dir / "surface_google_published.png"
-    render_surface(p, document["r"], document["q"], heading, footnote, path)
+    render_surface(p, 0.0015, 0.0, heading, footnote, path, tenor_low=0.20, tenor_high=1.97)
     return [{"claim_id": "fig_surface_google_published", "location": "figure", "artifact_type": "figure",
              "run_id": document["run_name"], "result_path": relative(comparison_file, results_root),
              "json_pointer": "/params/kappa", "check_ids": "V-02"}]

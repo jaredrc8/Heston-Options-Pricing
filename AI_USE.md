@@ -569,3 +569,25 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 **Author review status:**
 - [ ] Decision on the stored Cboe quote
 - [ ] Source of GOOG option data for calibration
+
+### Entry 20 — 2026-11-08 — Finding a 2015 Google put to compare with
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Find a put contract from 2015 to compare with, since the GOOG parameters come from 2015.
+
+**Finding:** Burkovska et al., arXiv:1611.06452, Appendix A, Table 10, publishes 401 American put prices on Google from 2015-02-02 with S0 = 523.755, the same data the parameters were fitted to.
+
+**Scratch check, not committed and not a reported result:** nine puts priced with the published parameters, r = 0.15% and q = 0, in the AI's scratch directory. Differences ranged from -2.2% to +2.5%; the $525 put with T = 0.9507 was $45.25 ± $0.09 against $46.05. This is an in-sample comparison, because the parameters were fitted to these prices.
+
+**Repository:** no file other than this log changed for this task.
+
+### Entry 21 — 2026-11-08 — GOOG 2015 volatility surface
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Plot the volatility surface for the 2015 GOOG model and add it to `SPEC.md`.
+
+**What the AI did:** `scripts/make_figures.py` now draws VZ-1b over tenors 0.20 to 1.97 years, labelled as the GOOG 2015 Heston model. `SPEC.md` v1.9 defines the figure. It shows model values only.
+
+**Not committed:** these changes stay uncommitted while the author's decision on the stored Cboe quote is pending.
