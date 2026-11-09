@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "data_mode": "market",
+  "snapshot_date": "2026-10-15",
+  "r": 0.04440341596737319,
+  "inputs": [
+    {
+      "dataset": "ivolatility_raw_iv",
+      "tickers": [
+        "INTC"
+      ],
+      "snapshot_date": "2026-10-14",
+      "file_name": "nvda_amd_intc_IV_Oct13-15.csv",
+      "row_count": 41256
+    }
+  ],
+  "assets": {
+    "INTC": {
+      "q": 0.0,
+      "filter_drops": {
+        "F1": 38886,
+        "F2": 136,
+        "F3": 729,
+        "F4": 905,
+        "F5": 300,
+        "F6": 0,
+        "F7": 31,
+        "F8": 0
+      },
+      "mid_mismatch_rows": 136,
+      "params": {
+        "v0": 0.6223254718187646,
+        "kappa": 19.572795275042832,
+        "theta": 0.3242003850138356,
+        "xi": 4.999999999999999,
+        "rho": 0.1447149648152429
+      },
+      "fixed_params": [],
+      "feller_ratio": 0.5076406211172696,
+      "grid_size": 48,
+      "n_expiries": 6,
+      "rms_iv_residual": 0.007506187896681308,
+      "stable": true,
+      "n_accepted_starts": 8,
+      "accepted_spread": {
+        "v0": 5.159442696453031e-07,
+        "kappa": 2.1942599560711583e-06,
+        "theta": 1.1830035375011616e-07,
+        "xi": 0.0,
+        "rho": 1.5112157502807143e-06
+      },
+      "uninvertible_events": 0,
+      "starts": [
+        {
+          "start": 0,
+          "converged": true,
+          "status": 2,
+          "rms_iv_residual": 0.0075061878966822945
+        },
+        {
+          "start": 1,
+          "converged": true,
+          "status": 2,
+          "rms_iv_residual": 0.0075061878966817056
+        },
+        {
+          "start": 2,
+          "converged": true,
+          "status": 2,
+          "rms_iv_residual": 0.007506187896685309
+        },
+        {
+          "start": 3,
+          "converged": true,
+          "status": 2,
+          "rms_iv_residual": 0.007506187896681413
+        },
+        {
+          "start": 4,
+          "converged": true,
+          "status": 2,
+          "rms_iv_residual": 0.007506187896681827
+        },
+        {
+          "start": 5,
+          "converged": true,
+          "status": 2,
+          "rms_iv_residual": 0.007506187896684109
+        },
+        {
+          "start": 6,
+          "converged": true,
+          "status": 2,
+          "rms_iv_residual": 0.007506187896681308
+        },
+        {
+          "start": 7,
+          "converged": true,
+          "status": 2,
+          "rms_iv_residual": 0.007506187896693005
+        }
+      ],
+      "residual_buckets": [
+        {
+          "tenor_bucket": "T<0.5",
+          "moneyness_bucket": "K/F<0.95",
+          "n": 7,
+          "rms": 0.008584103922809163
+        },
+        {
+          "tenor_bucket": "T<0.5",
+          "moneyness_bucket": "0.95<=K/F<=1.05",
+          "n": 5,
+          "rms": 0.007472774568683245
+        },
+        {
+          "tenor_bucket": "0.5<=T<1",
+          "moneyness_bucket": "K/F<0.95",
+          "n": 11,
+          "rms": 0.0033717235147627837
+        },
+        {
+          "tenor_bucket": "0.5<=T<1",
+          "moneyness_bucket": "0.95<=K/F<=1.05",
+          "n": 5,
+          "rms": 0.006538559002243869
+        },
+        {
+          "tenor_bucket": "0.5<=T<1",
+          "moneyness_bucket": "K/F>1.05",
+          "n": 8,
+          "rms": 0.008213439117890757
+        }
+      ],
+      "ladder_step": 1,
+      "iv_checks": {
+        "near_money_pairs": 64,
+        "pairs_with_overlapping_bands": 54,
+        "median_abs_own_minus_vendor_iv": 0.0009000653248828483
+      }
+    }
+  }
+}

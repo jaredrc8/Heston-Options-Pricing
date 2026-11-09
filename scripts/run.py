@@ -41,8 +41,8 @@ from hestonpricer.lsmc import price_bermudan
 from hestonpricer.simulate import simulate
 from hestonpricer.tree import crr_price
 
-SPEC_VERSION = "1.9"
-DATA_CONTRACT_VERSION = "0.6"
+SPEC_VERSION = "1.10"
+DATA_CONTRACT_VERSION = "0.7"
 RAW_IV_MARKET = ROOT / "data" / "nvda_amd_intc_IV_Oct13-15.csv"
 RAW_IV_SYNTHETIC = ROOT / "tests" / "fixtures" / "synthetic_raw_iv.csv"
 GRID_FILE = ROOT / "data" / "derived" / "calibration_grid.parquet"
@@ -51,6 +51,7 @@ COMPARISON_SEED = 620100
 
 CONFIG_KEYS = {"schema_version", "run_name", "tier", "reported", "data_mode", "assets", "snapshot_date",
                "market_inputs", "params_source", "contract", "simulation", "seeds"}
+OPTIONAL_KEYS = {"allow_rejected_fit"}   # exploratory pricing of a rejected fit (SPEC.md 8.5)
 CONTRACT_KEYS = {"strike", "maturity", "n_exercise"}
 SIMULATION_KEYS = {"n_paths", "n_substeps", "basis_degree"}
 
@@ -79,7 +80,7 @@ def load_config(path):
     except (OSError, yaml.YAMLError) as error:
         raise HestonError("E_CONFIG", f"cannot read {path}: {type(error).__name__}") from None
 
-    unknown = set(cfg) - CONFIG_KEYS
+    unknown = set(cfg) - CONFIG_KEYS - OPTIONAL_KEYS
     missing = CONFIG_KEYS - set(cfg)
     if unknown or missing:
         raise HestonError("E_CONFIG", f"unknown keys {sorted(unknown)}, missing keys {sorted(missing)}")
@@ -87,6 +88,8 @@ def load_config(path):
         raise HestonError("E_CONFIG", "unknown key inside contract or simulation")
     if cfg["data_mode"] not in ("synthetic", "published", "market"):
         raise HestonError("E_CONFIG", "data_mode must be synthetic, published or market")
+    if cfg.get("allow_rejected_fit") and cfg["reported"]:
+        raise HestonError("E_CONFIG", "a rejected fit cannot be used for a reported run (SPEC.md 8.5)")
     if cfg["tier"] != "CORE" or len(cfg["assets"]) != 1:
         raise HestonError("E_CONFIG", "only the single-asset CORE tier is open (SPEC.md 2.2)")
 
@@ -154,6 +157,8 @@ def load_params(cfg, results_root):
     calibration = json.loads(calibration_file.read_text())
     entry = calibration["assets"][asset]
     if entry["ladder_step"] == 3:
+        if cfg.get("allow_rejected_fit") and entry.get("rejected_full_fit"):
+            return entry["rejected_full_fit"]["params"], entry["q"], calibration["inputs"]
         raise HestonError("E_CALIB_FAILED", "no market-calibrated result; use published mode (SPEC.md 6.7)")
     return entry["params"], entry["q"], calibration["inputs"]
 
@@ -305,6 +310,8 @@ def price_run(cfg, config_source, results_root, command, r_shift=0.0, sweep_info
     }
     if sweep_info:
         result["sweep"] = sweep_info
+    if cfg.get("allow_rejected_fit"):
+        result["parameter_status"] = "REJECTED FIT: exploratory, not a reported result (SPEC.md 8.5)"
     assert_all_finite(result)  # no result.json if any value is NaN or infinite
 
     # The manifest is written last: a directory without one is an incomplete run.

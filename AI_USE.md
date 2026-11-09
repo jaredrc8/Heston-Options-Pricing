@@ -538,11 +538,11 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 - Omitted the named bar in `python/validate_raw.py` and recorded it in `DATA_CONTRACT.md` v0.6. Validation then passed: 177 months, 9,953,348 rows, 0 violations.
 - Ran `scripts/estimate_correlations.py` on licensed data, writing `results/estimates.json` (aggregates only).
 - Entered the V-01 and V-06 reference values on the author's instruction (`SPEC.md` §15 exception), read through automated extracts of the papers.
-- Chose `GOOG271217P00280000` as the market-comparison contract, priced it, and wrote `results/market_comparison.json`.
+- Chose a listed GOOG put expiring in December 2027 as the market-comparison contract, priced it, and wrote `results/market_comparison.json`.
 
 **Benchmark choice:** the spec named Clarke and Parrott for V-06, but their prices at spots 10 to 12 are 2% to 11% above four later studies. The AI raised this before V-06 ran, and the author chose Ikonen and Toivanen. V-01 uses calls, because no published Heston put table was found. Neither benchmark uses Google's parameters, so they test the engine and not the GOOG parameter set.
 
-**Market comparison, model against the public quote:** model $20.29 ± $0.04 against bid $31.50 and ask $36.50, which is 40% below the mid of $34.00. Implied volatility is 23.1% for the model and 35.3% for the mid. There is no pass rule. The gap reflects at least the Feb 2015 parameters, and it does not show that the engine is right or wrong.
+**Market comparison, model against the public quote:** the model was 40% below the quote's midpoint, with implied volatility of 23.1% against about 35%. (The quote's values were removed from this log on 2026-11-08; see Entry 23.) There is no pass rule. The gap reflects at least the Feb 2015 parameters, and it does not show that the engine is right or wrong.
 
 **Data boundary:** the AI read `data/` only through committed scripts. The Cboe quote is public, cited reference data (`DATA_CONTRACT.md` §2.4). The AI did not check Cboe's terms of use beyond storing this one cited quote.
 
@@ -564,7 +564,7 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 
 **AI error disclosed:** in Entry 18 the AI stored and pushed one Cboe quote (`configs/market_quote_goog.yaml`, `results/market_comparison.json`, `SPEC.md` §8.4) and labelled it Public in `DATA_CONTRACT.md` §2.4 before reading these terms. That label may be wrong. The author must decide what to do. Until then the AI has not pushed anything further, and the updated `results/market_comparison.json` is left uncommitted.
 
-**Dividend:** `q = 0.0031`, from Alphabet's declared $0.22 quarterly dividend. The run is `goog_market_contract-90258c0b`. The model price moved from $20.29 to $20.51, and the mid quote is $34.00, so the model is 39.7% below the mid.
+**Dividend:** `q = 0.0031`, from Alphabet's declared $0.22 quarterly dividend. The run is `goog_market_contract-90258c0b`. The model price moved from $20.29 to $20.51, still about 40% below the quote's midpoint.
 
 **Author review status:**
 - [ ] Decision on the stored Cboe quote
@@ -591,3 +591,20 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 **What the AI did:** `scripts/make_figures.py` now draws VZ-1b over tenors 0.20 to 1.97 years, labelled as the GOOG 2015 Heston model. `SPEC.md` v1.9 defines the figure. It shows model values only.
 
 **Not committed:** these changes stay uncommitted while the author's decision on the stored Cboe quote is pending.
+
+### Entry 22 — 2026-11-08 — NVDA and INTC calibration
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Try fitting and calibrating the Heston parameters for NVDA and INTC.
+
+**What the AI did:** added `configs/calibrate_nvda.yaml` and `configs/calibrate_intc.yaml`, and ran `scripts/run.py calibrate` under the unchanged §6 rules, writing to `results/calibration_nvda/` and `results/calibration_intc/`. Dividends: `q_INTC = 0` (the §4.3 default) and `q_NVDA = 0.0045` from the declared $0.25 quarterly dividend and a reported Oct 14 close of about $221.30 from a news source.
+
+**Outcome on the primary date, 2026-10-14:** both reached ladder step 1. NVDA RMS IV residual 0.00822; INTC 0.00918; limit 0.01; all 8 starts agreed.
+
+**Warnings the AI reported to the author:**
+- Parameters at their bounds: `kappa` = 20 for both on the primary date, and `xi` = 5 for INTC. INTC's `rho` is positive (+0.13).
+- Near-the-money call and put implied-vol bands agree for only 21 of 74 NVDA pairs (28%) and 32 of 46 INTC pairs (70%), against 93 of 94 for AMD. The V-14 standard, which the spec applies to AMD, is at least 90%.
+- The AI therefore describes these fits as passing the written rule but not as properly calibrated.
+
+**Not committed:** the two `results/calibration_*` folders. A local commit holds the configs; nothing has been pushed while the Cboe decision is pending.

@@ -1,0 +1,15 @@
+# Official market comparison (SPEC.md 8.4): the $525 Google American put on 2015-02-02,
+# with spot 523.755 and T = 0.9507. Daily exercise approximates American exercise.
+# The parameters were fitted to the same market prices, so this comparison is in-sample.
+schema_version: 1
+run_name: goog_2015_contract
+tier: CORE
+reported: true
+data_mode: published
+assets: [GOOG]
+snapshot_date: 2015-02-02
+market_inputs: configs/market_inputs_goog_2015.yaml
+params_source: configs/published_params.yaml
+contract: {strike: 1.00237707, maturity: 0.9507, n_exercise: 240}
+simulation: {n_paths: 100000, n_substeps: 1, basis_degree: 3}
+seeds: [620001, 620002, 620003, 620004, 620005]

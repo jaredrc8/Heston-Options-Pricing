@@ -225,26 +225,60 @@ def test_correlations_on_the_fixture_recover_the_known_values(tmp_path):
     assert "close" not in json.dumps(document) and "log_return" not in json.dumps(document)
 
 
-def test_market_comparison_converts_prices_correctly(tmp_path):
+def test_market_comparison_uses_the_published_price(tmp_path):
     result = tmp_path / "result.json"
-    result.write_text(json.dumps({"run_id": "test", "data_mode": "published", "assets": ["GOOG"],
-                                  "contract": {"strike": 280.0 / 283.93, "maturity": 406.0 / 365.0, "n_exercise": 280},
-                                  "pooled": {"bermudan": 0.10, "se_bermudan": 0.001, "european_analytic": 0.09}}))
-    output = tmp_path / "comparison.json"
-    subprocess.run([sys.executable, "scripts/compare_to_market.py", "--result", str(result), "--output", str(output)],
-                   cwd=ROOT, check=True, capture_output=True)
-    document = json.loads(output.read_text())
-    assert document["model"]["bermudan_usd"] == pytest.approx(28.393)
-    assert document["market"]["mid_usd"] == pytest.approx(34.0)
-    assert document["difference"]["model_minus_mid_usd"] == pytest.approx(28.393 - 34.0)
-    assert document["difference"]["model_inside_bid_ask"] is False
+    result.write_text(json.dumps({"run_id": "test", "data_mode": "published",
+                                  "pooled": {"bermudan": 0.08, "se_bermudan": 0.001, "european_analytic": 0.08}}))
+    table = tmp_path / "table.csv"
+    table.write_text("maturity,strike,market_price\n0.9507,525.0,46.05\n0.9507,500.0,34.6\n")
+    subprocess.run([sys.executable, "scripts/compare_to_market.py", "--result", str(result), "--table", str(table),
+                    "--output-dir", str(tmp_path), "--n-paths", "2000"], cwd=ROOT, check=True, capture_output=True)
+    document = json.loads((tmp_path / "market_comparison.json").read_text())
+    official = document["official_contract"]
+    assert official["market_usd"] == 46.05
+    assert official["model_usd"] == pytest.approx(0.08 * 523.755)
+    assert document["all_puts"]["n"] == 2
 
 
-def test_market_inputs_can_set_a_published_assets_dividend():
+def test_market_inputs_can_set_a_published_assets_dividend(tmp_path):
     run = load_run_module()
-    config = yaml.safe_load((ROOT / "configs" / "goog_market_contract.yaml").read_text())
+    inputs = tmp_path / "inputs.yaml"
+    inputs.write_text("dividend_yield:\n  GOOG: 0.0031\n")
+    config = {"data_mode": "published", "assets": ["GOOG"], "params_source": "configs/published_params.yaml",
+              "market_inputs": str(inputs)}
     _, q, _ = run.load_params(config, ROOT / "results")
     assert q == 0.0031
+
+
+def rejected_calibration(tmp_path):
+    fit = {"v0": 0.4, "kappa": 20.0, "theta": 0.3, "xi": 4.0, "rho": -0.1}
+    (tmp_path / "calibration.json").write_text(json.dumps(
+        {"inputs": [], "assets": {"AMD": {"ladder_step": 3, "q": 0.0, "params": None, "rejected_full_fit": {"params": fit}}}}))
+    return {"data_mode": "market", "assets": ["AMD"], "params_source": "results/calibration.json"}, fit
+
+
+def test_rejected_fit_is_refused_unless_requested(tmp_path):
+    run = load_run_module()
+    config, _ = rejected_calibration(tmp_path)
+    with pytest.raises(HestonError) as caught:
+        run.load_params(config, tmp_path)
+    assert caught.value.code == "E_CALIB_FAILED"
+
+
+def test_rejected_fit_is_available_for_exploratory_runs(tmp_path):
+    run = load_run_module()
+    config, fit = rejected_calibration(tmp_path)
+    params, _, _ = run.load_params({**config, "allow_rejected_fit": True}, tmp_path)
+    assert params == fit
+
+
+def test_rejected_fit_cannot_be_reported(tmp_path):
+    run = load_run_module()
+    path = tmp_path / "bad.yaml"
+    path.write_text(yaml.safe_dump(smoke_config(allow_rejected_fit=True, reported=True)))
+    with pytest.raises(HestonError) as caught:
+        run.load_config(path)
+    assert caught.value.code == "E_CONFIG"
 
 
 def test_named_bad_bar_is_the_only_exclusion():
@@ -328,7 +362,7 @@ def test_run_writes_the_required_files_and_fields(tmp_path):
     assert result["units"] == "fraction_of_initial_spot" and result["data_mode"] == "synthetic"
     assert len(result["diagnostics"]["exercise_fraction_by_date"]) == 50
     manifest = json.loads((run_dir / "manifest.json").read_text())
-    assert manifest["spec_version"] == "1.9" and manifest["data_contract_version"] == "0.6"
+    assert manifest["spec_version"] == "1.10" and manifest["data_contract_version"] == "0.7"
 
 
 def test_compare_writes_each_comparison(tmp_path):

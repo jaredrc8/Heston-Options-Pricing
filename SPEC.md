@@ -4,8 +4,8 @@
 |---|---|
 | **Project** | ENSF 620 Fall 2026 final project (individual) |
 | **Owner** | Jared Crebo |
-| **Spec version** | 1.9 (2026-11-08) |
-| **Companion document** | `DATA_CONTRACT.md` v0.6 |
+| **Spec version** | 1.10 (2026-11-08) |
+| **Companion document** | `DATA_CONTRACT.md` v0.7 |
 | **Audience** | Engineers and AI coding agents writing implementation code and automated tests |
 
 The key words MUST, MUST NOT, SHOULD, and MAY are normative. Requirements are binding until changed through §1.3.
@@ -90,7 +90,7 @@ The headline value is a **model-implied, low-biased Monte Carlo estimate** for t
 | Standard error | `SE = s / sqrt(N)`, where `s` is the sample standard deviation with `ddof=1` over `N` independent evaluation paths |
 | Paired SE | SE of the path-by-path difference on the same evaluation paths |
 | Pooled result over R seeds | `mean(V_r)`, with `SE = sqrt(sum(SE_r^2)) / R` |
-| Absolute prices | Absolute market prices MUST NOT appear in `results/`, logs, figures, or submitted files (§15). The one public, cited quote in §8.4 is the only exception |
+| Absolute prices | Absolute market prices MUST NOT appear in `results/`, logs, figures, or submitted files (§15). The published Google prices of 2015-02-02 in §8.4 are the only exception |
 
 ---
 
@@ -147,7 +147,7 @@ These values live in `configs/market_inputs.yaml`.
 
 - **Rate.** Let `y` be the U.S. Treasury 1-Year CMT par yield on the snapshot date as a decimal. Then `r = 2 ln(1 + y / 2)`.
 - **Term structure.** The same flat `r` is used for implied-volatility conversion, calibration, and pricing. Ignoring the term structure is a stated limitation.
-- **CORE dividend yield.** `q_GOOG = 0`, the assumption of the paper the parameters come from. Alphabet has paid a dividend since 2024, so this is a stated limitation for the Oct 14 run; the market comparison in §8.4 uses the declared dividend. `q_AMD = 0`.
+- **CORE dividend yield.** `q_GOOG = 0`, the assumption of the paper the parameters come from. Alphabet has paid a dividend since 2024, so this is a stated limitation for the Oct 14 run; the market comparison in §8.4 uses `q = 0`, as in its source paper. `q_AMD = 0`.
 - **EXT-A dividend yields.** `q_AMD = 0`. `q_INTC = 0` unless the owner records otherwise. `q_NVDA` is the annualized declared dividend divided by the snapshot spot, rounded to the nearest `0.0001` before any use.
 - **Discrete dividends.** They are approximated by this continuous yield in both the tree and the simulation.
 
@@ -403,23 +403,29 @@ CORE reports two baselines:
 
 EXT-A has only the Monte Carlo European comparator.
 
-### 8.4 Market comparison contract
+### 8.4 Market comparison: Google puts of 2015-02-02
 
-One listed GOOG put is priced for comparison with the market. There is no pass rule: the comparison is reported as it comes out. Its inputs are in `configs/market_quote_goog.yaml` and `configs/goog_market_contract.yaml`.
+The official market comparison uses a put from the same date and options the published parameters were fitted to. Prices come from Burkovska et al. (arXiv:1611.06452, Appendix A, Table 10), stored in `configs/google_2015_american_puts.csv`.
 
 | Term | Value |
 |---|---|
-| Option | `GOOG271217P00280000`, American put |
-| Valuation date | 2026-11-06 |
-| Expiry | 2027-12-17 (406 days, `T = 406/365`) |
-| Spot and strike | $283.93 and $280.00 (`K/S = 0.98615856`) |
-| Market quote | Bid $31.50, ask $36.50, mid $34.00 (Cboe delayed quotes) |
-| Rate | From the 1-Year CMT yield of 4.33% on 2026-11-06 (§4.3) |
-| Dividend | `q = 0.0031`: Alphabet's declared $0.22 quarterly dividend, annualized, divided by spot and rounded to 0.0001 (§4.3) |
-| Exercise | `M = 280` daily dates with `n_sub = 1`, approximating American exercise |
-| Parameters | Published Google set, fitted on 2015-02-02 |
+| Option | American put on Google, strike $525 |
+| Valuation date | 2015-02-02 |
+| Maturity | `T = 0.9507` years |
+| Spot | $523.755 (`K/S = 1.00237707`) |
+| Published market price | $46.05 |
+| Rate and dividend | `r = 0.15%`, `q = 0`, as in the source paper |
+| Exercise | `M = 240` daily dates with `n_sub = 1`, approximating American exercise |
+| Parameters | Published Google set, fitted to these prices |
 
-`scripts/compare_to_market.py` writes `results/market_comparison.json`. A gap to the market reflects, at least in part, the 2015 parameters. The comparison MUST NOT be described as a calibration or as evidence that the engine is correct.
+`scripts/compare_to_market.py` compares that contract and also prices all 401 published puts with `M = 50`, writing `results/market_comparison.json` and `results/market_comparison_2015.csv`. There is no pass rule. This comparison is **in-sample** and MUST be described that way. At `r = 0.15%` early exercise is worth very little, so it does not test the early-exercise logic; V-06 does.
+
+### 8.5 Exploratory runs for NVDA, AMD, and INTC
+
+A one-year Bermudan put with `K = 1`, `M = 50`, the production profile, and the snapshot date 2026-10-14 is run for each of NVDA, AMD, and INTC, using configs `explore_nvda`, `explore_amd`, and `explore_intc`. These are exploratory and are not reported results.
+
+- NVDA and INTC use the fits accepted by §6.7, which remain provisional (OD-11).
+- AMD uses its rejected full fit, because no accepted fit exists. Its result carries `parameter_status` and MUST be labelled as using a rejected fit. A rejected fit MUST NOT be used for a reported run.
 
 ---
 
@@ -671,8 +677,8 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
 ```json
 {
   "schema_version": 1,
-  "spec_version": "1.9",
-  "data_contract_version": "0.6",
+  "spec_version": "1.10",
+  "data_contract_version": "0.7",
   "run_id": "core_amd_production-1a2b3c4d",
   "git_commit": "<full hash>",
   "git_dirty": false,
@@ -811,6 +817,7 @@ This is the plan for the figures in the report and the eight-minute presentation
 |---|---|---|---|---|---|
 | VZ-1a | PyVista 3D surface of the rejected full AMD fit, labelled as rejected | `rejected_full_fit` in `results/calibration.json` | Internal | Yes | Yes |
 | VZ-1b | PyVista 3D surface of the GOOG 2015 Heston model: the published Google parameters fitted on 2015-02-02 | Parameters in the comparison summary | Public | Yes | Yes |
+| VZ-1c, VZ-1d | PyVista 3D surfaces of the NVDA and INTC fits, labelled as provisional | `results/calibration_nvda/` and `results/calibration_intc/` | Internal | Yes | Optional |
 | VZ-2 | Monte Carlo European vs. semi-analytic prices over the V-03 grid of strikes and maturities, with the difference in SE | Comparison run on the reported parameters | Internal | Yes | Yes |
 | VZ-3 | LSMC Bermudan vs. CRR tree on the V-04 cases | Comparison run | Public | Yes | Yes |
 | VZ-4 | Heston Bermudan, European, and constant-volatility Bermudan across strikes | Comparison run on the reported parameters | Internal | Yes | No |
@@ -818,10 +825,11 @@ This is the plan for the figures in the report and the eight-minute presentation
 | VZ-6 | Price, European value, and premium with 95% intervals | `result.json` | Internal | Yes | Yes |
 | VZ-7 | Fitted vs. known surface on the synthetic fixture | `results/smoke/calibration.json` | Public | Yes | No |
 | VZ-8 | Seed robustness table and aggregate fit-quality table | `per_seed`; `residual_buckets` | Internal | Yes | No |
+| VZ-9 | Simulated prices vs. the 401 published Google puts of 2015-02-02, labelled in-sample | `results/market_comparison_2015.csv` | Public | Yes | Yes |
 
 **VZ-1 requirements.**
 
-- Applies to VZ-1a and VZ-1b. VZ-1a is the only AMD surface available, because the market fit ended at ladder step 3 (§6.7). It MUST carry the word REJECTED and the failed limit in the figure itself, and it MUST NOT be used for pricing.
+- Applies to VZ-1a to VZ-1d. VZ-1a is the only AMD surface available, because the market fit ended at ladder step 3 (§6.7). It MUST carry the word REJECTED and the failed limit in the figure itself, and it MUST NOT be used for a reported price (§8.5).
 - Evaluate `sigma_Heston` with `model_implied_vols` on a dense regular grid of `K/F` in `[0.80, 1.20]`, using the stated parameters only. Tenor is `[0.10, 1.25]` for VZ-1a. For VZ-1b it is `[0.20, 1.97]`, the maturity range of the source paper's Google options, with `r = 0.15%` and `q = 0` as in that paper.
 - VZ-1b MUST state that its parameters date from 2015-02-02 and that it is not a surface for today's market.
 - Show `K/F`, tenor, and implied volatility as labelled axes, with height encoding implied volatility and a single-hue colour ramp with a labelled scale, so the figure does not rely on colour alone.
@@ -1169,3 +1177,4 @@ Citations follow the proposal unless marked.
 | 1.7 | 2026-11-08 | V-06 benchmark changed from Clarke and Parrott to Ikonen and Toivanen; V-01 and V-06 values entered by the agent on the owner's instruction (§15); market comparison contract (§8.4, §3); one named out-of-hours bar omitted (`DATA_CONTRACT.md` §1.1) | Clarke and Parrott's prices at spots 10 to 12 are 2% to 11% above four later independent studies, so a correct engine could fail V-06 against them. Decided by the owner before V-06 had been run. No pass rule, tolerance, seed, or filter changed | V-06 had not been run. Other results had been viewed; none is affected by this change |
 | 1.8 | 2026-11-08 | Market comparison (§8.4) uses `q = 0.0031` from Alphabet's declared dividend | Owner instruction. No pass rule, tolerance, seed, or filter changed | Yes. The `q = 0` comparison had been viewed; the report MUST disclose this |
 | 1.9 | 2026-11-08 | VZ-1b (§12.9) defined as the GOOG 2015 Heston model surface over the source paper's maturity range | Owner instruction. No pass rule, tolerance, seed, or filter changed | Yes. The figure is drawn from parameters already viewed and does not change them |
+| 1.10 | 2026-11-08 | Feb 2015 Google put is the official market comparison (§8.4), replacing the 2026 contract, whose Cboe quote was removed; exploratory NVDA, AMD, and INTC runs (§8.5); VZ-1c, VZ-1d, VZ-9 | Owner instruction. Cboe's terms require written consent to store or publish its materials. No pass rule, tolerance, seed, or filter changed | Yes. The 2015 scratch comparison and the 2026 gap had been viewed; the report MUST disclose this and describe §8.4 as in-sample |

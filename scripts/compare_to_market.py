@@ -1,12 +1,14 @@
 """
-Compare the priced GOOG put with its public market quote (SPEC.md 8.4).
+Compare the simulated Google put with the published market price of 2015-02-02 (SPEC.md 8.4),
+and price all 401 published puts.
 
-    python scripts/compare_to_market.py [--result <result.json>] [--output <file>]
+    python scripts/compare_to_market.py [--result <result.json>] [--output-dir <dir>] [--n-paths N]
 
-There is no pass rule. The comparison is written to results/market_comparison.json.
+The parameters were fitted to these same prices, so the comparison is in-sample.
 """
 
 import argparse
+import csv
 import json
 import math
 import sys
@@ -15,73 +17,117 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "python"))
 
+import numpy as np
 import yaml
 
 from hestonpricer.iv import american_implied_vol
+from hestonpricer.lsmc import evaluate_policy, fit_policy
+from hestonpricer.simulate import simulate
 
-QUOTE_FILE = ROOT / "configs" / "market_quote_goog.yaml"
-MARKET_INPUTS = ROOT / "configs" / "market_inputs_goog_contract.yaml"
+TABLE = ROOT / "configs" / "google_2015_american_puts.csv"
+INPUTS = ROOT / "configs" / "market_inputs_goog_2015.yaml"
+PARAMS = ROOT / "configs" / "published_params.yaml"
+SOURCE = "Burkovska, Glau, Mahlstedt and Wohlmuth, arXiv:1611.06452, Appendix A, Table 10"
+SPOT = 523.755
+OFFICIAL_MATURITY = 0.9507
+OFFICIAL_STRIKE = 525.0
+SEED = 620001
+N_EXERCISE = 50
+
+
+def price_all(rows, params, market, n_paths):
+    """Price each published put. One simulation per maturity is reused across its strikes."""
+    priced = []
+    for maturity in sorted({row["maturity"] for row in rows}):
+        n_substeps = max(1, round(252 * maturity / N_EXERCISE))
+        base = {"strike": 1.0, "maturity": maturity, "n_exercise": N_EXERCISE}
+        sim = {"n_paths": n_paths, "n_substeps": n_substeps}
+        child_a, child_b = np.random.SeedSequence(SEED).spawn(2)
+        paths_a = simulate([params], [[1.0]], market, base, sim, np.random.Generator(np.random.PCG64(child_a)))
+        paths_b = simulate([params], [[1.0]], market, base, sim, np.random.Generator(np.random.PCG64(child_b)))
+        for row in rows:
+            if row["maturity"] != maturity:
+                continue
+            contract = {**base, "strike": row["strike"] / SPOT}
+            outcome = evaluate_policy(fit_policy(paths_a, contract, market, 3), paths_b, contract, market)
+            priced.append({**row, "model_price": outcome["bermudan"] * SPOT, "se": outcome["se_bermudan"] * SPOT})
+    return priced
 
 
 def newest_result():
-    """The newest completed run of the market contract."""
-    results = sorted(ROOT.glob("results/runs/goog_market_contract-*/result.json"), key=lambda p: p.stat().st_mtime)
+    results = sorted(ROOT.glob("results/runs/goog_2015_contract-*/result.json"), key=lambda p: p.stat().st_mtime)
     if not results:
-        raise SystemExit("no goog_market_contract run found: run scripts/run.py price first")
+        raise SystemExit("no goog_2015_contract run found: run scripts/run.py price first")
     return results[-1]
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compare the GOOG put with its market quote")
+    parser = argparse.ArgumentParser(description="Compare with the published Feb 2015 Google puts")
     parser.add_argument("--result", default=None)
-    parser.add_argument("--output", default=str(ROOT / "results" / "market_comparison.json"))
+    parser.add_argument("--output-dir", default=str(ROOT / "results"))
+    parser.add_argument("--table", default=str(TABLE))
+    parser.add_argument("--n-paths", type=int, default=100_000)
     args = parser.parse_args()
 
     result = json.loads(Path(args.result).read_text() if args.result else newest_result().read_text())
-    quote = yaml.safe_load(QUOTE_FILE.read_text())
-    inputs = yaml.safe_load(MARKET_INPUTS.read_text())
-    yields = {str(date): value for date, value in inputs["treasury_1y_cmt_yield"].items()}
+    params = {k: float(v) for k, v in yaml.safe_load(PARAMS.read_text())["sets"]["GOOG"].items()
+              if k in ("v0", "kappa", "theta", "xi", "rho")}
+    y = yaml.safe_load(INPUTS.read_text())["treasury_1y_cmt_yield"]
+    r = 2.0 * math.log(1.0 + float(next(iter(y.values()))) / 2.0)
+    q = 0.0
 
-    spot = float(quote["spot"])
-    strike_fraction = float(quote["strike"]) / spot
-    maturity = float(result["contract"]["maturity"])
-    r = 2.0 * math.log(1.0 + float(yields[str(quote["valuation_date"])]) / 2.0)
-    q = float(inputs["dividend_yield"]["GOOG"])
+    with open(args.table, newline="") as file:
+        rows = [{k: float(v) for k, v in row.items()} for row in csv.DictReader(file)]
+    official_rows = [row for row in rows if row["maturity"] == OFFICIAL_MATURITY and row["strike"] == OFFICIAL_STRIKE]
+    if len(official_rows) != 1:
+        raise SystemExit("the official contract is not in the table")
+    market_price = official_rows[0]["market_price"]
 
-    if abs(float(result["contract"]["strike"]) - strike_fraction) > 1e-6:
-        raise SystemExit("the run's strike does not match the quote")
+    def implied(price):
+        return american_implied_vol("put", price / SPOT, 1.0, OFFICIAL_STRIKE / SPOT, OFFICIAL_MATURITY, r, q)
 
-    def implied(price_usd):
-        return american_implied_vol("put", price_usd / spot, 1.0, strike_fraction, maturity, r, q)
+    model = result["pooled"]["bermudan"] * SPOT
+    priced = price_all(rows, params, {"r": r, "q": [q]}, args.n_paths)
+    gaps = np.array([row["model_price"] - row["market_price"] for row in priced])
+    relative = np.array([abs(row["model_price"] / row["market_price"] - 1) for row in priced])
 
-    pooled = result["pooled"]
-    bid, ask = float(quote["bid"]), float(quote["ask"])
-    mid = 0.5 * (bid + ask)
-    model = pooled["bermudan"] * spot
+    by_maturity = []
+    for maturity in sorted({row["maturity"] for row in priced}):
+        part = [row["model_price"] - row["market_price"] for row in priced if row["maturity"] == maturity]
+        by_maturity.append({"maturity": maturity, "n": len(part), "rms_usd": float(np.sqrt(np.mean(np.square(part))))})
 
     document = {
         "schema_version": 1,
+        "source": SOURCE,
+        "note": "In-sample: the published parameters were fitted to these same prices.",
         "run_id": result["run_id"],
         "data_mode": result["data_mode"],
-        "note": "Published Google parameters from 2015-02-02; not a calibration to this market.",
-        "quote_file": QUOTE_FILE.name,
-        "contract": {key: str(quote[key]) if key in ("valuation_date", "expiry") else quote[key]
-                     for key in ("option", "style", "valuation_date", "expiry", "strike")},
-        "r": r,
-        "q": q,
-        "market": {"bid_usd": bid, "ask_usd": ask, "mid_usd": mid, "mid_fraction_of_spot": mid / spot,
-                   "implied_vol_bid": implied(bid), "implied_vol_mid": implied(mid), "implied_vol_ask": implied(ask),
-                   "vendor_implied_vol": quote["vendor_iv"], "source": quote["source"]},
-        "model": {"bermudan_usd": model, "se_usd": pooled["se_bermudan"] * spot,
-                  "bermudan_fraction_of_spot": pooled["bermudan"],
-                  "european_analytic_usd": pooled["european_analytic"] * spot, "implied_vol": implied(model)},
-        "difference": {"model_minus_mid_usd": model - mid, "model_minus_mid_percent_of_mid": 100.0 * (model - mid) / mid,
-                       "model_inside_bid_ask": bid <= model <= ask},
+        "official_contract": {
+            "valuation_date": "2015-02-02", "style": "American put", "underlying_usd": SPOT, "strike_usd": OFFICIAL_STRIKE,
+            "maturity_years": OFFICIAL_MATURITY, "r": r, "q": q,
+            "market_usd": market_price, "model_usd": model, "se_usd": result["pooled"]["se_bermudan"] * SPOT,
+            "european_analytic_usd": result["pooled"]["european_analytic"] * SPOT,
+            "model_minus_market_usd": model - market_price,
+            "model_minus_market_percent": 100.0 * (model - market_price) / market_price,
+            "market_implied_vol": implied(market_price), "model_implied_vol": implied(model),
+        },
+        "all_puts": {
+            "n": len(priced), "n_paths": args.n_paths, "n_exercise": N_EXERCISE, "seed": SEED,
+            "rms_usd": float(np.sqrt(np.mean(gaps**2))), "median_abs_usd": float(np.median(np.abs(gaps))),
+            "max_abs_usd": float(np.max(np.abs(gaps))), "median_abs_percent": float(100.0 * np.median(relative)),
+            "within_2_percent": int((relative <= 0.02).sum()), "within_5_percent": int((relative <= 0.05).sum()),
+            "by_maturity": by_maturity,
+        },
     }
-    output = Path(args.output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(document, indent=2))
-    print(f"model {model:.2f} USD against market bid {bid:.2f} / ask {ask:.2f}; written to {output.name}")
+
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "market_comparison.json").write_text(json.dumps(document, indent=2))
+    with open(output_dir / "market_comparison_2015.csv", "w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=["maturity", "strike", "market_price", "model_price", "se"])
+        writer.writeheader()
+        writer.writerows(priced)
+    print(f"official put: model {model:.2f} USD against market {market_price:.2f} USD; {len(priced)} puts priced")
     return 0
 
 

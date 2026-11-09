@@ -393,6 +393,69 @@ def comparison_figures(comparison_file, results_root, out_dir):
                                           ("fig_compare_strike_profile", "/strike_profile/0/bermudan", "V-11"))]
 
 
+def calibrated_surface_figure(ticker, results_root, out_dir):
+    """VZ-1c and VZ-1d: a fit accepted by the ladder, labelled as provisional."""
+    name = ticker.lower()
+    calibration_file = Path(results_root) / f"calibration_{name}" / "calibration.json"
+    if not calibration_file.exists():
+        return []
+    document = json.loads(calibration_file.read_text())
+    entry = document["assets"][ticker]
+    if not entry.get("params"):
+        return []
+    p = entry["params"]
+    at_bound = [label for label, value, limit in (("kappa", p["kappa"], 20.0), ("xi", p["xi"], 5.0)) if value >= limit - 1e-3]
+    warning = f"{' and '.join(at_bound)} at the upper bound; provisional." if at_bound else "Provisional."
+    heading = (f"{ticker} Heston surface, {document['snapshot_date']}\n"
+               f"Passed the fit limit (RMS IV residual {entry['rms_iv_residual']:.4f}, limit 0.01). {warning}")
+    footnote = (f"Model surface; no market data points shown. v0 {p['v0']:.4f}, kappa {p['kappa']:.2f}, theta {p['theta']:.4f}, "
+                f"xi {p['xi']:.3f}, rho {p['rho']:.3f}.\n"
+                f"Fit: {entry['grid_size']} grid points, 8 starts; no uncertainty band. Exclusions: filters F1 to F8. "
+                f"Source {relative(calibration_file, results_root)}. Code {CODE}.")
+    render_surface(p, document["r"], entry["q"], heading, footnote, out_dir / f"surface_{name}_provisional.png")
+    return [{"claim_id": f"fig_surface_{name}_provisional", "location": "figure", "artifact_type": "figure",
+             "run_id": f"calibrate_{name}", "result_path": relative(calibration_file, results_root),
+             "json_pointer": f"/assets/{ticker}/rms_iv_residual", "check_ids": "V-13"}]
+
+
+def google_2015_figure(results_root, out_dir):
+    """VZ-9: the model against all 401 published Google puts of 2015-02-02."""
+    table_file = Path(results_root) / "market_comparison_2015.csv"
+    summary_file = Path(results_root) / "market_comparison.json"
+    if not table_file.exists() or not summary_file.exists():
+        return []
+    rows = pd.read_csv(table_file)
+    summary = json.loads(summary_file.read_text())
+    spot = summary["official_contract"]["underlying_usd"]
+
+    fig, (left, right) = plt.subplots(1, 2, figsize=(8.5, 3.9))
+    top = rows["market_price"].max()
+    left.plot([0, top], [0, top], "--", color=MUTED, linewidth=1, label="Equal")
+    left.plot(rows["market_price"], rows["model_price"], "o", color=BLUE, markersize=3, label="401 published puts")
+    left.set_xlabel("Published market price (USD)")
+    left.set_ylabel("Simulated price (USD)")
+    left.legend(frameon=False)
+    for marker, maturity in zip(["o", "s", "^", "D", "v"], sorted(rows["maturity"].unique())):
+        part = rows[rows["maturity"] == maturity]
+        right.plot(part["strike"] / spot, part["model_price"] - part["market_price"], marker, color=BLUE, markersize=4,
+                   markerfacecolor="none", label=f"T = {maturity:.2f}")
+    right.axhline(0, color=MUTED, linewidth=1, linestyle="--")
+    right.set_xlabel("Strike / spot")
+    right.set_ylabel("Simulated - published (USD)")
+    right.legend(frameon=False, ncol=2, fontsize=7)
+    stats = summary["all_puts"]
+    fig.suptitle(f"Google puts, 2015-02-02: median absolute gap {stats['median_abs_usd']:.2f} USD "
+                 f"over {stats['n']} options (in-sample)", fontsize=10, x=0.01, ha="left")
+    fig.tight_layout(rect=(0, 0.08, 1, 0.97))
+    add_footnote(fig, f"Parameters were fitted to these prices. {stats['n_paths']} paths per set, "
+                      f"{stats['n_exercise']} exercise dates, seed {stats['seed']}. Source: {summary['source']}. Code {CODE}.")
+    fig.savefig(out_dir / "compare_google_2015.png", dpi=180)
+    plt.close(fig)
+    return [{"claim_id": "fig_compare_google_2015", "location": "figure", "artifact_type": "figure",
+             "run_id": summary["run_id"], "result_path": relative(summary_file, results_root),
+             "json_pointer": "/all_puts/median_abs_usd", "check_ids": "V-06"}]
+
+
 def main():
     parser = argparse.ArgumentParser(description="Make figures from Public and Internal outputs")
     parser.add_argument("--results-root", default=str(ROOT / "results"))
@@ -418,6 +481,9 @@ def main():
             evidence += comparison_figures(comparison_file, results_root, out_dir)
             evidence += published_surface_figure(comparison_file, results_root, out_dir)
     evidence += rejected_surface_figure(results_root, out_dir)
+    evidence += calibrated_surface_figure("NVDA", results_root, out_dir)
+    evidence += calibrated_surface_figure("INTC", results_root, out_dir)
+    evidence += google_2015_figure(results_root, out_dir)
     evidence += surface_figure(results_root, out_dir)
     evidence += market_fit_table(results_root, out_dir)
 

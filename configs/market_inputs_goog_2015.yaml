@@ -1,0 +1,8 @@
+# Inputs for the Feb 2015 Google put comparison (SPEC.md 8.4), from Burkovska et al., arXiv:1611.06452, Section 6.4.
+# The paper uses r = 0.15%. The pipeline computes r = 2 ln(1 + y / 2), so y below gives r = 0.0015.
+# Google paid no dividend in 2015.
+treasury_1y_cmt_yield:
+  2015-02-02: 0.00150056
+
+dividend_yield:
+  GOOG: 0.0
