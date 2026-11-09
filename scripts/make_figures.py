@@ -67,7 +67,7 @@ def find_run(results_root, run_name):
 
 
 def default_run_name(results_root):
-    for name in ("core_amd_production", "core_published_production", "core_smoke"):
+    for name in ("core_amd_production", "core_goog_production", "core_smoke"):
         if find_run(results_root, name) is not None:
             return name
     return None

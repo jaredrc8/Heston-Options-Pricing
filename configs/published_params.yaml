@@ -1,10 +1,10 @@
 # Published Heston parameters (SPEC.md 5.1).
 # Entered by Claude Code on the owner's instruction of 2026-11-08 (SPEC.md 15, AI_USE.md Entry 15).
 # These parameters were fitted to Google options on 2015-02-02. A result using them
-# MUST NOT be described as calibrated to AMD.
+# MUST NOT be described as calibrated to current GOOG options, or to AMD, NVDA or INTC.
 
 sets:
-  core_default:
+  GOOG:
     v0: 0.0546       # the paper's nu_0; its SDE treats nu as the variance
     kappa: 1.4554
     theta: 0.0580    # the paper's gamma

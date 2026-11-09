@@ -6,7 +6,7 @@ ENSF 620 Fall 2026 final project (individual). Owner: Jared Crebo.
 
 ## Question
 
-For a one-year Bermudan put on AMD, what is the risk-neutral price implied by Heston parameters calibrated to AMD's listed volatility surface, and how much of that price is the early-exercise premium relative to the corresponding European put?
+For a one-year Bermudan put on GOOG, what is the risk-neutral price implied by published Heston parameters for Google options, and how much of that price is the early-exercise premium relative to the corresponding European put?
 
 Any headline value is a **model-implied, low-biased Monte Carlo estimate** for its stated data mode, snapshot date and assumptions. It is not a market price, a tradable quote or a trading signal. Results appear only in `results/`, each labelled with its data mode.
 
@@ -22,7 +22,7 @@ Out of scope: live data, hedging or backtesting, stochastic rates, jumps, discre
 
 ## Data boundary
 
-Two licensed datasets (Massive minute bars and iVolatility Raw IV) stay on the owner's laptop under `data/`. They are never committed, submitted, shown to an AI tool, or written to a log.
+Two licensed datasets (Massive minute bars for NVDA, AMD, INTC, GOOG and GOOGL, and iVolatility Raw IV for NVDA, AMD and INTC) stay on the owner's laptop under `data/`. They are never committed, submitted, shown to an AI tool, or written to a log.
 
 Only aggregated results leave that boundary: fitted parameters, RMS fit residuals, correlations and prices as fractions of spot. No figure plots a market price, quote or implied-volatility point.
 
@@ -53,10 +53,12 @@ Inputs entered by hand: the Treasury yields in `configs/market_inputs.yaml`, the
 python python/make_fixtures.py                                   # regenerate synthetic fixtures
 python python/validate_raw.py --source fixtures                  # check data against the contract
 python scripts/inspect_schema.py <path-under-data>               # structure only, never values
+python scripts/estimate_correlations.py                          # NVDA, AMD, INTC, GOOG correlations
 
 python scripts/run.py calibrate --config configs/<name>.yaml
 python scripts/run.py price     --config configs/<name>.yaml
 python scripts/run.py sweep     --config configs/<name>.yaml
+python scripts/run.py compare   --config configs/<name>.yaml
 
 bash   scripts/smoke.sh                                          # reviewer smoke path
 python scripts/verify_outputs.py                                 # run checks, write the table
@@ -74,6 +76,7 @@ Exit codes: `0` success, `1` internal error, `2` input or schema failure, `3` a 
 |---|---|
 | `results/runs/<run_id>/` | `config.yaml`, `manifest.json`, `result.json`, `run.log` |
 | `results/calibration.json` | Fitted parameters and aggregate fit statistics |
+| `results/estimates.json` | Correlations and realized volatility for 126, 252 and 504-day windows |
 | `results/sweeps/` | Convergence sweep summaries |
 | `results/verification_table.csv` | PASS, FAIL or NOT_RUN for each check |
 | `results/evidence_map.csv` | Links each figure and table to its source |

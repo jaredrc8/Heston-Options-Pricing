@@ -1,0 +1,15 @@
+# Stock splits inside the data window (DATA_CONTRACT.md section 1.1).
+# date is the first session at the new share count. Prices before it are divided by ratio.
+#
+# NVDA: 4-for-1 and 10-for-1, as in the earlier prototype.
+# GOOG 2022: 20-for-1; adjusted shares began trading 2022-07-18 (Alphabet announcement, widely reported).
+# GOOG 2014: the Class C share issue, roughly 2-for-1. Public sources disagree on the exact
+# date and ratio, so this is approximate. It is outside every correlation window, and
+# scripts/estimate_correlations.py stops if a daily move larger than 0.5 remains after adjustment.
+splits:
+  NVDA:
+    - {date: 2021-07-20, ratio: 4}
+    - {date: 2024-06-10, ratio: 10}
+  GOOG:
+    - {date: 2014-04-03, ratio: 2}
+    - {date: 2022-07-18, ratio: 20}

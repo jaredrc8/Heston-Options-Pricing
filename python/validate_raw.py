@@ -17,12 +17,14 @@ sys.path.insert(0, str(ROOT / "python"))
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import pyarrow.parquet as pq
 
 from hestonpricer.errors import EXIT_CODES, HestonError
 from hestonpricer.surface import load_raw_iv
 
 REAL_TICKERS = {"NVDA", "AMD", "INTC"}
+REAL_BAR_TICKERS = REAL_TICKERS | {"GOOG", "GOOGL"}
 FIXTURE_TICKERS = {"SYN1", "SYN2", "SYN3"}
 IV_DATES = {"2026-10-13", "2026-10-14", "2026-10-15"}
 BAR_COLUMNS = ["ticker", "volume", "open", "close", "high", "low", "window_start", "transactions"]
@@ -31,7 +33,7 @@ MAX_INDICES = 1000    # keeps the report small; the violation count is always co
 IV_FIXTURE = ROOT / "tests" / "fixtures" / "synthetic_raw_iv.csv"
 BAR_FIXTURE = ROOT / "tests" / "fixtures" / "synthetic_minute_bars.csv.gz"
 IV_MARKET = ROOT / "data" / "nvda_amd_intc_IV_Oct13-15.csv"
-BAR_MARKET = ROOT / "data" / "nvda_amd_intc_minute" / "bars"
+BAR_MARKET = ROOT / "data" / "nvda_amd_intc_goog_minute" / "bars"
 
 # Column names in the Massive Parquet package -> names in the contract
 BAR_PARQUET_NAMES = {"source_window_start_ns": "window_start"}
@@ -114,13 +116,16 @@ def check_bar_table(df, tickers):
 
 
 def read_bars(path):
-    """Read one bar file. Parquet columns are renamed and decimals become float64."""
-    if path.name.endswith(".parquet"):
-        table = pq.read_table(path).to_pandas().rename(columns=BAR_PARQUET_NAMES)
-        table = table[BAR_COLUMNS].copy()
-        for column in ("volume", "open", "close", "high", "low"):
-            table[column] = table[column].astype(float)
-        return table, True
+    """
+    Read bars. path is a month folder of Parquet part files, or a fixture CSV.
+    Parquet columns are renamed and decimals become float64.
+    """
+    if path.is_dir():
+        columns = ["ticker", "volume", "open", "close", "high", "low", "source_window_start_ns", "transactions"]
+        table = pa.concat_tables([pq.ParquetFile(part).read(columns=columns) for part in sorted(path.glob("*.parquet"))])
+        for name in ("volume", "open", "close", "high", "low"):
+            table = table.set_column(table.schema.get_field_index(name), name, table[name].cast(pa.float64(), safe=False))
+        return table.to_pandas().rename(columns=BAR_PARQUET_NAMES)[BAR_COLUMNS], True
 
     table = pd.read_csv(path)
     return table, list(table.columns) == BAR_COLUMNS
@@ -137,7 +142,8 @@ def validate_bars(path, tickers):
     rules = [table_rule("columns_exact", columns_ok)]
     if columns_ok:
         rules += check_bar_table(df, tickers)
-    return {"file": path.name, "rows": int(len(df)), "rules": rules}
+    label = f"{path.parent.name}/{path.name}" if path.is_dir() else path.name
+    return {"file": label, "rows": int(len(df)), "rules": rules}
 
 
 def sanitized(function, path, tickers):
@@ -163,10 +169,11 @@ def main():
         elif args.source == "ivolatility":
             files = [sanitized(validate_iv, IV_MARKET, REAL_TICKERS)]
         else:
-            paths = sorted(BAR_MARKET.rglob("*.parquet"))
-            if not paths:
+            # Validate each month as one table, so duplicates across part files are caught
+            months = sorted({path.parent for path in BAR_MARKET.rglob("*.parquet")})
+            if not months:
                 raise HestonError("E_SCHEMA", "no Massive bar files found")
-            files = [sanitized(validate_bars, path, REAL_TICKERS) for path in paths]
+            files = [sanitized(validate_bars, month, REAL_BAR_TICKERS) for month in months]
     except HestonError as error:
         print(str(error), file=sys.stderr)
         return EXIT_CODES[error.code]

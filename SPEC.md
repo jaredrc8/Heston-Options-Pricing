@@ -4,8 +4,8 @@
 |---|---|
 | **Project** | ENSF 620 Fall 2026 final project (individual) |
 | **Owner** | Jared Crebo |
-| **Spec version** | 1.5 (2026-11-08) |
-| **Companion document** | `DATA_CONTRACT.md` v0.4 |
+| **Spec version** | 1.6 (2026-11-08) |
+| **Companion document** | `DATA_CONTRACT.md` v0.5 |
 | **Audience** | Engineers and AI coding agents writing implementation code and automated tests |
 
 The key words MUST, MUST NOT, SHOULD, and MAY are normative. Requirements are binding until changed through §1.3.
@@ -40,7 +40,9 @@ When documents conflict, the higher item wins:
 
 ### 2.1 Required core (CORE)
 
-**Primary question.** For a one-year Bermudan put on AMD, what is the risk-neutral price implied by Heston parameters calibrated to AMD's listed volatility surface, and how much of that price is the early-exercise premium relative to the corresponding European put?
+**Primary question.** For a one-year Bermudan put on GOOG, what is the risk-neutral price implied by the published Heston parameters for Google options (`configs/published_params.yaml`), and how much of that price is the early-exercise premium relative to the corresponding European put?
+
+Earlier versions asked this for AMD with calibrated parameters. The AMD market fit failed its acceptance limit (§6.7), so the question was revised as §17.3 requires. Calibrating NVDA, AMD, and INTC properly remains open (OD-11).
 
 CORE is the committed result. Its required components are:
 
@@ -56,7 +58,7 @@ CORE MUST also run with published parameters and synthetic fixtures so that it d
 
 | ID | Extension | May start only when | If not completed |
 |---|---|---|---|
-| EXT-A | Optional n-asset correlated extension: a Bermudan call or put on `d >= 2` correlated assets, with a worst-of or weighted-basket payoff (§4.1). It includes the three-asset worst-of put on NVDA, AMD, and INTC | Gate G1 passes (§17.1) | Omit it from the claims. The final question stays as stated in §2.1. |
+| EXT-A | Optional n-asset correlated extension: a Bermudan call or put on `d >= 2` correlated assets, with a worst-of or weighted-basket payoff (§4.1). It includes worst-of puts on NVDA, AMD, INTC, and GOOG | Gate G1 passes (§17.1) | Omit it from the claims. The final question stays as stated in §2.1. |
 | EXT-B | C++ pricing kernel exposed through pybind11 | The C++ gate passes (§9.4) | The Python engine remains the production engine. |
 
 The report, slides, and README MUST NOT present an unfinished extension as a result.
@@ -145,7 +147,7 @@ These values live in `configs/market_inputs.yaml`.
 
 - **Rate.** Let `y` be the U.S. Treasury 1-Year CMT par yield on the snapshot date as a decimal. Then `r = 2 ln(1 + y / 2)`.
 - **Term structure.** The same flat `r` is used for implied-volatility conversion, calibration, and pricing. Ignoring the term structure is a stated limitation.
-- **CORE dividend yield.** `q_AMD = 0`.
+- **CORE dividend yield.** `q_GOOG = 0`, the assumption of the paper the parameters come from. Alphabet has paid a dividend since 2024, so this is a stated limitation. `q_AMD = 0`.
 - **EXT-A dividend yields.** `q_AMD = 0`. `q_INTC = 0` unless the owner records otherwise. `q_NVDA` is the annualized declared dividend divided by the snapshot spot, rounded to the nearest `0.0001` before any use.
 - **Discrete dividends.** They are approximated by this continuous yield in both the tree and the simulation.
 
@@ -182,7 +184,7 @@ Every run MUST declare one mode.
 | `published` | `configs/published_params.yaml` | Fallback result and known-answer checks | None |
 | `market` | `results/calibration.json` | Market-calibrated result | Read by the committed scripts only (§15) |
 
-Each published parameter set MUST include its citation and table or page. Every reported artifact MUST name its mode. A `published` result MUST NOT be described as calibrated to AMD.
+Each published parameter set MUST include its citation and table or page. Every reported artifact MUST name its mode. A `published` result MUST NOT be described as calibrated to current GOOG options or to AMD, NVDA, or INTC. Its parameters were fitted to Google options on 2015-02-02.
 
 ### 5.2 Authority gate for market mode
 
@@ -205,14 +207,16 @@ Schemas, classes, and paths are defined by `DATA_CONTRACT.md`; this spec does no
 | Dataset | Used by | Notes |
 |---|---|---|
 | iVolatility Raw IV, 2026-10-13 to 2026-10-15 | CORE calibration; EXT-A calibration | Restricted. Primary snapshot date is `2026-10-14`. |
-| Massive minute bars, November 2011 to July 2026 | EXT-A correlations only | Restricted. **CORE MUST NOT read Massive data.** |
+| Massive minute bars for NVDA, AMD, INTC, GOOG, and GOOGL, November 2011 to July 2026 | Correlation estimates (§5.4) | Restricted. **CORE pricing MUST NOT read Massive data.** |
 | U.S. Treasury CMT yields | `r` | Public |
 | Published parameters and benchmarks | Fallback and checks | Public; transcribed by the owner |
 | Synthetic fixtures | Tests, CI, smoke path | Public |
 
 The other two iVolatility dates are for day-to-day stability reporting only. The primary date MUST NOT be changed after viewing fit quality.
 
-### 5.4 Correlation estimation (EXT-A)
+### 5.4 Correlation estimation
+
+The tickers are NVDA, AMD, INTC, and GOOG. GOOGL is validated but excluded, because it is a share class of the same company as GOOG. Correlations price nothing, so they may be estimated before gate G1; using them to price a multi-asset contract remains part of EXT-A. `scripts/estimate_correlations.py` applies this section.
 
 1. Take split-adjusted last regular-session closes and compute daily log returns.
 2. Inner-join tickers on date.
@@ -575,6 +579,7 @@ Violations raise `InputError` (§14.1).
 
 ```bash
 python python/validate_raw.py --source {ivolatility|massive|fixtures}
+python scripts/estimate_correlations.py [--source {market|fixtures}] [--results-root <dir>]
 python python/make_fixtures.py
 python scripts/inspect_schema.py <path-under-data>
 python scripts/run.py calibrate --config configs/<name>.yaml
@@ -647,8 +652,8 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
 ```json
 {
   "schema_version": 1,
-  "spec_version": "1.5",
-  "data_contract_version": "0.4",
+  "spec_version": "1.6",
+  "data_contract_version": "0.5",
   "run_id": "core_amd_production-1a2b3c4d",
   "git_commit": "<full hash>",
   "git_dirty": false,
@@ -740,9 +745,9 @@ Input records contain identifiers and counts only, never data values. Output has
 
 `residual_buckets` MUST contain only buckets with `n >= 5`. Per-contract residuals are prohibited.
 
-### 12.6 `results/estimates.json` (EXT-A)
+### 12.6 `results/estimates.json`
 
-This file contains the window dates, per-ticker sample size and realized volatility, and the correlation matrix. Return series and prices are prohibited.
+This file contains, for each of the 126, 252, and 504-day windows, the window dates, the sample size, per-ticker realized volatility, and the correlation matrix. Return series and prices are prohibited.
 
 ### 12.7 Evidence map and verification table
 
@@ -1005,7 +1010,7 @@ The report and README MUST state what the checks establish and what they do not.
 
 EXT-A is optional. It proceeds from `d = 2` to `d = 3` only after G1. If V-20 to V-24 do not pass by Nov 20, EXT-A is dropped from the claims. The CORE question and results stand.
 
-Basket payoffs, calls, and values of `d` other than 3 need V-25 to V-28 to pass before any claim is made. Market data covers NVDA, AMD, and INTC only, so other values of `d` use synthetic or published inputs.
+Basket payoffs, calls, and values of `d` other than 3 need V-25 to V-28 to pass before any claim is made. Massive data covers NVDA, AMD, INTC, GOOG, and GOOGL, and iVolatility covers NVDA, AMD, and INTC only, so other assets use synthetic or published inputs.
 
 ### 17.3 Fallback rules
 
@@ -1043,7 +1048,7 @@ Each item needs an owner decision. Defaults apply until changed through §1.3.
 | ID | Priority | Decision | Default in this spec |
 |---|---|---|---|
 | OD-1 | Resolved 2026-11-08 | The iVolatility licence allows every use in `DATA_CONTRACT.md` provided the raw data is not published, and the owner holds written confirmation that derived results may be used for this project (`DATA_CONTRACT.md` §2.2). | Authority recorded; `market` runs stay refused until `configs/governance.yaml` sets `market_use_authorized: true` (§5.2) |
-| OD-2 | High | Confirm AMD as the CORE asset. It pays no dividend, so `q = 0` holds and call quotes are effectively European. | AMD |
+| OD-2 | Resolved 2026-11-08 | The CORE asset is GOOG until NVDA, AMD, and INTC can be calibrated properly. | GOOG |
 | OD-3 | Resolved 2026-11-08 | Treasury 1-Year CMT yields from the official table: 4.48% (2026-10-13), 4.53% (2026-10-14), 4.49% (2026-10-15). The proposal's fixed `r = 5%` is withdrawn. | Values in `configs/market_inputs.yaml` |
 | OD-4 | High | Compare `DATA_CONTRACT.md` §1.2 with the actual iVolatility header. Confirm that `stock_price_for_iv` is synchronous with the quotes. | Contract schema, unverified |
 | OD-5 | Resolved 2026-11-08 | No published calibration for AMD, NVDA, or INTC was found. The owner chose the Google 2015-02-02 set in Burkovska et al. (arXiv:1611.06452, Table 8, de-Americanization with closed-form solution) as the published parameter set and its `kappa` for §6.7. | Values in `configs/published_params.yaml` |
@@ -1052,6 +1057,7 @@ Each item needs an owner decision. Defaults apply until changed through §1.3.
 | OD-8 | Medium | Raw-file hashes were removed from the data contract. Traceability currently relies on file name and row count. Hashes are not values and would strengthen the provenance evidence. | No raw-file hashes |
 | OD-9 | Low | Choose the code licence for `LICENSE`. | Unset |
 | OD-10 | EXT-A only | Confirm `q_INTC = 0` and NVDA's annualized declared dividend on the snapshot date. | §4.3 |
+| OD-11 | High | Calibrate NVDA, AMD, and INTC properly. AMD failed the §6.7 limit, and NVDA and INTC have not been fitted under this spec. | Open; no market-calibrated result |
 
 ---
 
@@ -1137,3 +1143,4 @@ Citations follow the proposal unless marked.
 | 1.3 | 2026-11-08 | Follows `DATA_CONTRACT.md` v0.4, which relaxes the raw-data rule on `expiration` from `> date` to `>= date` | Owner decision after validation flagged 518 rows. Disclosed because the rule changed in response to a failed check. Same-day expiries are normal listed contracts, and filter F3 is unchanged, so the quotes used for calibration are unchanged | No market-calibrated result had been produced under this spec. Earlier fits are noted in the 1.2 row |
 | 1.4 | 2026-11-08 | OD-5 resolved; §15 exception for the agent entering the published set on the owner's instruction; reference added to §21 | The full five-parameter market fit missed the RMS limit (ladder step 3), and no cited `kappa` existed. The 0.01 limit and all rules are unchanged | Yes. The rejected fit's residual and parameters were viewed before this `kappa` was chosen; it MUST be disclosed in the report (§1.3). One value was chosen, from one source, before any refit |
 | 1.5 | 2026-11-08 | §12.9 VZ-1 split into a rejected-fit AMD surface and a published Google surface; `run.py compare` added (§11) | Owner instruction. The market fit ended at ladder step 3, so no accepted AMD surface exists. No pass rule, tolerance, seed, filter, or default changed | Yes. Figures are generated from results already viewed and do not change them |
+| 1.6 | 2026-11-08 | Primary question revised to GOOG under the published parameters (§2.1, §17.3); Massive dataset replaced to add GOOG and GOOGL; four-ticker correlations allowed before G1 (§5.4); `q_GOOG = 0`; OD-2 and OD-11 | Owner instruction, after the AMD fit failed acceptance. No pass rule, tolerance, seed, filter, or default changed | Yes. The AMD fit and the published-parameter price had been viewed; this MUST be disclosed in the report (§1.3) |

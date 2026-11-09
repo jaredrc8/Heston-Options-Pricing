@@ -63,7 +63,7 @@ def reported_inputs():
             return entry["params"], {"r": document["r"], "q": [entry["q"]]}
 
     published = yaml.safe_load((ROOT / "configs" / "published_params.yaml").read_text())
-    entry = published["sets"]["core_default"]
+    entry = published["sets"]["GOOG"]
     if any(entry[name] is None for name in ("v0", "kappa", "theta", "xi", "rho", "q")):
         pytest.skip("no reported parameter set: OD-5 published parameters not entered")
     inputs = yaml.safe_load((ROOT / "configs" / "market_inputs.yaml").read_text())
@@ -443,7 +443,7 @@ def test_B1_one_production_pricing(record_property):
 
 @pytest.mark.slow
 def test_B2_full_sweep(record_property):
-    summaries = sorted((ROOT / "results" / "sweeps").glob("core_*production-*.json"))
+    summaries = sorted((ROOT / "results" / "sweeps").glob("core_*production-*.json"), key=lambda p: p.stat().st_mtime)
     if not summaries:
         pytest.skip("no reported sweep has been completed yet")
     total = json.loads(summaries[-1].read_text())["wall_seconds_total"]

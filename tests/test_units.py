@@ -15,7 +15,7 @@ import yaml
 from hestonpricer import surface
 from hestonpricer.analytic import heston_european
 from hestonpricer.calibrate import calibrate_with_ladder, is_stable
-from hestonpricer.correlation import estimate_correlation
+from hestonpricer.correlation import adjust_for_splits, count_large_minute_moves, daily_log_returns, estimate_correlation
 from hestonpricer.errors import HestonError, InputError
 from hestonpricer.lsmc import fit_policy, price_bermudan
 from hestonpricer.simulate import simulate
@@ -198,6 +198,33 @@ def test_correlation_matrix_is_valid_on_the_fixture():
     assert all("close" not in key for key in result)
 
 
+def test_split_adjustment_removes_the_jump():
+    closes = pd.DataFrame({"ticker": ["A", "A", "A"], "date": ["2022-07-14", "2022-07-15", "2022-07-18"],
+                           "close": [2000.0, 2000.0, 100.0]})
+    adjusted = adjust_for_splits(closes, {"A": [{"date": "2022-07-18", "ratio": 20}]})
+    assert np.allclose(daily_log_returns(adjusted)["log_return"], 0.0)
+
+
+def test_large_minute_moves_are_counted_only_for_adjacent_bars():
+    times = pd.to_datetime(["2026-01-05 10:00", "2026-01-05 10:01", "2026-01-05 10:30"])
+    bars = pd.DataFrame({"ticker": ["A", "A", "A"], "local_time": times, "close": [100.0, 300.0, 900.0]})
+    assert count_large_minute_moves(bars) == 1
+
+
+def test_correlations_on_the_fixture_recover_the_known_values(tmp_path):
+    subprocess.run([sys.executable, "scripts/estimate_correlations.py", "--source", "fixtures", "--results-root", str(tmp_path)],
+                   cwd=ROOT, check=True, capture_output=True)
+    document = json.loads((tmp_path / "estimates.json").read_text())
+    assert [w["window"] for w in document["windows"]] == [126, 252, 504]
+    primary = next(w for w in document["windows"] if w["window"] == 252)
+    tickers = primary["tickers"]
+    matrix = np.array(primary["matrix"])
+    assert abs(matrix[tickers.index("SYN1"), tickers.index("SYN2")] - 0.6) < 0.15
+    assert abs(matrix[tickers.index("SYN1"), tickers.index("SYN3")] - 0.4) < 0.15
+    assert abs(matrix[tickers.index("SYN2"), tickers.index("SYN3")] - 0.3) < 0.15
+    assert "close" not in json.dumps(document) and "log_return" not in json.dumps(document)
+
+
 # --- pipeline, governance and data boundary (SPEC.md 12, 14 and 15) ---
 
 def test_unknown_config_key_exits_2(tmp_path):
@@ -272,7 +299,7 @@ def test_run_writes_the_required_files_and_fields(tmp_path):
     assert result["units"] == "fraction_of_initial_spot" and result["data_mode"] == "synthetic"
     assert len(result["diagnostics"]["exercise_fraction_by_date"]) == 50
     manifest = json.loads((run_dir / "manifest.json").read_text())
-    assert manifest["spec_version"] == "1.5" and manifest["data_contract_version"] == "0.4"
+    assert manifest["spec_version"] == "1.6" and manifest["data_contract_version"] == "0.5"
 
 
 def test_compare_writes_each_comparison(tmp_path):
