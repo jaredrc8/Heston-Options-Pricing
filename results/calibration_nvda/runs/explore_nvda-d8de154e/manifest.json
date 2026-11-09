@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "spec_version": "1.10",
+  "data_contract_version": "0.7",
+  "run_id": "explore_nvda-d8de154e",
+  "git_commit": "d8de154e2990490ab343474b7fd5949870333438",
+  "git_dirty": false,
+  "command": "python scripts/run.py price --config configs/explore_nvda.yaml --results-root results/calibration_nvda",
+  "config_sha256": "e5245fe234284ad7d9d654b31deb8fb2d507b6c79cde5a98fafa1134f64e25b4",
+  "data_mode": "market",
+  "seeds": [
+    620001,
+    620002,
+    620003,
+    620004,
+    620005
+  ],
+  "environment": {
+    "python": "3.14.3",
+    "packages": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "pandas": "3.1.1"
+    },
+    "os": "macOS-26.2-arm64-arm-64bit-Mach-O",
+    "cpu": "arm",
+    "cores": 14,
+    "ram_gb": 24.0
+  },
+  "inputs": [
+    {
+      "dataset": "ivolatility_raw_iv",
+      "tickers": [
+        "NVDA"
+      ],
+      "snapshot_date": "2026-10-14",
+      "file_name": "nvda_amd_intc_IV_Oct13-15.csv",
+      "row_count": 41256
+    }
+  ],
+  "outputs": [
+    {
+      "path": "result.json",
+      "sha256": "815df05b587b3f3769317811c49095033368daa681c178ced3a402c9973cd07d"
+    },
+    {
+      "path": "config.yaml",
+      "sha256": "e5245fe234284ad7d9d654b31deb8fb2d507b6c79cde5a98fafa1134f64e25b4"
+    },
+    {
+      "path": "run.log",
+      "sha256": "39b5150c203679ff05b7d425507703d828d74163af210e6cfdbc2cf01038351d"
+    }
+  ],
+  "started_at": "2026-11-09T04:55:54.561439+00:00",
+  "finished_at": "2026-11-09T04:55:59.136066+00:00",
+  "wall_seconds": 4.574632625000959
+}

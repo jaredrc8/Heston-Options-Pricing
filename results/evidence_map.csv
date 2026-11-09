@@ -7,4 +7,7 @@ fig_compare_lsmc_vs_tree,figure,figure,core_goog_production,comparisons/core_goo
 fig_compare_strike_profile,figure,figure,core_goog_production,comparisons/core_goog_production-a13deb05.json,/strike_profile/0/bermudan,V-11
 fig_surface_google_published,figure,figure,core_goog_production,comparisons/core_goog_production-a13deb05.json,/params/kappa,V-02
 fig_surface_amd_rejected,figure,figure,market-rejected,calibration.json,/assets/AMD/rejected_full_fit/rms_iv_residual,V-13
+fig_surface_nvda_provisional,figure,figure,calibrate_nvda,calibration_nvda/calibration.json,/assets/NVDA/rms_iv_residual,V-13
+fig_surface_intc_provisional,figure,figure,calibrate_intc,calibration_intc/calibration.json,/assets/INTC/rms_iv_residual,V-13
+fig_compare_google_2015,figure,figure,goog_2015_contract-d8de154e,market_comparison.json,/all_puts/median_abs_usd,V-06
 fig_synthetic_surface,figure,figure,synthetic,smoke/calibration.json,/assets/SYN1/rms_iv_residual,V-12

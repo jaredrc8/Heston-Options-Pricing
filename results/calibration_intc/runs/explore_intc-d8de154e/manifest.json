@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "spec_version": "1.10",
+  "data_contract_version": "0.7",
+  "run_id": "explore_intc-d8de154e",
+  "git_commit": "d8de154e2990490ab343474b7fd5949870333438",
+  "git_dirty": false,
+  "command": "python scripts/run.py price --config configs/explore_intc.yaml --results-root results/calibration_intc",
+  "config_sha256": "37025101835d55baad17c357b2c9c8b0a2df3fef4b139ef5da7c857a45d8b227",
+  "data_mode": "market",
+  "seeds": [
+    620001,
+    620002,
+    620003,
+    620004,
+    620005
+  ],
+  "environment": {
+    "python": "3.14.3",
+    "packages": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "pandas": "3.1.1"
+    },
+    "os": "macOS-26.2-arm64-arm-64bit-Mach-O",
+    "cpu": "arm",
+    "cores": 14,
+    "ram_gb": 24.0
+  },
+  "inputs": [
+    {
+      "dataset": "ivolatility_raw_iv",
+      "tickers": [
+        "INTC"
+      ],
+      "snapshot_date": "2026-10-14",
+      "file_name": "nvda_amd_intc_IV_Oct13-15.csv",
+      "row_count": 41256
+    }
+  ],
+  "outputs": [
+    {
+      "path": "result.json",
+      "sha256": "305a6fa3087def35519af991816f57c3c741e42f36d6593186056298a262279a"
+    },
+    {
+      "path": "config.yaml",
+      "sha256": "37025101835d55baad17c357b2c9c8b0a2df3fef4b139ef5da7c857a45d8b227"
+    },
+    {
+      "path": "run.log",
+      "sha256": "657003f0731049fc2efb4725a26e49f37d8b72f6dc3e5f5d1ac9e754f01f653b"
+    }
+  ],
+  "started_at": "2026-11-09T04:55:59.763037+00:00",
+  "finished_at": "2026-11-09T04:56:04.564138+00:00",
+  "wall_seconds": 4.801106834001985
+}

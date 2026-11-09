@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "spec_version": "1.10",
+  "data_contract_version": "0.7",
+  "run_id": "explore_amd-d8de154e",
+  "git_commit": "d8de154e2990490ab343474b7fd5949870333438",
+  "git_dirty": false,
+  "command": "python scripts/run.py price --config configs/explore_amd.yaml",
+  "config_sha256": "01d2efbdb97be2354fd9a4fb01da7c925e8c727d5331ffe988a0d68beaccb699",
+  "data_mode": "market",
+  "seeds": [
+    620001,
+    620002,
+    620003,
+    620004,
+    620005
+  ],
+  "environment": {
+    "python": "3.14.3",
+    "packages": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "pandas": "3.1.1"
+    },
+    "os": "macOS-26.2-arm64-arm-64bit-Mach-O",
+    "cpu": "arm",
+    "cores": 14,
+    "ram_gb": 24.0
+  },
+  "inputs": [
+    {
+      "dataset": "ivolatility_raw_iv",
+      "tickers": [
+        "AMD"
+      ],
+      "snapshot_date": "2026-10-14",
+      "file_name": "nvda_amd_intc_IV_Oct13-15.csv",
+      "row_count": 41256
+    }
+  ],
+  "outputs": [
+    {
+      "path": "result.json",
+      "sha256": "7773ad65284472946304225c231af03f741cfe0438f88e6f41e04e6528f35496"
+    },
+    {
+      "path": "config.yaml",
+      "sha256": "01d2efbdb97be2354fd9a4fb01da7c925e8c727d5331ffe988a0d68beaccb699"
+    },
+    {
+      "path": "run.log",
+      "sha256": "dc7dbe0fbca22a389bc595540dae52732c53484d64468d2d3335a0d4c6ff12f5"
+    }
+  ],
+  "started_at": "2026-11-09T04:56:05.193228+00:00",
+  "finished_at": "2026-11-09T04:56:09.931264+00:00",
+  "wall_seconds": 4.738043874996947
+}

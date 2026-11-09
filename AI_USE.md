@@ -608,3 +608,22 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 - The AI therefore describes these fits as passing the written rule but not as properly calibrated.
 
 **Not committed:** the two `results/calibration_*` folders. A local commit holds the configs; nothing has been pushed while the Cboe decision is pending.
+
+### Entry 23 — 2026-11-08 — Official 2015 comparison, exploratory runs, NVDA and INTC surfaces
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Run similar contracts for NVDA, AMD and INTC as for GOOG. Make the Feb 2015 Google put the official market comparison for now. Plot the volatility surfaces for NVDA and INTC.
+
+**What the AI did:**
+- `SPEC.md` v1.10 §8.4 now defines the Feb 2015 comparison. The 401 published puts are in `configs/google_2015_american_puts.csv`, parsed from the paper's Appendix A by a scratch script and checked against its stated count of 401.
+- Removed the Cboe quote from the tracked files (`configs/market_quote_goog.yaml`, the old `results/market_comparison.json`, `SPEC.md` §8.4), removed the 2026 contract configs, removed the quote values from Entries 18 and 19 of this log, and corrected `DATA_CONTRACT.md` §2.4 (v0.7). The quote remains in earlier Git history; the author did not ask for history to be rewritten.
+- Added exploratory runs for NVDA, AMD and INTC (`SPEC.md` §8.5), and surfaces VZ-1c and VZ-1d.
+
+**Decisions by the AI, for review:** "similar contract" was read as the GOOG one-year contract with `K = 1` and `M = 50`. AMD has no accepted fit, so its run uses the rejected full fit, labelled in its `result.json`; the code refuses this for a reported run. The all-puts comparison uses `M = 50` and one seed, and the single official contract uses `M = 240` and five seeds.
+
+**Results:** official $525 put, model $45.25 ± $0.09 against $46.05 published (-1.7%). All 401 puts: median absolute gap $0.40, largest $1.16; 248 within 2% and 291 within 5%. These are in-sample. One-year put as a fraction of spot: NVDA 0.1316, AMD 0.1836 (rejected fit), INTC 0.2018, GOOG 0.0733.
+
+**Author review status:**
+- [ ] 2015 table values spot-checked against the paper
+- [ ] Interpretation of "similar contract" confirmed

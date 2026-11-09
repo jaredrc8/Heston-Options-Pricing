@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "source": "Burkovska, Glau, Mahlstedt and Wohlmuth, arXiv:1611.06452, Appendix A, Table 10",
+  "note": "In-sample: the published parameters were fitted to these same prices.",
+  "run_id": "goog_2015_contract-d8de154e",
+  "data_mode": "published",
+  "official_contract": {
+    "valuation_date": "2015-02-02",
+    "style": "American put",
+    "underlying_usd": 523.755,
+    "strike_usd": 525.0,
+    "maturity_years": 0.9507,
+    "r": 0.0014999973613285791,
+    "q": 0.0,
+    "market_usd": 46.05,
+    "model_usd": 45.252441510277826,
+    "se_usd": 0.08594322430496122,
+    "european_analytic_usd": 45.36833053753216,
+    "model_minus_market_usd": -0.7975584897221708,
+    "model_minus_market_percent": -1.7319402599829985,
+    "market_implied_vol": 0.2249752379892979,
+    "model_implied_vol": 0.2210373360799469
+  },
+  "all_puts": {
+    "n": 401,
+    "n_paths": 100000,
+    "n_exercise": 50,
+    "seed": 620001,
+    "rms_usd": 0.4918420363735192,
+    "median_abs_usd": 0.39669480456611517,
+    "max_abs_usd": 1.155882178826161,
+    "median_abs_percent": 0.9612325811444222,
+    "within_2_percent": 248,
+    "within_5_percent": 291,
+    "by_maturity": [
+      {
+        "maturity": 0.2027,
+        "n": 51,
+        "rms_usd": 0.5584276285470041
+      },
+      {
+        "maturity": 0.3753,
+        "n": 100,
+        "rms_usd": 0.5285711856352242
+      },
+      {
+        "maturity": 0.6247,
+        "n": 98,
+        "rms_usd": 0.4531457407630263
+      },
+      {
+        "maturity": 0.9507,
+        "n": 104,
+        "rms_usd": 0.4548751516312945
+      },
+      {
+        "maturity": 1.9671,
+        "n": 48,
+        "rms_usd": 0.4899079833149738
+      }
+    ]
+  }
+}

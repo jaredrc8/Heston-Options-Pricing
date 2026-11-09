@@ -1,0 +1,13 @@
+# Exploratory one-year Bermudan put on NVDA. Not a reported result. Uses the NVDA fit accepted by the failure ladder, which is provisional (SPEC.md 8.5).
+schema_version: 1
+run_name: explore_nvda
+tier: CORE
+reported: false
+data_mode: market
+assets: [NVDA]
+snapshot_date: 2026-10-14
+market_inputs: configs/market_inputs.yaml
+params_source: results/calibration.json
+contract: {strike: 1.0, maturity: 1.0, n_exercise: 50}
+simulation: {n_paths: 100000, n_substeps: 4, basis_degree: 3}
+seeds: [620001, 620002, 620003, 620004, 620005]
