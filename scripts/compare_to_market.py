@@ -64,8 +64,9 @@ def main():
         "run_id": result["run_id"],
         "data_mode": result["data_mode"],
         "note": "Published Google parameters from 2015-02-02 and q = 0; not a calibration to this market.",
+        "quote_file": QUOTE_FILE.name,
         "contract": {key: str(quote[key]) if key in ("valuation_date", "expiry") else quote[key]
-                     for key in ("option", "style", "valuation_date", "expiry", "spot", "strike")},
+                     for key in ("option", "style", "valuation_date", "expiry", "strike")},
         "r": r,
         "q": q,
         "market": {"bid_usd": bid, "ask_usd": ask, "mid_usd": mid, "mid_fraction_of_spot": mid / spot,

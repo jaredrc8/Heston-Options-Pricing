@@ -546,7 +546,7 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 
 **Data boundary:** the AI read `data/` only through committed scripts. The Cboe quote is public, cited reference data (`DATA_CONTRACT.md` §2.4). The AI did not check Cboe's terms of use beyond storing this one cited quote.
 
-**Checks:** the outcome of each is in `results/verification_table.csv`.
+**Checks:** the outcome of each is in `results/verification_table.csv`. V-01 and V-06 passed on their first run. V-16 first failed because `results/market_comparison.json` had a `spot` key holding the public closing price, which §8.4 allows. The AI did not loosen the scan; it removed that field, which duplicates `configs/market_quote_goog.yaml`. The file still holds public dollar prices under other names, as §8.4 permits.
 
 **Author review status:**
 - [ ] V-01 and V-06 values checked against the papers

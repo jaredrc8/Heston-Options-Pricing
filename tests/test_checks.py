@@ -456,32 +456,32 @@ def test_B2_full_sweep(record_property):
 # Extensions: closed until their gates pass (SPEC.md 2.2 and 17)
 # ----------------------------------------------------------------------
 
-G1_REASON = "EXT-A has not started: gate G1 has not passed"
+EXT_A_REASON = "EXT-A has not started: GOOG stays single-asset until NVDA, AMD and INTC are calibrated (OD-11)"
 
 
 @pytest.mark.slow
 def test_V20_driver_correlations():
-    pytest.skip(G1_REASON)
+    pytest.skip(EXT_A_REASON)
 
 
 @pytest.mark.slow
 def test_V21_identical_assets():
-    pytest.skip(G1_REASON)
+    pytest.skip(EXT_A_REASON)
 
 
 @pytest.mark.slow
 def test_V22_orderings():
-    pytest.skip(G1_REASON)
+    pytest.skip(EXT_A_REASON)
 
 
 @pytest.mark.slow
 def test_V23_three_asset_stability():
-    pytest.skip(G1_REASON)
+    pytest.skip(EXT_A_REASON)
 
 
 @pytest.mark.slow
 def test_V24_three_asset_calibration():
-    pytest.skip(G1_REASON)
+    pytest.skip(EXT_A_REASON)
 
 
 @pytest.mark.slow

@@ -1,27 +1,27 @@
 check_id,status,measured,threshold,run_id,commit,evaluated_at
-B1,PASS,median 0.85 s over 5 repeats,<= 30 s,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-B2,PASS,72 s,<= 21600 s,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-01,NOT_RUN,V-01 reference values not yet transcribed by the owner,,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-02,PASS,parity 2.50e-16; Black-Scholes difference 1.23e-09,parity <= 1e-10; Black-Scholes <= 1e-6,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-03,PASS,40 of 40 options within 3 SE,at least 38 of 40,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-04,PASS,"differences in SE: 1.42, 1.13, 1.37, 0.46",<= 3 SE for each pair,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-05,PASS,0.47 SE,<= 3 SE,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-06,NOT_RUN,V-06 reference values not yet transcribed by the owner,,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-07,PASS,relative difference 5.55e-16,<= 1e-10,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-08,PASS,result.json identical apart from wall_seconds,identical,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-09,PASS,2 vs 3: 1.51 SE; 3 vs 4: 0.18 SE,<= 2 SE of the higher-degree run,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-10,PASS,0.02 combined SE,<= 3 sqrt(SE_4^2 + SE_8^2),,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-11,PASS,largest pair difference 1.48 combined SE,<= 3 sqrt(SE_a^2 + SE_b^2),,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-12,PASS,RMS 5.10e-14; largest relative parameter error 1.85e-12; rho error 3.65e-13,RMS <= 1e-4; 5% relative; rho within 0.05,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-13,FAIL,,,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-14,PASS,largest error 1.91e-07; 0.989 of pairs agree; median |own - vendor| 0.0012,<= 1e-4; >= 0.90 of pairs; median <= 0.02,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-15,PASS,"1 run(s) complete, finite and hashes match",every configured run,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-16,PASS,201 tracked files scanned; no data/ paths in history; hook active,no findings,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-17,PASS,exit 0; 22 s,exit 0 within 600 s,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-18,PASS,9 evidence rows resolve; figures regenerate,every row resolves,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-20,NOT_RUN,EXT-A has not started: gate G1 has not passed,,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-21,NOT_RUN,EXT-A has not started: gate G1 has not passed,,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-22,NOT_RUN,EXT-A has not started: gate G1 has not passed,,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-23,NOT_RUN,EXT-A has not started: gate G1 has not passed,,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-24,NOT_RUN,EXT-A has not started: gate G1 has not passed,,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
-V-30,NOT_RUN,EXT-B is closed: the C++ gate in SPEC.md 9.4 has not passed,,,840d8a145ed3f9edda4d9864a4999f167df9b30f,2026-11-09T03:07:19.523853+00:00
+B1,PASS,median 0.83 s over 5 repeats,<= 30 s,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+B2,PASS,72 s,<= 21600 s,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-01,PASS,largest absolute difference 1.562e-08,"max(1e-6, half the last published digit)",,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-02,PASS,parity 2.50e-16; Black-Scholes difference 1.23e-09,parity <= 1e-10; Black-Scholes <= 1e-6,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-03,PASS,40 of 40 options within 3 SE,at least 38 of 40,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-04,PASS,"differences in SE: 1.42, 1.13, 1.37, 0.46",<= 3 SE for each pair,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-05,PASS,0.47 SE,<= 3 SE,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-06,PASS,largest |V - B| at M = 100: 0.0027,"max(0.01 B, 3 SE); V - B <= 3 SE; monotone in M within 3 SE",,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-07,PASS,relative difference 5.55e-16,<= 1e-10,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-08,PASS,result.json identical apart from wall_seconds,identical,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-09,PASS,2 vs 3: 1.51 SE; 3 vs 4: 0.18 SE,<= 2 SE of the higher-degree run,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-10,PASS,0.02 combined SE,<= 3 sqrt(SE_4^2 + SE_8^2),,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-11,PASS,largest pair difference 1.48 combined SE,<= 3 sqrt(SE_a^2 + SE_b^2),,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-12,PASS,RMS 5.10e-14; largest relative parameter error 1.85e-12; rho error 3.65e-13,RMS <= 1e-4; 5% relative; rho within 0.05,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-13,FAIL,,,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-14,PASS,largest error 1.91e-07; 0.989 of pairs agree; median |own - vendor| 0.0012,<= 1e-4; >= 0.90 of pairs; median <= 0.02,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-15,PASS,"2 run(s) complete, finite and hashes match",every configured run,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-16,FAIL,,,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-17,PASS,exit 0; 22 s,exit 0 within 600 s,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-18,PASS,9 evidence rows resolve; figures regenerate,every row resolves,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-20,NOT_RUN,EXT-A has not started: gate G1 has not passed,,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-21,NOT_RUN,EXT-A has not started: gate G1 has not passed,,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-22,NOT_RUN,EXT-A has not started: gate G1 has not passed,,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-23,NOT_RUN,EXT-A has not started: gate G1 has not passed,,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-24,NOT_RUN,EXT-A has not started: gate G1 has not passed,,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00
+V-30,NOT_RUN,EXT-B is closed: the C++ gate in SPEC.md 9.4 has not passed,,,7c8ee9606fe7d82f553a1983b572f121f7a6a4db,2026-11-09T04:04:17.881636+00:00

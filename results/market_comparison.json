@@ -3,12 +3,12 @@
   "run_id": "goog_market_contract-6496b385",
   "data_mode": "published",
   "note": "Published Google parameters from 2015-02-02 and q = 0; not a calibration to this market.",
+  "quote_file": "market_quote_goog.yaml",
   "contract": {
     "option": "GOOG271217P00280000",
     "style": "American",
     "valuation_date": "2026-11-06",
     "expiry": "2027-12-17",
-    "spot": 283.93,
     "strike": 280.0
   },
   "r": 0.04283793474659992,
