@@ -627,3 +627,15 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 **Author review status:**
 - [ ] 2015 table values spot-checked against the paper
 - [ ] Interpretation of "similar contract" confirmed
+
+### Entry 24 — 2026-11-13 — Testing the calibration method of Burkovska et al.
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Could the calibration error for AMD, NVDA and INTC come from the method? Try the method of the paper the GOOG data comes from.
+
+**What the AI did:** wrote `scripts/compare_calibration_methods.py` (committed locally as `89ad4e5`), a diagnostic of the paper's J_CF method. It de-Americanizes puts with a binomial tree, fits Heston closed-form prices in price space with uniform weights, and uses the paper's bounds, starting point and the constraint 2 kappa theta >= xi^2. It changes no spec rule.
+
+**Check on the paper's own data:** on the 401 Google puts, the fit matches the paper's `v0` and `theta`. `kappa` and `xi` differ, but the fit's price error is lower than at the paper's own parameters (RMS $0.43 against $0.50), consistent with the flat valley the paper reports for `kappa`.
+
+**Result on 2026-10-14, IV RMS on the spec's 48-point grid (limit 0.01):** AMD 0.0155, NVDA 0.0159, INTC 0.0156. All are worse than the spec's method (0.0105, 0.0082, 0.0092). `xi` reached the paper's upper bound of 0.9 for all three, and `kappa` its bound of 5 for AMD and INTC. Output: `results/method_comparison_market.json` (aggregates only).

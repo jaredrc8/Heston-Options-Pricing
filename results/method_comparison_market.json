@@ -1,0 +1,63 @@
+{
+  "results": [
+    {
+      "asset": "AMD",
+      "snapshot_date": "2026-10-14",
+      "puts_used": 1320,
+      "params": {
+        "xi": 0.8999999999999999,
+        "rho": -0.13736704441554257,
+        "theta": 0.270282488769875,
+        "kappa": 5.0,
+        "v0": 0.31311980438180037
+      },
+      "converged": true,
+      "price_rms_fraction_of_spot": 0.0019220307216307058,
+      "at_bound": [
+        "xi",
+        "kappa"
+      ],
+      "feller_ratio": 3.336820849010803,
+      "iv_rms_on_spec_grid": 0.01553815411958366
+    },
+    {
+      "asset": "NVDA",
+      "snapshot_date": "2026-10-14",
+      "puts_used": 882,
+      "params": {
+        "xi": 0.9,
+        "rho": -0.3489392301425085,
+        "theta": 0.16148849655130557,
+        "kappa": 2.5079185740717724,
+        "v0": 0.13672715437024285
+      },
+      "converged": true,
+      "price_rms_fraction_of_spot": 0.0018718909254678332,
+      "at_bound": [
+        "xi"
+      ],
+      "feller_ratio": 0.9999999999998631,
+      "iv_rms_on_spec_grid": 0.015931877096289432
+    },
+    {
+      "asset": "INTC",
+      "snapshot_date": "2026-10-14",
+      "puts_used": 596,
+      "params": {
+        "xi": 0.9,
+        "rho": 0.14501306714689796,
+        "theta": 0.2936037701030881,
+        "kappa": 5.0,
+        "v0": 0.43373048913886286
+      },
+      "converged": true,
+      "price_rms_fraction_of_spot": 0.0024691252111368033,
+      "at_bound": [
+        "xi",
+        "kappa"
+      ],
+      "feller_ratio": 3.6247379025072597,
+      "iv_rms_on_spec_grid": 0.015590227524643062
+    }
+  ]
+}
