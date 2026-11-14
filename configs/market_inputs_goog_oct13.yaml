@@ -1,0 +1,9 @@
+# Inputs for the GOOG market test on 2026-10-13 (SPEC.md 8.7).
+# Yield: U.S. Treasury 1-Year CMT par yield on 2026-10-13.
+# Dividend: Alphabet's declared $0.22 quarterly dividend, annualized to $0.88, divided by a GOOG
+# price near $345 (reported closes of about $341-345 around that week) and rounded to 0.0001. Approximate.
+treasury_1y_cmt_yield:
+  2026-10-13: 0.0448
+
+dividend_yield:
+  GOOG: 0.0026

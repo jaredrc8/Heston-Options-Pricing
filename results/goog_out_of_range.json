@@ -1,0 +1,309 @@
+{
+  "schema_version": 1,
+  "data_mode": "published",
+  "asset": "GOOG",
+  "note": "Model extrapolation with the published 2015 parameters; no market prices exist for these contracts.",
+  "r": 0.0014999973613285791,
+  "q": 0.0,
+  "n_paths": 100000,
+  "seeds": [
+    620001,
+    620002,
+    620003,
+    620004,
+    620005
+  ],
+  "n_exercise": 50,
+  "units": "fraction_of_initial_spot",
+  "rows": [
+    {
+      "maturity": 0.08,
+      "strike_over_spot": 0.4,
+      "bermudan": 0.0,
+      "se_bermudan": 0.0,
+      "european_mc": 0.0,
+      "se_european": 0.0,
+      "european_analytic": 1.2766032770032936e-15,
+      "premium": 0.0,
+      "se_premium": 0.0,
+      "model_implied_vol": 0.4425252057024398,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 0.08,
+      "strike_over_spot": 0.7,
+      "bermudan": 3.162235714891877e-07,
+      "se_bermudan": 1.755601149972413e-07,
+      "european_mc": 3.162235714891877e-07,
+      "se_european": 1.755601149972413e-07,
+      "european_analytic": 4.7625535057857144e-07,
+      "premium": 0.0,
+      "se_premium": 0.0,
+      "model_implied_vol": 0.31349347180259846,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 0.08,
+      "strike_over_spot": 1.0,
+      "bermudan": 0.02600334217051519,
+      "se_bermudan": 5.029218016324177e-05,
+      "european_mc": 0.02607011942040177,
+      "se_european": 5.6676643339328734e-05,
+      "european_analytic": 0.026077140392364872,
+      "premium": -6.677724988657469e-05,
+      "se_premium": 2.582900783709774e-05,
+      "model_implied_vol": 0.23168930286936307,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 0.08,
+      "strike_over_spot": 1.3,
+      "bermudan": 0.29992242148459264,
+      "se_bermudan": 5.194170524791795e-05,
+      "european_mc": 0.29973169704521796,
+      "se_european": 9.303003181917983e-05,
+      "european_analytic": 0.2998440146849128,
+      "premium": 0.0001907244393746683,
+      "se_premium": 7.714221462457621e-05,
+      "model_implied_vol": 0.18855924455064282,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 0.08,
+      "strike_over_spot": 1.8,
+      "bermudan": 0.7998424457656998,
+      "se_bermudan": 5.268894876788671e-05,
+      "european_mc": 0.7996716944934323,
+      "se_european": 9.303007233051637e-05,
+      "european_analytic": 0.7997840133394075,
+      "premium": 0.00017075127226746128,
+      "se_premium": 7.657833664642864e-05,
+      "model_implied_vol": 0.28603399307469796,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 0.9507,
+      "strike_over_spot": 0.4,
+      "bermudan": 0.00028051813829958305,
+      "se_bermudan": 7.0612301386086034e-06,
+      "european_mc": 0.00028934841427846937,
+      "se_european": 7.750945352871704e-06,
+      "european_analytic": 0.0002852505899129053,
+      "premium": -8.830275978886381e-06,
+      "se_premium": 2.65955893552305e-06,
+      "model_implied_vol": 0.3573042742874428,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": false,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 0.9507,
+      "strike_over_spot": 1.8,
+      "bermudan": 0.7996394825758104,
+      "se_bermudan": 0.00010597377944921193,
+      "european_mc": 0.7974968863773363,
+      "se_european": 0.00030753295940878035,
+      "european_analytic": 0.7974642559631215,
+      "premium": 0.002142596198474165,
+      "se_premium": 0.0002882932177845561,
+      "model_implied_vol": 0.18182740797316616,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": false
+      }
+    },
+    {
+      "maturity": 3.0,
+      "strike_over_spot": 0.4,
+      "bermudan": 0.0048813416233351664,
+      "se_bermudan": 3.683463039900327e-05,
+      "european_mc": 0.004898397141900791,
+      "se_european": 3.9251780368739356e-05,
+      "european_analytic": 0.004963189656532339,
+      "premium": -1.7055518565624596e-05,
+      "se_premium": 1.318972662817055e-05,
+      "model_implied_vol": 0.3007943415664534,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 3.0,
+      "strike_over_spot": 0.7,
+      "bermudan": 0.04188435460539252,
+      "se_bermudan": 0.00013442754356494537,
+      "european_mc": 0.04179170660659758,
+      "se_european": 0.00014408862741600756,
+      "european_analytic": 0.04202046468716046,
+      "premium": 9.264799879493762e-05,
+      "se_premium": 5.288114459863818e-05,
+      "model_implied_vol": 0.2542210198430068,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 3.0,
+      "strike_over_spot": 1.0,
+      "bermudan": 0.1503577507096872,
+      "se_bermudan": 0.00026212686910229713,
+      "european_mc": 0.15009561906789237,
+      "se_european": 0.0002917831580751209,
+      "european_analytic": 0.1504892076499342,
+      "premium": 0.00026213164179481865,
+      "se_premium": 0.0001294984868120822,
+      "model_implied_vol": 0.2228962731829921,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 3.0,
+      "strike_over_spot": 1.3,
+      "bermudan": 0.3473442007922781,
+      "se_bermudan": 0.00034973978258534403,
+      "european_mc": 0.34622795152064956,
+      "se_european": 0.00042279615433478125,
+      "european_analytic": 0.3466641026481766,
+      "premium": 0.0011162492716286245,
+      "se_premium": 0.00023993432309314718,
+      "model_implied_vol": 0.2012869084652669,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 3.0,
+      "strike_over_spot": 1.8,
+      "bermudan": 0.8012170849842726,
+      "se_bermudan": 0.00028161816267813705,
+      "european_mc": 0.7964440274113646,
+      "se_european": 0.0005217066889870928,
+      "european_analytic": 0.7971573293002323,
+      "premium": 0.004773057572907978,
+      "se_premium": 0.0004401756110057139,
+      "model_implied_vol": 0.18192563701160167,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 5.0,
+      "strike_over_spot": 0.4,
+      "bermudan": 0.011338365778111684,
+      "se_bermudan": 5.840269093123082e-05,
+      "european_mc": 0.011372041097929286,
+      "se_european": 6.251735935591641e-05,
+      "european_analytic": 0.011456704589441381,
+      "premium": -3.367531981760001e-05,
+      "se_premium": 2.1815989906695023e-05,
+      "model_implied_vol": 0.2780779382414304,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 5.0,
+      "strike_over_spot": 0.7,
+      "bermudan": 0.06810376540826171,
+      "se_bermudan": 0.00017561200525071844,
+      "european_mc": 0.06802943343312981,
+      "se_european": 0.00018990513127887203,
+      "european_analytic": 0.06826285323186462,
+      "premium": 7.43319751318998e-05,
+      "se_premium": 7.296609817959932e-05,
+      "model_implied_vol": 0.24580195088885062,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 5.0,
+      "strike_over_spot": 1.0,
+      "bermudan": 0.19410387660675354,
+      "se_bermudan": 0.0003100481313469159,
+      "european_mc": 0.19353720381965508,
+      "se_european": 0.0003449373813503642,
+      "european_analytic": 0.19404901761582743,
+      "premium": 0.0005666727870984542,
+      "se_premium": 0.0001540723022260333,
+      "model_implied_vol": 0.22487047394879814,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 5.0,
+      "strike_over_spot": 1.3,
+      "bermudan": 0.388738814998692,
+      "se_bermudan": 0.00041254091235526873,
+      "european_mc": 0.38694806499764445,
+      "se_european": 0.0004838413564985891,
+      "european_analytic": 0.38755718075572054,
+      "premium": 0.0017907500010475453,
+      "se_premium": 0.00025671210471338367,
+      "model_implied_vol": 0.21004821324946502,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    },
+    {
+      "maturity": 5.0,
+      "strike_over_spot": 1.8,
+      "bermudan": 0.8153450286905249,
+      "se_bermudan": 0.000445299476131375,
+      "european_mc": 0.8098401072584196,
+      "se_european": 0.000628392613364537,
+      "european_analytic": 0.8104353030027871,
+      "premium": 0.005504921432105235,
+      "se_premium": 0.00044789753319748437,
+      "model_implied_vol": 0.19385044587619218,
+      "checks": {
+        "european_within_3_se": true,
+        "bermudan_not_below_european": true,
+        "bermudan_not_below_intrinsic": true
+      }
+    }
+  ]
+}

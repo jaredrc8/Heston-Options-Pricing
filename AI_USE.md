@@ -639,3 +639,17 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 **Check on the paper's own data:** on the 401 Google puts, the fit matches the paper's `v0` and `theta`. `kappa` and `xi` differ, but the fit's price error is lower than at the paper's own parameters (RMS $0.43 against $0.50), consistent with the flat valley the paper reports for `kappa`.
 
 **Result on 2026-10-14, IV RMS on the spec's 48-point grid (limit 0.01):** AMD 0.0155, NVDA 0.0159, INTC 0.0156. All are worse than the spec's method (0.0105, 0.0082, 0.0092). `xi` reached the paper's upper bound of 0.9 for all three, and `kappa` its bound of 5 for AMD and INTC. Output: `results/method_comparison_market.json` (aggregates only).
+
+### Entry 25 — 2026-11-13 — GOOG only; contracts outside the paper's range
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Proceed with GOOG only. Test strikes and maturities outside the paper's range. Identify the data needed to compare GOOG with the market today. Do not commit.
+
+**What the AI did:** `SPEC.md` v1.11 restricts the project to GOOG and closes EXT-A and OD-11. Added `scripts/test_goog_out_of_range.py`, which priced 17 GOOG puts at maturities of 0.08, 3 and 5 years and strikes of 0.4 to 1.8 times spot, writing `results/goog_out_of_range.json`. Nothing was committed.
+
+**Results:** 15 of 17 contracts pass all behaviour checks. Two flags, both at T = 0.9507:
+- **K/S = 0.4:** the Bermudan price is 0.0000088 below the European price, 3.3 SE. LSMC exercised a few far out-of-the-money paths too early. This is the method's known low bias; the amount is under 0.001% of spot.
+- **K/S = 1.8:** the "not below intrinsic" check is too strict. The spec allows no exercise at t = 0, so the right lower bound is the value of exercising at the first date (0.79995). The Bermudan price of 0.79964 is 2.9 SE below that, again consistent with low bias.
+
+The AI did not change either check after seeing these results. It reported the second as a defect in its own check.

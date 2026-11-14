@@ -4,8 +4,8 @@
 |---|---|
 | **Project** | ENSF 620 Fall 2026 final project (individual) |
 | **Owner** | Jared Crebo |
-| **Spec version** | 1.10 (2026-11-08) |
-| **Companion document** | `DATA_CONTRACT.md` v0.7 |
+| **Spec version** | 1.12 (2026-11-13) |
+| **Companion document** | `DATA_CONTRACT.md` v0.8 |
 | **Audience** | Engineers and AI coding agents writing implementation code and automated tests |
 
 The key words MUST, MUST NOT, SHOULD, and MAY are normative. Requirements are binding until changed through §1.3.
@@ -42,7 +42,7 @@ When documents conflict, the higher item wins:
 
 **Primary question.** For a one-year Bermudan put on GOOG, what is the risk-neutral price implied by the published Heston parameters for Google options (`configs/published_params.yaml`), and how much of that price is the early-exercise premium relative to the corresponding European put?
 
-Earlier versions asked this for AMD with calibrated parameters. The AMD market fit failed its acceptance limit (§6.7), so the question was revised as §17.3 requires. Calibrating NVDA, AMD, and INTC properly remains open (OD-11).
+Earlier versions asked this for AMD with calibrated parameters. The AMD market fit failed its acceptance limit (§6.7), so the question was revised as §17.3 requires. Since v1.11 the project proceeds with GOOG only. Work on NVDA, AMD, and INTC has stopped; their calibrations and exploratory runs (§8.5) stay in `results/` as a record and are not part of the reported analysis.
 
 CORE is the committed result. Its required components are:
 
@@ -61,7 +61,7 @@ CORE MUST also run with published parameters and synthetic fixtures so that it d
 | EXT-A | Optional n-asset correlated extension: a Bermudan call or put on `d >= 2` correlated assets, with a worst-of or weighted-basket payoff (§4.1). It includes worst-of puts on NVDA, AMD, INTC, and GOOG | Gate G1 passes (§17.1) | Omit it from the claims. The final question stays as stated in §2.1. |
 | EXT-B | C++ pricing kernel exposed through pybind11 | The C++ gate passes (§9.4) | The Python engine remains the production engine. |
 
-The report, slides, and README MUST NOT present an unfinished extension as a result.
+The report, slides, and README MUST NOT present an unfinished extension as a result. Since v1.11 EXT-A is not pursued, because the project prices GOOG only.
 
 ### 2.3 Removed or out of scope
 
@@ -427,6 +427,16 @@ A one-year Bermudan put with `K = 1`, `M = 50`, the production profile, and the 
 - NVDA and INTC use the fits accepted by §6.7, which remain provisional (OD-11).
 - AMD uses its rejected full fit, because no accepted fit exists. Its result carries `parameter_status` and MUST be labelled as using a rejected fit. A rejected fit MUST NOT be used for a reported run.
 
+### 8.6 GOOG contracts outside the source paper's range
+
+`scripts/test_goog_out_of_range.py` prices GOOG puts with the published parameters at maturities of 0.08, 3, and 5 years and strikes of 0.4 to 1.8 times spot, outside the paper's data (about 0.48 to 1.68 times spot, 0.20 to 1.97 years). It writes `results/goog_out_of_range.json`. No market prices exist for these contracts, so each result is checked only for behaviour: the Monte Carlo European price within 3 SE of the semi-analytic price, the Bermudan price not below the European price, and not below intrinsic value, each within 3 SE. These results are model extrapolation and MUST NOT be described as validated against a market.
+
+### 8.7 GOOG against the market on 2026-10-13
+
+GOOG is calibrated to its own iVolatility surface of 2026-10-13 with the §6 method and failure ladder (`configs/calibrate_goog.yaml`, results in `results/calibration_goog/`). That is the only GOOG date held, so it is the primary date for this test, chosen before any GOOG fit was viewed. The dividend yield is `0.0026`, from Alphabet's declared $0.22 quarterly dividend and a GOOG price near $345; it is approximate.
+
+`scripts/test_goog_market.py` then prices every GOOG option that passes filters F1 to F8, is not in the calibration grid, and traded on that day (volume above zero). Each model price is the model's implied volatility carried through the same 500-step American tree as §6.3. It reports only aggregates: the RMS and median implied-volatility error, the share of model prices inside the bid–ask spread, and the median relative price error, for the calibrated parameters and for the published 2015 parameters. This is a same-day, out-of-sample test across contracts; it is not a test over time.
+
 ---
 
 ## 9. Precision, workload, and runtime
@@ -677,8 +687,8 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
 ```json
 {
   "schema_version": 1,
-  "spec_version": "1.10",
-  "data_contract_version": "0.7",
+  "spec_version": "1.12",
+  "data_contract_version": "0.8",
   "run_id": "core_amd_production-1a2b3c4d",
   "git_commit": "<full hash>",
   "git_dirty": false,
@@ -1085,7 +1095,7 @@ Each item needs an owner decision. Defaults apply until changed through §1.3.
 | OD-8 | Medium | Raw-file hashes were removed from the data contract. Traceability currently relies on file name and row count. Hashes are not values and would strengthen the provenance evidence. | No raw-file hashes |
 | OD-9 | Low | Choose the code licence for `LICENSE`. | Unset |
 | OD-10 | EXT-A only | Confirm `q_INTC = 0` and NVDA's annualized declared dividend on the snapshot date. | §4.3 |
-| OD-11 | High | Calibrate NVDA, AMD, and INTC properly. AMD failed the §6.7 limit, and NVDA and INTC have not been fitted under this spec. | Open; no market-calibrated result |
+| OD-11 | Closed 2026-11-13 | Calibrating NVDA, AMD, and INTC. The owner stopped this work; the project proceeds with GOOG only. | Not pursued |
 
 ---
 
@@ -1178,3 +1188,5 @@ Citations follow the proposal unless marked.
 | 1.8 | 2026-11-08 | Market comparison (§8.4) uses `q = 0.0031` from Alphabet's declared dividend | Owner instruction. No pass rule, tolerance, seed, or filter changed | Yes. The `q = 0` comparison had been viewed; the report MUST disclose this |
 | 1.9 | 2026-11-08 | VZ-1b (§12.9) defined as the GOOG 2015 Heston model surface over the source paper's maturity range | Owner instruction. No pass rule, tolerance, seed, or filter changed | Yes. The figure is drawn from parameters already viewed and does not change them |
 | 1.10 | 2026-11-08 | Feb 2015 Google put is the official market comparison (§8.4), replacing the 2026 contract, whose Cboe quote was removed; exploratory NVDA, AMD, and INTC runs (§8.5); VZ-1c, VZ-1d, VZ-9 | Owner instruction. Cboe's terms require written consent to store or publish its materials. No pass rule, tolerance, seed, or filter changed | Yes. The 2015 scratch comparison and the 2026 gap had been viewed; the report MUST disclose this and describe §8.4 as in-sample |
+| 1.11 | 2026-11-13 | Project restricted to GOOG; EXT-A and OD-11 closed; out-of-range GOOG tests (§8.6) | Owner instruction. No pass rule, tolerance, seed, or filter changed | Yes. The NVDA, AMD, and INTC results had been viewed; the report MUST disclose that this work was stopped and why |
+| 1.12 | 2026-11-13 | GOOG market test on 2026-10-13 (§8.7); GOOG iVolatility file added (`DATA_CONTRACT.md` v0.8); optional config key `raw_iv_file` | Owner purchased GOOG Raw IV for 2026-10-13. No pass rule, tolerance, seed, or filter changed | No GOOG fit or market comparison had been viewed when this was written |

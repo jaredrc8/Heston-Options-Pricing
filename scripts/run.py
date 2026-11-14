@@ -41,8 +41,8 @@ from hestonpricer.lsmc import price_bermudan
 from hestonpricer.simulate import simulate
 from hestonpricer.tree import crr_price
 
-SPEC_VERSION = "1.10"
-DATA_CONTRACT_VERSION = "0.7"
+SPEC_VERSION = "1.12"
+DATA_CONTRACT_VERSION = "0.8"
 RAW_IV_MARKET = ROOT / "data" / "nvda_amd_intc_IV_Oct13-15.csv"
 RAW_IV_SYNTHETIC = ROOT / "tests" / "fixtures" / "synthetic_raw_iv.csv"
 GRID_FILE = ROOT / "data" / "derived" / "calibration_grid.parquet"
@@ -51,7 +51,8 @@ COMPARISON_SEED = 620100
 
 CONFIG_KEYS = {"schema_version", "run_name", "tier", "reported", "data_mode", "assets", "snapshot_date",
                "market_inputs", "params_source", "contract", "simulation", "seeds"}
-OPTIONAL_KEYS = {"allow_rejected_fit"}   # exploratory pricing of a rejected fit (SPEC.md 8.5)
+OPTIONAL_KEYS = {"allow_rejected_fit",    # exploratory pricing of a rejected fit (SPEC.md 8.5)
+                 "raw_iv_file"}           # another licensed iVolatility file under data/ (SPEC.md 8.7)
 CONTRACT_KEYS = {"strike", "maturity", "n_exercise"}
 SIMULATION_KEYS = {"n_paths", "n_substeps", "basis_degree"}
 
@@ -383,6 +384,8 @@ def run_calibrate(cfg, results_root, root_given):
 
     market = cfg["data_mode"] == "market"
     raw_path = RAW_IV_MARKET if market else RAW_IV_SYNTHETIC
+    if market and cfg.get("raw_iv_file"):
+        raw_path = ROOT / cfg["raw_iv_file"]
     raw = surface.load_raw_iv(raw_path)
     inputs = [{"dataset": "ivolatility_raw_iv" if market else "synthetic_raw_iv",
                "tickers": cfg["assets"], "snapshot_date": cfg["snapshot_date"],
@@ -413,7 +416,7 @@ def run_calibrate(cfg, results_root, root_given):
     # The other two dates are for day-to-day stability only (SPEC.md 5.3)
     if market:
         for date in ALL_DATES:
-            if date != cfg["snapshot_date"]:
+            if date != cfg["snapshot_date"] and (raw["date"] == pd.Timestamp(date)).any():
                 other, _ = calibrate_date(cfg, raw, date, fallback_kappa, inputs)
                 assert_all_finite(other)
                 (results_root / f"calibration_{date}.json").write_text(json.dumps(other, indent=2))

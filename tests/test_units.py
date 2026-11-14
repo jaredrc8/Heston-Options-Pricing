@@ -362,7 +362,7 @@ def test_run_writes_the_required_files_and_fields(tmp_path):
     assert result["units"] == "fraction_of_initial_spot" and result["data_mode"] == "synthetic"
     assert len(result["diagnostics"]["exercise_fraction_by_date"]) == 50
     manifest = json.loads((run_dir / "manifest.json").read_text())
-    assert manifest["spec_version"] == "1.10" and manifest["data_contract_version"] == "0.7"
+    assert manifest["spec_version"] == "1.12" and manifest["data_contract_version"] == "0.8"
 
 
 def test_compare_writes_each_comparison(tmp_path):

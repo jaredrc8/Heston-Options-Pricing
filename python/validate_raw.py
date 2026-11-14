@@ -35,6 +35,9 @@ MAX_INDICES = 1000    # keeps the report small; the violation count is always co
 IV_FIXTURE = ROOT / "tests" / "fixtures" / "synthetic_raw_iv.csv"
 BAR_FIXTURE = ROOT / "tests" / "fixtures" / "synthetic_minute_bars.csv.gz"
 IV_MARKET = ROOT / "data" / "nvda_amd_intc_IV_Oct13-15.csv"
+IV_GOOG = ROOT / "data" / "goog_IV_Oct13.csv"
+# Dates each iVolatility file must cover (DATA_CONTRACT.md section 1.2); fixtures use IV_DATES
+IV_FILE_DATES = {IV_GOOG.name: {"2026-10-13"}}
 BAR_MARKET = ROOT / "data" / "nvda_amd_intc_goog_minute" / "bars"
 
 # Column names in the Massive Parquet package -> names in the contract
@@ -54,7 +57,7 @@ def table_rule(name, ok):
     return {"rule": name, "violations": 0 if ok else 1, "row_indices": []}
 
 
-def check_iv_table(df, tickers):
+def check_iv_table(df, tickers, dates=IV_DATES):
     """Every rule in DATA_CONTRACT.md section 1.2."""
     is_call = df["call_put"] == "C"
     is_put = df["call_put"] == "P"
@@ -63,7 +66,7 @@ def check_iv_table(df, tickers):
     rules = [
         rule_entry("symbol_allowed", ~df["symbol"].isin(tickers)),
         rule_entry("exchange_non_empty", df["exchange"].isna() | (df["exchange"].astype(str) == "")),
-        rule_entry("date_allowed", ~date_text.isin(IV_DATES)),
+        rule_entry("date_allowed", ~date_text.isin(dates)),
         rule_entry("stock_price_positive", ~(df["stock_price"] > 0)),
         rule_entry("option_symbol_non_empty", df["option_symbol"].isna() | (df["option_symbol"].astype(str) == "")),
         rule_entry("expiration_not_before_date", ~(df["expiration"] >= df["date"])),
@@ -86,7 +89,7 @@ def check_iv_table(df, tickers):
 
     # Every symbol has records on all three dates
     dates_per_symbol = date_text.groupby(df["symbol"]).nunique()
-    rules.append(table_rule("every_symbol_on_all_dates", bool((dates_per_symbol == 3).all())))
+    rules.append(table_rule("every_symbol_on_all_dates", bool((dates_per_symbol == len(dates)).all())))
 
     # Not a violation: rows with no IV are excluded later, and counted here.
     no_valid_iv = int((~(df["iv"] > 0)).sum())
@@ -135,7 +138,7 @@ def read_bars(path):
 
 def validate_iv(path, tickers):
     df = load_raw_iv(path)
-    rules, notes = check_iv_table(df, tickers)
+    rules, notes = check_iv_table(df, tickers, IV_FILE_DATES.get(path.name, IV_DATES))
     return {"file": path.name, "rows": int(len(df)), "rules": rules, **notes}
 
 
@@ -171,7 +174,7 @@ def main():
             files = [sanitized(validate_iv, IV_FIXTURE, FIXTURE_TICKERS),
                      sanitized(validate_bars, BAR_FIXTURE, FIXTURE_TICKERS)]
         elif args.source == "ivolatility":
-            files = [sanitized(validate_iv, IV_MARKET, REAL_TICKERS)]
+            files = [sanitized(validate_iv, IV_MARKET, REAL_TICKERS), sanitized(validate_iv, IV_GOOG, {"GOOG"})]
         else:
             # Validate each month as one table, so duplicates across part files are caught
             months = sorted({path.parent for path in BAR_MARKET.rglob("*.parquet")})
