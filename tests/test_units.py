@@ -457,6 +457,46 @@ def test_validator_reports_indices_but_never_values():
     assert set(broken) == {"rule", "violations", "row_indices"}
 
 
+def goog_files(tmp_path, bad_strike_row=None):
+    """Synthetic GOOG inputs for validate_goog_data.py, built from the Public fixtures."""
+    iv = pd.read_csv(FIXTURES / "synthetic_raw_iv.csv")
+    iv = iv[(iv["symbol"] == "SYN1") & (iv["date"] == "2026-10-13")].assign(symbol="GOOG").reset_index(drop=True)
+    if bad_strike_row is not None:
+        iv.loc[bad_strike_row, "strike"] = -123.456
+    iv_file = tmp_path / "goog_iv.csv"
+    iv.to_csv(iv_file, index=False)
+
+    bars = pd.read_csv(FIXTURES / "synthetic_minute_bars.csv.gz")
+    bars["ticker"] = bars["ticker"].astype(str).replace({"SYN1": "GOOG"})     # other tickers stay and are ignored
+    month = tmp_path / "bars" / "year=2020" / "month=1"
+    month.mkdir(parents=True)
+    bars.rename(columns={"window_start": "source_window_start_ns"}).to_parquet(month / "part-0.parquet")
+    return iv_file, tmp_path / "bars"
+
+
+def run_goog_validation(tmp_path, iv_file, minute_dir):
+    report = tmp_path / "validation_goog.json"
+    done = subprocess.run([sys.executable, "scripts/validate_goog_data.py", "--iv-file", str(iv_file),
+                           "--minute-dir", str(minute_dir), "--report", str(report)],
+                          cwd=ROOT, capture_output=True, text=True)
+    return done, json.loads(report.read_text()) if report.exists() else None
+
+
+def test_goog_validation_passes_on_synthetic_goog_files(tmp_path):
+    done, report = run_goog_validation(tmp_path, *goog_files(tmp_path))
+    assert done.returncode == 0, done.stderr
+    assert report["total_violations"] == 0 and report["bar_months"] == 1
+    assert report["bar_rows"] == 1280      # GOOG rows only; SYN2 and SYN3 are ignored
+
+
+def test_goog_validation_reports_indices_but_never_values(tmp_path):
+    done, report = run_goog_validation(tmp_path, *goog_files(tmp_path, bad_strike_row=3))
+    assert done.returncode == 2
+    strike_rule = next(r for r in report["files"][0]["rules"] if r["rule"] == "strike_positive")
+    assert strike_rule["violations"] == 1 and strike_rule["row_indices"] == [3]
+    assert "123.456" not in done.stdout + done.stderr + json.dumps(report)
+
+
 def test_inspect_schema_prints_structure_only():
     done = subprocess.run([sys.executable, "scripts/inspect_schema.py", "tests/fixtures/synthetic_raw_iv.csv"],
                           cwd=ROOT, capture_output=True, text=True)
@@ -472,3 +512,58 @@ def test_unreadable_raw_file_gives_a_sanitized_error(tmp_path):
         surface.load_raw_iv(path)
     assert "secret-row-value" not in str(caught.value)
     assert caught.value.__suppress_context__ or caught.value.code == "E_SCHEMA"
+
+
+# --- out-of-sample test script (SPEC.md 8.5) ---
+
+def load_market_test_module():
+    spec = importlib.util.spec_from_file_location("goog_market", ROOT / "scripts" / "test_goog_market.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_shared_paths_give_the_same_price_as_pricing_each_contract_alone():
+    market_test = load_market_test_module()
+    tenor = 0.3
+    contracts = [{"index": 0, "strike": 0.95, "kind": "put"}, {"index": 1, "strike": 1.08, "kind": "call"}]
+    rows = market_test.price_expiration((PARAMS, 0.04, 0.0026, tenor, contracts, 3000, [11, 12]))
+    n_exercise = math.ceil(252 * tenor)
+    for contract, row in zip(contracts, rows):
+        alone = [price_bermudan([PARAMS], [[1.0]], {"r": 0.04, "q": [0.0026]},
+                                {"strike": contract["strike"], "maturity": tenor, "n_exercise": n_exercise,
+                                 "kind": contract["kind"]},
+                                {"n_paths": 3000, "n_substeps": 1, "basis_degree": 3, "master_seed": seed})
+                 for seed in (11, 12)]
+        assert row["n_exercise"] == n_exercise
+        assert row["V"] == pytest.approx(np.mean([a["bermudan"] for a in alone]), rel=1e-12)
+        assert row["se"] == pytest.approx(np.sqrt(sum(a["se_bermudan"] ** 2 for a in alone)) / 2, rel=1e-12)
+
+
+def test_market_test_output_is_aggregate_with_groups_of_five(tmp_path):
+    out, prices = tmp_path / "out.json", tmp_path / "prices.parquet"
+    done = subprocess.run([sys.executable, "scripts/test_goog_market.py", "--raw-file", "tests/fixtures/synthetic_raw_iv.csv",
+                           "--calibration", "results/smoke/calibration.json",
+                           "--market-inputs", "tests/fixtures/synthetic_market_inputs.yaml", "--symbol", "SYN1",
+                           "--date", "2026-10-14", "--n-paths", "1000", "--seeds", "1", "--bootstrap", "20",
+                           "--output", str(out), "--prices-out", str(prices)], cwd=ROOT, capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    document = json.loads(out.read_text())
+    assert document["test_set"]["grid_overlap"] == 0
+    assert set(document["results"]) == set(document["in_sample_results"]) == {"calibrated_2026_10_13", "published_2015"}
+    for table in (document["results"], document["in_sample_results"]):
+        for summary in table.values():
+            for key in ("by_maturity", "by_moneyness", "by_kind"):
+                assert all(group["n"] >= 5 for group in summary[key])
+    text = out.read_text()
+    assert "option_symbol" not in text and "SYN1-" not in text     # no contract identifiers
+    assert "NaN" not in text and "Infinity" not in text             # strict JSON
+    assert len(pd.read_parquet(prices)) == 2 * (document["test_set"]["n_test"] + document["in_sample_set"]["n"])
+
+
+def test_histogram_bins_are_merged_until_each_has_five():
+    market_test = load_market_test_module()
+    values = np.array([0.1] * 7 + [0.3] * 2 + [0.6] * 4 + [3.0] * 1)
+    bins = market_test.histogram_min5(values, [0.0, 0.25, 0.5, 1.0, np.inf])
+    assert all(b["n"] >= 5 for b in bins) and sum(b["n"] for b in bins) == len(values)
+    assert all(math.isfinite(b["high"]) for b in bins)

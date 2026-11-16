@@ -115,11 +115,17 @@ prototype/ the owner's earlier code and notebook, not part of the assessed work
 
 The list is roughly in dependency order. Items marked **(data)** read licensed data, so the owner must review the committed script before an agent runs it (contract §3.3).
 
-**Progress (2026-11-15, `AI_USE.md` Entry 30):**
-- **Part A is done**, except the VZ-10 to VZ-13 figures, which wait for the item 13 output schema.
-- **Fast tests and smoke still pass.** The smoke price is bit-identical to before.
-- **V-04 now FAILS on one call case**, recorded and not loosened. It needs an owner decision; see section 10.
-- **Before items 14–18 run,** the owner must review the changed `run.py` calibrate and price paths.
+**Progress (2026-11-16, `AI_USE.md` Entries 30–31):**
+- **Part A is done**, including the VZ-10 to VZ-13 figures, tested on synthetic output only.
+- **Reviewed `run.py`, run on GOOG (items 14, 18, 19):**
+  - The recalibration reproduces RMS 0.01049 at ladder step 3, now in the v1.13 schema.
+  - The reference contract under parameter set (a), labelled REJECTED: Bermudan 0.11677 ± 0.00019, premium 0.00377 (95% interval 0.00355–0.00399). T1 and T2 are met.
+  - The comparison and sweeps are done (18 configurations in 77 s).
+- **Part B scripts are written and committed:** `validate_goog_data.py` (item 12) and the rewritten `test_goog_market.py` (item 13).
+  - `test_goog_market.py` also prices the calibration grid, for the reworded question about accuracy within and outside the calibrated sample.
+  - **Neither has run on licensed data.** Both wait for owner review (contract §3.3).
+- **Expected runtime:** about 10–20 minutes with `--workers 8`, double that at 200,000 paths. This is estimated from a production-size fixture run (148 contracts, 347 s); budget B4 is 2 hours.
+- **V-04 still FAILS on one call case;** this needs an owner decision (section 10).
 
 **A. Changes that don't touch licensed data (an agent can do these now)**
 
@@ -227,7 +233,7 @@ The committed `results/verification_table.csv` predates v1.12 and v1.13. Its las
 
 | ID | What it checks | Status for v1.13 |
 |---|---|---|
-| V-00 | Raw-data validation of the GOOG IV file and GOOG minute bars | Not run: `validate_goog_data.py` doesn't exist. The older `validate_raw.py` passed with the recorded exceptions |
+| V-00 | Raw-data validation of the GOOG IV file and GOOG minute bars | `validate_goog_data.py` written, with synthetic-file tests passing. Not run on GOOG data: it awaits owner review |
 | V-01 | Semi-analytic European against published prices (Fang & Oosterlee, via Chan) | PASS (v1.12 table) |
 | V-02 | Put–call parity; Black–Scholes limit when vol-of-vol is tiny | PASS |
 | V-03 | Monte Carlo European against semi-analytic, 40 options | PASS |
@@ -236,20 +242,20 @@ The committed `results/verification_table.csv` predates v1.12 and v1.13. Its las
 | V-06 | Bermudan against published American puts (Ikonen & Toivanen) | PASS |
 | V-07 | Vectorized LSMC against an independent scalar version | PASS |
 | V-08 | The same run repeated gives identical numbers | PASS |
-| V-09 | Price stable across basis degrees | PASS under v1.12; must rerun with parameter set (a) |
+| V-09 | Price stable across basis degrees | Inputs now exist (parameter set (a)); run in `verify_outputs.py` |
 | V-10 | Price stable from 4 to 8 sub-steps | Same as V-09 |
 | V-11 | Production seeds agree | Same as V-09 |
 | V-12 | Calibration recovers known parameters on synthetic data | PASS |
-| V-13 | GOOG 2026-10-13 calibration meets RMS ≤ 0.01 and is stable | Will record **FAIL**: RMS 0.01049 is already known |
-| V-14 | Implied-vol conversion: (a) tree round trip; (b, c) checks on the GOOG file | (a) PASS; (b, c) not yet run on GOOG |
-| V-15 | Configured runs complete, finite, with matching hashes | FAIL until `core_goog_reference` has run. The test now fails on a reported config with no run, where before it ignored it |
+| V-13 | GOOG 2026-10-13 calibration meets RMS ≤ 0.01 and is stable | **FAIL**, recorded: ladder step 3, rejected fit RMS 0.01049 |
+| V-14 | Implied-vol conversion: (a) tree round trip; (b, c) checks on the GOOG file | PASS: 77 of 85 near-the-money pairs agree (0.906, rule ≥ 0.90); median own-vs-vendor gap 0.0008 (rule ≤ 0.02) |
+| V-15 | Configured runs complete, finite, with matching hashes | `core_goog_reference` has now run; rerun the check |
 | V-16 | No licensed data or secrets in Git | PASS |
 | V-17 | Smoke test passes from a fresh clone | PASS; rerun |
 | V-18 | Every figure and table traces to a result file | Rerun after the new figures |
-| V-19 | Test set and calibration grid share no `option_symbol` | Not implemented |
+| V-19 | Test set and calibration grid share no `option_symbol` | Implemented; reads `test_set.grid_overlap` once `test_goog_market.py` has run |
 | B1, B2 | Runtime: one pricing ≤ 30 s (about 0.85 s measured); full sweep ≤ 6 h (72 s measured) | PASS under v1.12 |
-| B3, B4 | Smoke ≤ 10 min from a clean clone; full test pricing ≤ 2 h | B3 passes via V-17; B4 not measured |
-| T1, T2, T3 | Precision targets for the reference price, its premium, and the test pricing | T3 is new; T1 and T2 to rerun with set (a) |
+| B3, B4 | Smoke ≤ 10 min from a clean clone; full test pricing ≤ 2 h | B3 passes via V-17; B4 is estimated well inside the budget and recorded by `test_goog_market.py` |
+| T1, T2, T3 | Precision targets for the reference price, its premium, and the test pricing | T1 and T2 met under set (a); T3 is computed by `test_goog_market.py` (rerun at 200,000 paths if missed) |
 
 **Gates (spec §17.1):**
 - **G1** (Nov 14) needs V-01 to V-12 and V-15, B1, B2, and the governance gate. All passed in the last table, before V-04's calls were added.
@@ -286,8 +292,8 @@ Spec changes are recorded in `SPEC.md` §22; the full detail is in `AI_USE.md`.
   - the commit holding spec v1.13, contract v0.9, this handover, the GOOG calibration and the v1.12 market-test results.
 
   `origin/main` is at `ebd457a`. Push only when the owner asks.
-- **Part A of section 5** is committed locally as well. See `git log` and `AI_USE.md` Entry 30.
-- **Next:** part B, starting with `validate_goog_data.py` and the `test_goog_market.py` rewrite. Both need owner review before they run on licensed data.
+- **Part A and the part B scripts** are committed locally; see `git log` and `AI_USE.md` Entry 31.
+- **Next:** once the owner has reviewed them, run `validate_goog_data.py`, then `test_goog_market.py --workers 8`, then `make_figures.py` and `verify_outputs.py` from a clean tree.
 
 ---
 
@@ -320,6 +326,9 @@ Spec changes are recorded in `SPEC.md` §22; the full detail is in `AI_USE.md`.
 9. **Release:** `LICENSE`, the `v1.0-final` tag, and the Route A package verified as spec §13 describes.
 
 ---
+
+10. **The in-sample addition to `test_goog_market.py`.** For the reworded question, the script also prices the calibration grid with the same metrics, under `in_sample_results` and `in_sample_set`. §8.5 and §12.6 don't describe this yet; the owner may want to add it through a §22 row.
+11. **The uncommitted §2.3 edit in `SPEC.md`.** It removes "C++" and "contracts on more than one asset" from the out-of-scope list, and has no §22 row yet. §10.3 still requires one asset, and the engine enforces that since part A. The owner's `prototype/` changes are also uncommitted.
 
 ## 11. Useful commands
 

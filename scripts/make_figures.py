@@ -445,6 +445,158 @@ def google_2015_figure(results_root, out_dir):
              "json_pointer": "/all_puts/median_abs_usd", "check_ids": "V-06"}]
 
 
+# ----------------------------------------------------------------------
+# VZ-10 to VZ-13: accuracy within and outside the calibrated sample (SPEC.md 8.5, 12.9)
+# ----------------------------------------------------------------------
+
+SERIES = [("results", "calibrated_2026_10_13", "Calibrated 2026-10-13, out of sample", "o", BLUE, "full"),
+          ("in_sample_results", "calibrated_2026_10_13", "Calibrated 2026-10-13, in sample", "s", BLUE, "none"),
+          ("results", "published_2015", "Published 2015, out of sample", "^", ORANGE, "full")]
+
+
+def market_test_title(document, text):
+    """The heading, led by the REJECTED label when the calibrated set failed acceptance (SPEC.md 2.4)."""
+    fitted = document["parameter_sets"]["calibrated_2026_10_13"]
+    if fitted.get("status") != "rejected":
+        return text
+    return (f"Calibrated set is a REJECTED FIT (RMS IV {fitted['rms_iv_residual']:.5f} > limit {fitted['limit']}).\n"
+            + text)
+
+
+def market_test_footnote(document, source):
+    pricing = document["pricing"]
+    return (f"{document['symbol']} {document['snapshot_date']}. Out of sample: {document['test_set']['n_test']} traded "
+            f"contracts not in the grid; in sample: the {document['in_sample_set']['n']}-point calibration grid. LSMC, "
+            f"{pricing['n_paths']} paths per set, {len(pricing['seeds'])} seeds, daily exercise. Bars: 95% bootstrap "
+            f"intervals over expirations ({pricing['bootstrap_resamples']} resamples). Groups with n < 5 omitted. "
+            f"Aggregates only. Source {source}. Code {CODE}.")
+
+
+def plot_grouped(ax, document, key, metric, label_fn=None):
+    """One marker per series and group, with bootstrap intervals; shape and fill separate the series."""
+    offsets = np.linspace(-0.2, 0.2, len(SERIES))
+    labels = None
+    for (table, name, label, marker, colour, fill), offset in zip(SERIES, offsets):
+        groups = document[table][name][key]
+        labels = labels or [g["bucket"] for g in groups]
+        xs, ys, lows, highs = [], [], [], []
+        for group in groups:
+            if group.get(metric) is None or group["bucket"] not in labels:
+                continue
+            interval = group.get("ci95", {}).get(metric, [group[metric], group[metric]])
+            xs.append(labels.index(group["bucket"]) + offset)
+            ys.append(group[metric])
+            lows.append(group[metric] - interval[0])
+            highs.append(interval[1] - group[metric])
+        ax.errorbar(xs, ys, yerr=[lows, highs], fmt=marker, color=colour, markerfacecolor=colour if fill == "full" else "none",
+                    markersize=6, capsize=3, linewidth=1.2, label=label)
+    ax.set_xticks(range(len(labels)), labels)
+    return labels
+
+
+def accuracy_figures(results_root, out_dir):
+    path = Path(results_root) / "goog_market_test.json"
+    if not path.exists():
+        return []
+    document = json.loads(path.read_text())
+    if "in_sample_results" not in document:
+        return []    # written before the v1.13 schema
+    source = relative(path, results_root)
+    evidence = []
+
+    def row(claim, pointer, checks):
+        return {"claim_id": claim, "location": "figure", "artifact_type": "figure", "run_id": "goog_market_test",
+                "result_path": source, "json_pointer": pointer, "check_ids": checks}
+
+    # VZ-10: implied-volatility error by maturity and by moneyness
+    fig, (left, right) = plt.subplots(1, 2, figsize=(9.0, 3.9), sharey=True)
+    plot_grouped(left, document, "by_maturity", "median_abs_iv_error")
+    plot_grouped(right, document, "by_moneyness", "median_abs_iv_error")
+    left.set_yscale("log")
+    left.set_ylabel("Median |model IV - market IV| (log scale)")
+    left.set_xlabel("Maturity")
+    right.set_xlabel("Strike / forward")
+    handles, labels = left.get_legend_handles_labels()
+    fig.legend(handles, labels, frameon=False, fontsize=7, ncol=3, loc="lower center", bbox_to_anchor=(0.5, 0.1))
+    overall = document["results"]["calibrated_2026_10_13"]["overall"]["median_abs_iv_error"]
+    fig.suptitle(market_test_title(document, f"Out of sample, the calibrated set's median implied-vol error is {overall:.4f}"),
+                 fontsize=9, x=0.01, ha="left")
+    fig.tight_layout(rect=(0, 0.17, 1, 0.94))
+    add_footnote(fig, market_test_footnote(document, source))
+    fig.savefig(out_dir / "accuracy_iv_error.png", dpi=180)
+    plt.close(fig)
+    evidence.append(row("fig_accuracy_iv_error", "/results/calibrated_2026_10_13/overall/median_abs_iv_error", "V-19"))
+
+    # VZ-11: model inside the spread, and mid inside the Monte Carlo interval
+    fig, axes = plt.subplots(2, 2, figsize=(9.0, 6.0), sharey=True)
+    for column, key, label in ((0, "by_maturity", "Maturity"), (1, "by_moneyness", "Strike / forward")):
+        plot_grouped(axes[0, column], document, key, "share_inside_spread")
+        plot_grouped(axes[1, column], document, key, "share_mid_inside_mc_ci95")
+        axes[1, column].set_xlabel(label)
+    axes[0, 0].set_ylabel("Share of model prices\ninside bid-ask")
+    axes[1, 0].set_ylabel("Share of mids inside the\nMonte Carlo 95% interval")
+    axes[0, 0].set_ylim(-0.03, 1.03)
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, frameon=False, fontsize=7, ncol=3, loc="lower center", bbox_to_anchor=(0.5, 0.06))
+    inside = document["results"]["calibrated_2026_10_13"]["overall"]["share_inside_spread"]
+    fig.suptitle(market_test_title(document, f"Out of sample, {inside:.0%} of calibrated-set prices fall inside the "
+                                             "bid-ask spread"), fontsize=9, x=0.01, ha="left")
+    fig.tight_layout(rect=(0, 0.11, 1, 0.94))
+    add_footnote(fig, market_test_footnote(document, source))
+    fig.savefig(out_dir / "accuracy_inside_spread.png", dpi=180)
+    plt.close(fig)
+    evidence.append(row("fig_accuracy_inside_spread", "/results/calibrated_2026_10_13/overall/share_inside_spread", "V-19"))
+
+    # VZ-12: Monte Carlo half-width against the market half-spread (T3)
+    precision = document["precision"]
+    bins = precision["half_width_to_half_spread"]["bins"]
+    # Equal-width bars labelled by range, so a wide merged bin is not drawn larger than it is
+    fig, ax = plt.subplots(figsize=(7.0, 3.4))
+    # Each bar is labelled as well as coloured: within the limit, outside it, or a merged bin spanning it
+    sides = ["within" if b["high"] <= 0.5 else "outside" if b["low"] >= 0.5 else "spans 0.5" for b in bins]
+    colours = {"within": BLUE, "outside": ORANGE, "spans 0.5": MUTED}
+    ax.bar(range(len(bins)), [b["n"] for b in bins], color=[colours[s] for s in sides], edgecolor=SURFACE)
+    for i, (b, side) in enumerate(zip(bins, sides)):
+        ax.text(i, b["n"], side, ha="center", va="bottom", fontsize=7, color=MUTED)
+    ax.set_xticks(range(len(bins)), [f"{b['low']:.3g}-{b['high']:.3g}" for b in bins], fontsize=7)
+    ax.set_xlabel("Monte Carlo 95% half-width / market half-spread (T3 limit 0.5)")
+    ax.set_ylabel("Contracts (bins merged to n >= 5)")
+    verdict = "met" if precision["T3_met"] else "not met"
+    fig.suptitle(market_test_title(document, f"T3 {verdict}: {precision['T3_share']:.0%} of contracts within the limit "
+                                             "(needs 90%)"), fontsize=9, x=0.01, ha="left")
+    fig.tight_layout(rect=(0, 0.1, 1, 0.93))
+    add_footnote(fig, f"Calibrated set, out of sample, {precision['n_paths_used']} paths per set, "
+                      f"{len(document['pricing']['seeds'])} seeds. Source {source}. Code {CODE}.")
+    fig.savefig(out_dir / "precision_t3.png", dpi=180)
+    plt.close(fig)
+    evidence.append({**row("fig_precision_t3", "/precision/T3_share", "T3"), "location": "figure"})
+
+    # VZ-13: LSMC pricing against the tree shortcut, by maturity
+    shortcut = {g["bucket"]: g for g in document["tree_shortcut"]["by_maturity"]}
+    lsmc = {g["bucket"]: g for g in document["results"]["calibrated_2026_10_13"]["by_maturity"]}
+    buckets = [b for b in lsmc if b in shortcut]
+    fig, (left, right) = plt.subplots(1, 2, figsize=(9.0, 3.6))
+    x = np.arange(len(buckets))
+    for ax, metric, label in ((left, "median_abs_iv_error", "Median |IV error|"),
+                              (right, "share_inside_spread", "Share inside bid-ask")):
+        ax.plot(x - 0.08, [lsmc[b][metric] for b in buckets], "o", color=BLUE, markersize=6, label="LSMC (reported)")
+        ax.plot(x + 0.08, [shortcut[b][metric] for b in buckets], "D", color=ORANGE, markersize=6, markerfacecolor="none",
+                markeredgewidth=1.5, label="Tree shortcut (diagnostic)")
+        ax.set_xticks(x, buckets)
+        ax.set_ylabel(label)
+        ax.set_xlabel("Maturity")
+    left.legend(frameon=False, fontsize=7)
+    fig.suptitle(market_test_title(document, "Pricing with LSMC instead of the tree shortcut, calibrated set, "
+                                             "out of sample"), fontsize=9, x=0.01, ha="left")
+    fig.tight_layout(rect=(0, 0.08, 1, 0.93))
+    add_footnote(fig, "The shortcut carries the model's European IV through a 500-step American tree; no Monte Carlo "
+                      f"interval. Source {source}. Code {CODE}.")
+    fig.savefig(out_dir / "accuracy_lsmc_vs_tree.png", dpi=180)
+    plt.close(fig)
+    evidence.append(row("fig_accuracy_lsmc_vs_tree", "/tree_shortcut/overall/median_abs_iv_error", "V-19"))
+    return evidence
+
+
 def main():
     parser = argparse.ArgumentParser(description="Make figures from Public and Internal outputs")
     parser.add_argument("--results-root", default=str(ROOT / "results"))
@@ -473,6 +625,7 @@ def main():
     if published_comparison is not None:
         evidence += published_surface_figure(published_comparison, results_root, out_dir)
     evidence += goog_surface_figure(results_root, out_dir)
+    evidence += accuracy_figures(results_root, out_dir)
     evidence += google_2015_figure(results_root, out_dir)
     evidence += surface_figure(results_root, out_dir)
     evidence += market_fit_table(results_root, out_dir)

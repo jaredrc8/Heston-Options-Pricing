@@ -768,3 +768,35 @@ The AI did not change either check after seeing these results. It reported the s
 - **V-09 to V-11, V-13, V-14(b, c), V-00 and V-19** are skipped: their inputs predate the v1.13 schema or don't exist yet.
 
 **Not done:** no licensed data was read and no market run was made. Part B (`validate_goog_data.py`, the `test_goog_market.py` rewrite, recalibration) and figures VZ-10 to VZ-13 remain. The `run.py` changes need the author's review before market runs (contract §3.3). Nothing was pushed.
+
+### Entry 31 — 2026-11-16 — Reworded question; GOOG reruns with the reviewed run.py; part B scripts
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** The question in `SPEC.md` §2.1 was reworded (accuracy within and outside the calibrated sample); `run.py` has been reviewed and may be pushed; continue the project.
+
+**What the AI did:**
+- **Recorded the question change** in a §22 row, and updated README and HANDOVER. Committed and pushed (`d206a17`) after `check_no_data.sh` passed.
+- **Ran the reviewed `run.py` on GOOG:**
+  - Recalibration reproduced ladder step 3, RMS 0.01049, now in the v1.13 schema.
+  - V-14(b, c) passes: 77 of 85 pairs, median gap 0.0008. V-13 records FAIL.
+  - Reference contract under the REJECTED fit: Bermudan 0.11677 ± 0.00019, premium 0.00377 (95% interval 0.00355–0.00399). T1 and T2 met.
+  - The comparison and 18-configuration sweep ran (77 s).
+- **Wrote `scripts/validate_goog_data.py` (V-00).** It reuses the rules in `validate_raw.py` and checks the GOOG option file and the GOOG rows of each minute-bar month. It writes counts and row indices only. Synthetic-file tests check both a clean pass and that a bad value is reported by index but never printed.
+- **Rewrote `scripts/test_goog_market.py` to §8.5:**
+  - LSMC American pricing with `ceil(252 T)` dates, one sub-step, 5 seeds and 100,000 paths. Paths are shared within an expiration; a test shows each price equals `price_bermudan` on that contract alone.
+  - Monte Carlo intervals; metrics for median relative error, inside the spread, mid inside the interval, and IV error by American-tree inversion.
+  - Breakdowns by maturity, moneyness and kind (n ≥ 5), with bootstrap intervals that resample expirations (2000 resamples, seed 620200), also for each group, since VZ-10 needs them.
+  - The tree-shortcut diagnostic, and T3 with a histogram merged to n ≥ 5.
+  - Per-contract values go only to `data/derived/goog_test_prices.parquet`.
+  - **Addition beyond §8.5:** the same metrics for the calibration grid (in sample), to answer the reworded question. Flagged for the author.
+- **Added figures VZ-10 to VZ-13** to `make_figures.py`, with REJECTED headings. Checked visually on synthetic output only.
+
+**Errors found and fixed:**
+- An open histogram edge would have written `Infinity`, which is not valid JSON. A test now checks the output is strict JSON.
+- The VZ-10 legend covered data points.
+- A merged T3 bin spanning the limit was drawn as "outside".
+
+**Timing:** a production-size fixture run (148 contracts, 6 expirations, 8 workers) took 347 s. GOOG is estimated at 10–20 minutes; budget B4 is 2 hours.
+
+**Not done:** neither new script has run on licensed data; both await the author's review (contract §3.3). V-04 still records one FAIL. The author's uncommitted `SPEC.md` §2.3 edit and `prototype/` changes were left out of the commit. Nothing after `d206a17` was pushed.
