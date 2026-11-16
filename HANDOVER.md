@@ -10,7 +10,10 @@ Owner: Jared Crebo. Next gate G2 is 2026-11-20; final submission is due 2026-12-
 
 ## 1. Where things stand
 
-- **The question (spec §2.1):** how accurately does a Heston model calibrated to one day of GOOG options price GOOG options it was not fitted to?
+- **The question (spec §2.1, reworded 2026-11-16):** how accurately does a Heston model price options contracts within its calibrated sample data and outside it?
+  - **Within** means the 2026-10-13 calibration grid.
+  - **Outside** means the held-out test population of §2.2.
+  - The rest of the spec is unchanged.
 - **How it is answered:**
   - Calibrate to GOOG's 2026-10-13 surface (iVolatility, `data/goog_IV_Oct13.csv`).
   - Price every contract in the test population as an American option with the LSMC engine, with Monte Carlo intervals.

@@ -6,7 +6,9 @@ ENSF 620 Fall 2026 final project (individual). Owner: Jared Crebo.
 
 ## Question
 
-How accurately does a Heston model calibrated to one day of GOOG options price GOOG options it was not fitted to?
+How accurately does a Heston model price options contracts within its calibrated sample data and outside its calibrated sample data?
+
+Within the sample means the contracts in the calibration grid; outside means held-out GOOG contracts that traded the same day (the test population below).
 
 1. Calibrate the five Heston parameters to GOOG's option surface of 2026-10-13.
 2. Price every contract in the test population as an American option with a Least-Squares Monte Carlo (LSMC) engine, with a Monte Carlo interval on each price.
