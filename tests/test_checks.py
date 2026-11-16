@@ -53,25 +53,30 @@ def reference_section(name):
     return section
 
 
-def reported_inputs():
-    """The reported parameter set: the market fit if one exists, otherwise the published set."""
-    calibration = ROOT / "results" / "calibration.json"
-    if calibration.exists():
-        document = json.loads(calibration.read_text())
-        entry = document["assets"]["AMD"]
-        if entry["ladder_step"] < 3:
-            return entry["params"], {"r": document["r"], "q": [entry["q"]]}
+CALIBRATION_GOOG = ROOT / "results" / "calibration_goog" / "calibration.json"
 
-    published = yaml.safe_load((ROOT / "configs" / "published_params.yaml").read_text())
-    entry = published["sets"]["GOOG"]
-    if any(entry[name] is None for name in ("v0", "kappa", "theta", "xi", "rho", "q")):
-        pytest.skip("no reported parameter set: OD-5 published parameters not entered")
-    inputs = yaml.safe_load((ROOT / "configs" / "market_inputs.yaml").read_text())
-    yields = {str(k): v for k, v in inputs["treasury_1y_cmt_yield"].items()}
-    if yields.get("2026-10-14") is None:
-        pytest.skip("no rate: OD-3 Treasury yield not entered")
-    params = {name: float(entry[name]) for name in ("v0", "kappa", "theta", "xi", "rho")}
-    return params, {"r": 2.0 * math.log(1.0 + float(yields["2026-10-14"]) / 2.0), "q": [float(entry["q"])]}
+
+def goog_calibration_or_skip():
+    """The 2026-10-13 GOOG calibration summary in the v1.13 schema (SPEC.md 12.5), or skip."""
+    if not CALIBRATION_GOOG.exists():
+        pytest.skip("market mode only: no results/calibration_goog/calibration.json")
+    document = json.loads(CALIBRATION_GOOG.read_text())
+    entry = document["assets"]["GOOG"]
+    if "rejected_fit" not in entry:
+        pytest.skip("calibration_goog/calibration.json predates the v1.13 schema; rerun run.py calibrate")
+    return document, entry
+
+
+def reported_inputs():
+    """Parameter set (a): the 2026-10-13 GOOG fit, or its REJECTED fit at ladder step 3 (SPEC.md 6.7)."""
+    document, entry = goog_calibration_or_skip()
+    if entry["ladder_step"] in (1, 2):
+        params = entry["params"]
+    elif entry["ladder_step"] == 3:
+        params = entry["rejected_fit"]["params"]
+    else:
+        pytest.skip("ladder step 4: no market-calibrated parameter set exists")
+    return params, {"r": document["r"], "q": [entry["q"]]}
 
 
 def pooled_price(params, market, contract, settings, seeds):
@@ -90,6 +95,33 @@ def run_price(results_root, config="configs/smoke.yaml"):
 # ----------------------------------------------------------------------
 # CORE checks
 # ----------------------------------------------------------------------
+
+@pytest.mark.slow
+def test_V00_raw_data_validation(record_property):
+    """Reads the report written by scripts/validate_goog_data.py (SPEC.md 11)."""
+    path = ROOT / "results" / "validation_goog.json"
+    if not path.exists():
+        pytest.skip("no results/validation_goog.json: run scripts/validate_goog_data.py (owner-reviewed)")
+    report = json.loads(path.read_text())
+    total = report["total_violations"]
+    record_property("measured", f"{total} violations over {len(report['files'])} file group(s)")
+    record_property("threshold", "zero violations, apart from exceptions recorded in DATA_CONTRACT.md")
+    assert total == 0
+
+
+@pytest.mark.slow
+def test_V19_test_set_disjoint_from_grid(record_property):
+    path = ROOT / "results" / "goog_market_test.json"
+    if not path.exists():
+        pytest.skip("no results/goog_market_test.json")
+    test_set = json.loads(path.read_text()).get("test_set")
+    if test_set is None or "grid_overlap" not in test_set:
+        pytest.skip("goog_market_test.json predates the v1.13 schema; rerun scripts/test_goog_market.py")
+    record_property("measured", f"overlap {test_set['grid_overlap']}; test {test_set['n_test']}; "
+                                f"grid removed {test_set['n_in_grid_removed']}")
+    record_property("threshold", "no option_symbol in both")
+    assert test_set["grid_overlap"] == 0
+
 
 @pytest.mark.fast
 def test_V01_published_benchmark(record_property):
@@ -151,17 +183,22 @@ def test_V03_european_mc_grid(record_property):
 
 @pytest.mark.slow
 def test_V04_gbm_reduction_vs_tree(record_property):
+    """Puts with q = 0 and, since v1.13, calls with q = 0.0026."""
     measured = []
-    for sigma, strike in [(0.3, 1.0), (0.5, 1.0), (0.5, 0.9), (0.3, 1.1)]:
-        params = {"v0": sigma**2, "kappa": 1.0, "theta": sigma**2, "xi": 0.0, "rho": 0.0}
-        contract = {"strike": strike, "maturity": 1.0, "n_exercise": 50}
-        result = price_bermudan([params], [[1.0]], SYN_MARKET, contract, {**PRODUCTION, "master_seed": TEST_SEED})
-        tree = crr_price("put", 1.0, strike, 1.0, sigma, SYN_R, 0.0, 5000, exercise_steps=[100 * k for k in range(1, 51)])
-        z = abs(result["bermudan"] - tree) / max(result["se_bermudan"], 1e-12)
-        measured.append(z)
-        assert z <= 3
-    record_property("measured", "differences in SE: " + ", ".join(f"{z:.2f}" for z in measured))
-    record_property("threshold", "<= 3 SE for each pair")
+    for kind, q in (("put", 0.0), ("call", 0.0026)):
+        for sigma, strike in [(0.3, 1.0), (0.5, 1.0), (0.5, 0.9), (0.3, 1.1)]:
+            params = {"v0": sigma**2, "kappa": 1.0, "theta": sigma**2, "xi": 0.0, "rho": 0.0}
+            contract = {"strike": strike, "maturity": 1.0, "n_exercise": 50, "kind": kind}
+            result = price_bermudan([params], [[1.0]], {"r": SYN_R, "q": [q]}, contract,
+                                    {**PRODUCTION, "master_seed": TEST_SEED})
+            tree = crr_price(kind, 1.0, strike, 1.0, sigma, SYN_R, q, 5000, exercise_steps=[100 * k for k in range(1, 51)])
+            z = abs(result["bermudan"] - tree) / max(result["se_bermudan"], 1e-12)
+            measured.append((f"{kind} sigma {sigma} K {strike}", z))
+    # Every case is measured and recorded before the rule is applied
+    record_property("measured", "differences in SE: " + "; ".join(f"{name}: {z:.2f}" for name, z in measured))
+    record_property("threshold", "<= 3 SE for each pair, puts and calls")
+    failing = [f"{name}: {z:.2f} SE" for name, z in measured if z > 3]
+    assert not failing, "; ".join(failing)
 
 
 @pytest.mark.fast
@@ -294,24 +331,16 @@ def test_V12_calibration_recovers_known_parameters(record_property):
     assert rho_error <= 0.05
 
 
-def market_calibration_or_skip():
-    path = ROOT / "results" / "calibration.json"
-    if not path.exists():
-        pytest.skip("market mode only: no results/calibration.json (owner-run; OD-1 unresolved)")
-    document = json.loads(path.read_text())
-    if document["data_mode"] != "market":
-        pytest.skip("market mode only")
-    return document
-
-
 @pytest.mark.slow
 def test_V13_market_calibration(record_property):
-    entry = market_calibration_or_skip()["assets"]["AMD"]
-    if entry["ladder_step"] == 3:
-        pytest.fail("failure ladder step 3: no market-calibrated result")
-    record_property("measured", f"RMS {entry['rms_iv_residual']:.4f}; stable {entry['stable']}; "
+    _, entry = goog_calibration_or_skip()
+    if entry["ladder_step"] == 4:
+        pytest.fail("failure ladder step 4: no converged start or sparse grid")
+    fit = entry["rejected_fit"] if entry["ladder_step"] == 3 else entry
+    record_property("measured", f"RMS {fit['rms_iv_residual']:.5f}; stable {fit['stable']}; "
                                 f"ladder step {entry['ladder_step']}")
-    record_property("threshold", "RMS <= 0.01 and stable")
+    record_property("threshold", "RMS <= 0.01 and stable (GOOG, 2026-10-13)")
+    assert entry["ladder_step"] in (1, 2), f"ladder step 3: rejected fit RMS {fit['rms_iv_residual']:.5f} > 0.01"
     assert entry["rms_iv_residual"] <= 0.01 and entry["stable"]
 
 
@@ -329,7 +358,7 @@ def test_V14a_tree_inversion_round_trip(record_property):
 
 @pytest.mark.slow
 def test_V14bc_market_iv_conversion(record_property):
-    checks = market_calibration_or_skip()["assets"]["AMD"].get("iv_checks")
+    checks = goog_calibration_or_skip()[1].get("iv_checks")
     if not checks or checks["near_money_pairs"] == 0:
         pytest.skip("no near-the-money call/put pairs were available")
     fraction = checks["pairs_with_overlapping_bands"] / checks["near_money_pairs"]
@@ -351,6 +380,9 @@ def test_V15_output_completeness(record_property):
     found = {name: sorted((ROOT / "results" / "runs").glob(f"{name}-*")) for name in reported}
     if not any(found.values()):
         pytest.skip("no reported run has been completed yet")
+
+    missing = sorted(name for name, directories in found.items() if not directories)
+    assert not missing, f"reported config(s) with no completed run: {', '.join(missing)}"
 
     n_checked = 0
     for directories in found.values():
@@ -443,47 +475,10 @@ def test_B1_one_production_pricing(record_property):
 
 @pytest.mark.slow
 def test_B2_full_sweep(record_property):
-    summaries = sorted((ROOT / "results" / "sweeps").glob("core_*production-*.json"), key=lambda p: p.stat().st_mtime)
+    summaries = sorted((ROOT / "results" / "sweeps").glob("core_goog_reference-*.json"), key=lambda p: p.stat().st_mtime)
     if not summaries:
         pytest.skip("no reported sweep has been completed yet")
     total = json.loads(summaries[-1].read_text())["wall_seconds_total"]
     record_property("measured", f"{total:.0f} s")
     record_property("threshold", "<= 21600 s")
     assert total <= 21600
-
-
-# ----------------------------------------------------------------------
-# Extensions: closed until their gates pass (SPEC.md 2.2 and 17)
-# ----------------------------------------------------------------------
-
-EXT_A_REASON = "EXT-A has not started: GOOG stays single-asset until NVDA, AMD and INTC are calibrated (OD-11)"
-
-
-@pytest.mark.slow
-def test_V20_driver_correlations():
-    pytest.skip(EXT_A_REASON)
-
-
-@pytest.mark.slow
-def test_V21_identical_assets():
-    pytest.skip(EXT_A_REASON)
-
-
-@pytest.mark.slow
-def test_V22_orderings():
-    pytest.skip(EXT_A_REASON)
-
-
-@pytest.mark.slow
-def test_V23_three_asset_stability():
-    pytest.skip(EXT_A_REASON)
-
-
-@pytest.mark.slow
-def test_V24_three_asset_calibration():
-    pytest.skip(EXT_A_REASON)
-
-
-@pytest.mark.slow
-def test_V30_cpp_engine():
-    pytest.skip("EXT-B is closed: the C++ gate in SPEC.md 9.4 has not passed")

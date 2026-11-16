@@ -716,3 +716,55 @@ The AI did not change either check after seeing these results. It reported the s
 - **`HANDOVER.md`:** rules and open items updated to match.
 
 **Not done:** nothing was pushed. Under the new rule, no rewritten or new data-reading script has been run.
+
+### Entry 30 — 2026-11-15 — Handover section 5, part A: code changes for spec v1.13
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Begin the next section of the handover: the v1.13 changes that do not touch licensed data.
+
+**What the AI did:**
+- **Engine:**
+  - `simulate.py` is single-asset only: `corr == [[1.0]]` and one parameter set, as §10.3 requires.
+  - The contract gains `kind` (put or call), and `lsmc.py` prices calls.
+  - The random draws keep their order, so the smoke price is bit-identical to before.
+- **Calibration:**
+  - Ladder step 3 records one `rejected_fit` (from_step, params, RMS, stable, limit 0.01), taken from the lowest-RMS attempt, as §12.5 requires.
+  - Step 4 covers the cases with no converged start and a sparse grid.
+- **`run.py`:**
+  - Spec 1.13 and contract 0.9 constants.
+  - The `tier` and `allow_rejected_fit` config keys are removed (they now raise `E_CONFIG`), and `contract.kind` is added.
+  - A rejected fit is used and labelled REJECTED, with its RMS and limit, in `result.json`, sweep and comparison summaries.
+  - `parameter_status` is recorded, and `feller_ratio` is a scalar.
+  - The calibration-date sweep is removed.
+  - V-04's comparison adds calls with q = 0.0026.
+  - **Defect found and fixed:** market-mode pricing read `results/calibration.json` (the old AMD fit) whatever `params_source` said. Market calibration now writes to the `params_source` folder, and pricing reads from it.
+- **Configs:**
+  - New `core_goog_reference.yaml`, exactly as in §12.1.
+  - `core_goog_production.yaml` is now `reported: false`, kept as a record.
+  - `calibrate_goog.yaml` points at `results/calibration_goog/`.
+- **Tests:**
+  - V-04 adds calls; V-09 to V-11 use parameter set (a); V-13 and V-14(b, c) use GOOG.
+  - New V-00 and V-19 read their reports.
+  - V-20 to V-24 and V-30 are removed.
+  - V-15 now fails when a reported config has no completed run.
+  - New unit tests cover the single-asset guard, calls, the ladder steps, the REJECTED label, removed config keys and the reference config.
+- **Figures:**
+  - VZ-1e (the 2026-10-13 surface, labelled REJECTED with the limit inside the figure) replaces the AMD surface. The NVDA and INTC surfaces are dropped.
+  - VZ-1b comes from the published-mode comparison.
+  - VZ-3 shows calls.
+  - Headings carry the REJECTED label.
+  - Tested on a scratch copy of `results/` only.
+- **README** rewritten for v1.13.
+
+**Checks:** ruff clean; 60 fast tests pass; smoke matches `expected.json` exactly.
+- **V-04 FAILS** on one call case: σ 0.5, K 0.9, 3.16 SE against the 3 SE limit. The other cases are 1.24–2.02 SE (calls) and within 3 SE (puts).
+  - Early exercise is worthless here; the tree's Bermudan and European call prices are equal.
+  - The Monte Carlo European agrees with Black–Scholes within 0.4 SE.
+  - The LSMC premium is negative (−0.0029 ± 0.0008).
+  - So this is LSMC low bias from spurious early exercise, not a path or payoff defect.
+  - The rule and seed were not changed (§1.3). The test now records every case before asserting. The decision is the author's (handover section 10).
+- **V-15** fails until `core_goog_reference` has run.
+- **V-09 to V-11, V-13, V-14(b, c), V-00 and V-19** are skipped: their inputs predate the v1.13 schema or don't exist yet.
+
+**Not done:** no licensed data was read and no market run was made. Part B (`validate_goog_data.py`, the `test_goog_market.py` rewrite, recalibration) and figures VZ-10 to VZ-13 remain. The `run.py` changes need the author's review before market runs (contract §3.3). Nothing was pushed.

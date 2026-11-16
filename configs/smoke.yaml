@@ -1,7 +1,6 @@
 # Reviewer smoke path (SPEC.md 9.1 and 11). Synthetic data only; no licensed data is read.
 schema_version: 1
 run_name: core_smoke
-tier: CORE
 reported: false
 data_mode: synthetic
 assets: [SYN1]

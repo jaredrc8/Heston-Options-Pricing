@@ -41,19 +41,19 @@ from hestonpricer.lsmc import price_bermudan
 from hestonpricer.simulate import simulate
 from hestonpricer.tree import crr_price
 
-SPEC_VERSION = "1.12"
-DATA_CONTRACT_VERSION = "0.8"
+SPEC_VERSION = "1.13"
+DATA_CONTRACT_VERSION = "0.9"
 RAW_IV_MARKET = ROOT / "data" / "nvda_amd_intc_IV_Oct13-15.csv"
 RAW_IV_SYNTHETIC = ROOT / "tests" / "fixtures" / "synthetic_raw_iv.csv"
 GRID_FILE = ROOT / "data" / "derived" / "calibration_grid.parquet"
-ALL_DATES = ["2026-10-13", "2026-10-14", "2026-10-15"]
 COMPARISON_SEED = 620100
+V04_CASES = [(0.3, 1.0), (0.5, 1.0), (0.5, 0.9), (0.3, 1.1)]     # (sigma, K), SPEC.md 16
+V04_CALL_Q = 0.0026
 
-CONFIG_KEYS = {"schema_version", "run_name", "tier", "reported", "data_mode", "assets", "snapshot_date",
+CONFIG_KEYS = {"schema_version", "run_name", "reported", "data_mode", "assets", "snapshot_date",
                "market_inputs", "params_source", "contract", "simulation", "seeds"}
-OPTIONAL_KEYS = {"allow_rejected_fit",    # exploratory pricing of a rejected fit (SPEC.md 8.5)
-                 "raw_iv_file"}           # another licensed iVolatility file under data/ (SPEC.md 8.7)
-CONTRACT_KEYS = {"strike", "maturity", "n_exercise"}
+OPTIONAL_KEYS = {"raw_iv_file"}           # the licensed iVolatility file under data/ to calibrate to
+CONTRACT_KEYS = {"strike", "maturity", "n_exercise", "kind"}
 SIMULATION_KEYS = {"n_paths", "n_substeps", "basis_degree"}
 
 # The sweeps of SPEC.md section 9.3. "M" keeps the time step fixed at 1/200.
@@ -89,11 +89,12 @@ def load_config(path):
         raise HestonError("E_CONFIG", "unknown key inside contract or simulation")
     if cfg["data_mode"] not in ("synthetic", "published", "market"):
         raise HestonError("E_CONFIG", "data_mode must be synthetic, published or market")
-    if cfg.get("allow_rejected_fit") and cfg["reported"]:
-        raise HestonError("E_CONFIG", "a rejected fit cannot be used for a reported run (SPEC.md 8.5)")
-    if cfg["tier"] != "CORE" or len(cfg["assets"]) != 1:
-        raise HestonError("E_CONFIG", "only the single-asset CORE tier is open (SPEC.md 2.2)")
+    if len(cfg["assets"]) != 1:
+        raise HestonError("E_CONFIG", "contracts on more than one asset are out of scope (SPEC.md 2.3)")
+    if cfg["contract"].get("kind", "put") not in ("put", "call"):
+        raise HestonError("E_CONFIG", "contract kind must be put or call")
 
+    cfg["contract"] = {"kind": "put", **cfg["contract"]}
     cfg["snapshot_date"] = str(cfg["snapshot_date"])
     state["show_traceback"] = cfg["data_mode"] != "market"
     return cfg
@@ -130,14 +131,18 @@ def load_dividend(cfg, asset):
 
 
 def load_params(cfg, results_root):
-    """Returns (params, q, inputs) for the run's single asset, according to its data mode."""
+    """
+    Returns (params, q, inputs, status) for the run's single asset, according to its data mode.
+    status is "accepted", "rejected", "published" or "synthetic" (SPEC.md 12.4). A rejected fit
+    (ladder step 3) is used and labelled; at step 4 there is nothing to price (SPEC.md 6.7).
+    """
     asset = cfg["assets"][0]
     source = ROOT / cfg["params_source"]
 
     if cfg["data_mode"] == "synthetic":
         params = yaml.safe_load(source.read_text())["assets"][asset]
         inputs = [{"dataset": "synthetic_params", "tickers": [asset], "file_name": source.name}]
-        return params, load_dividend(cfg, asset), inputs
+        return params, load_dividend(cfg, asset), inputs, "synthetic"
 
     if cfg["data_mode"] == "published":
         entry = (yaml.safe_load(source.read_text()).get("sets") or {}).get(asset)
@@ -149,19 +154,34 @@ def load_params(cfg, results_root):
                    "citation": entry["citation"], "table_or_page": entry["table_or_page"]}]
         # A run's market_inputs file may set the dividend yield for this asset
         dividends = yaml.safe_load((ROOT / cfg["market_inputs"]).read_text()).get("dividend_yield", {})
-        return params, float(dividends.get(asset, entry["q"])), inputs
+        return params, float(dividends.get(asset, entry["q"])), inputs, "published"
 
-    # Market mode: the fitted parameters in the Internal calibration summary
-    calibration_file = Path(results_root) / Path(cfg["params_source"]).name
+    # Market mode: the fitted parameters in the Internal calibration summary named by params_source.
+    # A redirected results root (tests, V-08) holds its own copy under the same file name.
+    if Path(results_root).resolve() == (ROOT / "results").resolve():
+        calibration_file = ROOT / cfg["params_source"]
+    else:
+        calibration_file = Path(results_root) / Path(cfg["params_source"]).name
     if not calibration_file.exists():
-        raise HestonError("E_CONFIG", "run `calibrate` first: calibration.json not found")
+        raise HestonError("E_CONFIG", f"run `calibrate` first: {calibration_file.name} not found")
     calibration = json.loads(calibration_file.read_text())
     entry = calibration["assets"][asset]
     if entry["ladder_step"] == 3:
-        if cfg.get("allow_rejected_fit") and entry.get("rejected_full_fit"):
-            return entry["rejected_full_fit"]["params"], entry["q"], calibration["inputs"]
-        raise HestonError("E_CALIB_FAILED", "no market-calibrated result; use published mode (SPEC.md 6.7)")
-    return entry["params"], entry["q"], calibration["inputs"]
+        return entry["rejected_fit"]["params"], entry["q"], calibration["inputs"], "rejected"
+    if entry["ladder_step"] not in (1, 2):
+        raise HestonError("E_CALIB_FAILED", "no market-calibrated result; only published mode is reported (SPEC.md 6.7)")
+    return entry["params"], entry["q"], calibration["inputs"], "accepted"
+
+
+def rejected_label(results_root, cfg):
+    """The REJECTED label every result of a step-3 fit carries (SPEC.md 2.4)."""
+    if Path(results_root).resolve() == (ROOT / "results").resolve():
+        path = ROOT / cfg["params_source"]
+    else:
+        path = Path(results_root) / Path(cfg["params_source"]).name
+    rejected = json.loads(path.read_text())["assets"][cfg["assets"][0]]["rejected_fit"]
+    return {"label": "REJECTED", "rms_iv_residual": rejected["rms_iv_residual"], "limit": rejected["limit"],
+            "from_step": rejected["from_step"]}
 
 
 # ----------------------------------------------------------------------
@@ -227,14 +247,15 @@ def pool_results(per_seed, params, r, q, contract):
         return float(np.sqrt(np.sum([row[name] ** 2 for row in per_seed])) / n_seeds)
 
     K, T, M = float(contract["strike"]), float(contract["maturity"]), int(contract["n_exercise"])
+    kind = contract.get("kind", "put")
 
     # European baseline. heston_european needs xi > 0, so nothing is reported at xi = 0.
-    european_analytic = heston_european("put", 1.0, K, T, params, r, q)
+    european_analytic = heston_european(kind, 1.0, K, T, params, r, q)
 
     # Constant-volatility Bermudan at the European-matching volatility
-    sigma = bs_implied_vol("put", european_analytic, 1.0, K, T, r, q)
+    sigma = bs_implied_vol(kind, european_analytic, 1.0, K, T, r, q)
     steps_per_date = 50
-    baseline = crr_price("put", 1.0, K, T, sigma, r, q, steps_per_date * M,
+    baseline = crr_price(kind, 1.0, K, T, sigma, r, q, steps_per_date * M,
                          exercise_steps=[steps_per_date * k for k in range(1, M + 1)])
 
     bermudan, se_bermudan = pooled_mean("bermudan"), pooled_se("se_bermudan")
@@ -270,7 +291,7 @@ def price_run(cfg, config_source, results_root, command, r_shift=0.0, sweep_info
 
     started = now()
     begin = time.perf_counter()
-    params, q, inputs = load_params(cfg, results_root)
+    params, q, inputs, status = load_params(cfg, results_root)
     r = load_rate(cfg) + r_shift
     market = {"r": r, "q": [q]}
     contract = cfg["contract"]
@@ -296,8 +317,8 @@ def price_run(cfg, config_source, results_root, command, r_shift=0.0, sweep_info
     feller = 2 * params["kappa"] * params["theta"] / params["xi"] ** 2
 
     result = {
-        "schema_version": 1, "run_id": run_id, "tier": cfg["tier"], "data_mode": cfg["data_mode"],
-        "units": "fraction_of_initial_spot", "assets": cfg["assets"],
+        "schema_version": 1, "run_id": run_id, "data_mode": cfg["data_mode"],
+        "parameter_status": status, "units": "fraction_of_initial_spot", "assets": cfg["assets"],
         "contract": contract, "simulation": simulation,
         "per_seed": per_seed, "pooled": pooled,
         "diagnostics": {
@@ -305,14 +326,14 @@ def price_run(cfg, config_source, results_root, command, r_shift=0.0, sweep_info
             "min_itm_count": min(o["min_itm_count"] for o in outcomes),
             "skipped_dates": sum(o["skipped_dates"] for o in outcomes),
             "rank_deficient_dates": sum(o["rank_deficient_dates"] for o in outcomes),
-            "feller_ratio": [feller],
+            "feller_ratio": feller,
         },
         "precision": precision,
     }
     if sweep_info:
         result["sweep"] = sweep_info
-    if cfg.get("allow_rejected_fit"):
-        result["parameter_status"] = "REJECTED FIT: exploratory, not a reported result (SPEC.md 8.5)"
+    if status == "rejected":
+        result["rejected_fit"] = rejected_label(results_root, cfg)
     assert_all_finite(result)  # no result.json if any value is NaN or infinite
 
     # The manifest is written last: a directory without one is an incomplete run.
@@ -334,8 +355,9 @@ def price_run(cfg, config_source, results_root, command, r_shift=0.0, sweep_info
     }
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
 
+    label = " REJECTED FIT" if status == "rejected" else ""
     print(f"{run_id}: bermudan {pooled['bermudan']:.6f} +/- {pooled['se_bermudan']:.6f} "
-          f"(fraction of spot, mode {cfg['data_mode']})")
+          f"(fraction of spot, mode {cfg['data_mode']}, parameters {status}{label})")
     return run_id
 
 
@@ -361,8 +383,8 @@ def calibrate_date(cfg, raw, date, fallback_kappa, inputs):
     except HestonError as error:
         if error.code != "E_SPARSE_GRID":
             raise
-        entry.update({"ladder_step": 3, "params": None, "stable": False, "fixed_params": [],
-                      "failure": error.code})
+        entry.update({"ladder_step": 4, "params": None, "stable": False, "fixed_params": [],
+                      "rejected_fit": None, "failure": error.code})
 
     if grid is not None:
         entry.update(calibrate_with_ladder(grid, r, q, fallback_kappa))
@@ -397,9 +419,10 @@ def run_calibrate(cfg, results_root, root_given):
         fallback = yaml.safe_load(published.read_text()).get("kappa_fallback") or {}
         fallback_kappa = fallback.get("value")
 
-    # Synthetic output is kept apart from the real calibration.json
-    if not root_given and not market:
-        results_root = ROOT / "results" / "smoke"
+    # Without --results-root, a market fit goes where params_source says (for GOOG,
+    # results/calibration_goog/), and synthetic output is kept apart in results/smoke/
+    if not root_given:
+        results_root = ROOT / Path(cfg["params_source"]).parent if market else ROOT / "results" / "smoke"
     results_root = Path(results_root)
     results_root.mkdir(parents=True, exist_ok=True)
 
@@ -412,14 +435,6 @@ def run_calibrate(cfg, results_root, root_given):
     if market and grid is not None and not root_given:
         GRID_FILE.parent.mkdir(parents=True, exist_ok=True)
         grid[["symbol", "date", "strike", "expiration", "call_put", "iv"]].to_parquet(GRID_FILE)
-
-    # The other two dates are for day-to-day stability only (SPEC.md 5.3)
-    if market:
-        for date in ALL_DATES:
-            if date != cfg["snapshot_date"] and (raw["date"] == pd.Timestamp(date)).any():
-                other, _ = calibrate_date(cfg, raw, date, fallback_kappa, inputs)
-                assert_all_finite(other)
-                (results_root / f"calibration_{date}.json").write_text(json.dumps(other, indent=2))
 
     entry = document["assets"][cfg["assets"][0]]
     print(f"calibration ({cfg['data_mode']}): ladder step {entry['ladder_step']}, "
@@ -450,37 +465,24 @@ def sweep_variants(cfg):
     return variants
 
 
-def calibration_date_variants(cfg, results_root):
-    """Market mode only: price with the parameters fitted on each date."""
-    variants = []
-    if cfg["data_mode"] != "market":
-        return variants
-    for date in ALL_DATES:
-        name = "calibration.json" if date == cfg["snapshot_date"] else f"calibration_{date}.json"
-        if (Path(results_root) / name).exists():
-            variant = copy.deepcopy(cfg)
-            variant["params_source"] = f"results/{name}"
-            variant["run_name"] = f"{cfg['run_name']}__calibration_date_{date}"
-            variants.append(("calibration_date", date, variant, 0.0))
-    return variants
-
-
 def run_sweep(cfg, results_root, command):
     begin = time.perf_counter()
     rows = []
     commit = git_commit()
-    for factor, value, variant, r_shift in sweep_variants(cfg) + calibration_date_variants(cfg, results_root):
+    for factor, value, variant, r_shift in sweep_variants(cfg):
         run_id = f"{variant['run_name']}-{commit[:8]}"
         run_dir = Path(results_root) / "runs" / run_id
         if not (run_dir / "manifest.json").exists():     # finished variants are kept, not redone
             price_run(variant, variant, results_root, command, r_shift, {"factor": factor, "value": value})
-        pooled = json.loads((run_dir / "result.json").read_text())["pooled"]
+        result = json.loads((run_dir / "result.json").read_text())
+        pooled = result["pooled"]
         wall = json.loads((run_dir / "manifest.json").read_text())["wall_seconds"]
         rows.append({"factor": factor, "value": value, "run_id": run_id, "wall_seconds": wall,
                      "bermudan": pooled["bermudan"], "se_bermudan": pooled["se_bermudan"],
                      "premium": pooled["premium"], "se_premium": pooled["se_premium"]})
 
     summary = {"schema_version": 1, "run_name": cfg["run_name"], "data_mode": cfg["data_mode"],
+               "parameter_status": result["parameter_status"], "rejected_fit": result.get("rejected_fit"),
                "commit": commit, "wall_seconds_this_invocation": time.perf_counter() - begin,
                "wall_seconds_total": sum(row["wall_seconds"] for row in rows), "budget_b2_seconds": 21600,
                "rows": rows}
@@ -505,7 +507,7 @@ def run_compare(cfg, results_root, command):
     if out.exists():
         raise HestonError("E_RUN_EXISTS", f"{out.name} exists; use --results-root for a new location")
 
-    params, q, inputs = load_params(cfg, results_root)
+    params, q, inputs, status = load_params(cfg, results_root)
     r = load_rate(cfg)
     market = {"r": r, "q": [q]}
     n_paths = int(cfg["simulation"]["n_paths"])
@@ -525,17 +527,19 @@ def run_compare(cfg, results_root, command):
             mc_rows.append({"maturity": maturity, "strike": float(strike), "mc": mc, "se": se,
                             "analytic": analytic, "z": (mc - analytic) / max(se, 1e-12)})
 
-    # 2. LSMC against the CRR tree, on the V-04 cases (a test model, not the reported parameters)
+    # 2. LSMC against the CRR tree, on the V-04 cases (a test model, not the reported parameters).
+    #    Puts use q = 0; calls use q = 0.0026, so early exercise of a call can matter.
     tree_rows = []
-    for sigma, strike in [(0.3, 1.0), (0.5, 1.0), (0.5, 0.9), (0.3, 1.1)]:
-        gbm = {"v0": sigma**2, "kappa": 1.0, "theta": sigma**2, "xi": 0.0, "rho": 0.0}
-        contract = {"strike": strike, "maturity": 1.0, "n_exercise": 50}
-        outcome = price_bermudan([gbm], [[1.0]], {"r": r, "q": [0.0]}, contract,
-                                 {**cfg["simulation"], "master_seed": COMPARISON_SEED})
-        tree = crr_price("put", 1.0, strike, 1.0, sigma, r, 0.0, 5000,
-                         exercise_steps=[100 * k for k in range(1, 51)])
-        tree_rows.append({"sigma": sigma, "strike": strike, "lsmc": outcome["bermudan"],
-                          "se": outcome["se_bermudan"], "tree": tree})
+    for kind, q_case in (("put", 0.0), ("call", V04_CALL_Q)):
+        for sigma, strike in V04_CASES:
+            gbm = {"v0": sigma**2, "kappa": 1.0, "theta": sigma**2, "xi": 0.0, "rho": 0.0}
+            contract = {"strike": strike, "maturity": 1.0, "n_exercise": 50, "kind": kind}
+            outcome = price_bermudan([gbm], [[1.0]], {"r": r, "q": [q_case]}, contract,
+                                     {**cfg["simulation"], "master_seed": COMPARISON_SEED})
+            tree = crr_price(kind, 1.0, strike, 1.0, sigma, r, q_case, 5000,
+                             exercise_steps=[100 * k for k in range(1, 51)])
+            tree_rows.append({"kind": kind, "q": q_case, "sigma": sigma, "strike": strike,
+                              "lsmc": outcome["bermudan"], "se": outcome["se_bermudan"], "tree": tree})
 
     # 3. Bermudan, European and constant-volatility Bermudan across strikes
     profile = []
@@ -548,6 +552,8 @@ def run_compare(cfg, results_root, command):
 
     document = {"schema_version": 1, "run_name": cfg["run_name"], "data_mode": cfg["data_mode"],
                 "commit": commit, "command": command, "units": "fraction_of_initial_spot",
+                "parameter_status": status,
+                "rejected_fit": rejected_label(results_root, cfg) if status == "rejected" else None,
                 "r": r, "q": q, "params": params, "inputs": inputs, "comparison_seed": COMPARISON_SEED,
                 "seeds": cfg["seeds"], "n_paths": n_paths,
                 "mc_vs_analytic": mc_rows, "lsmc_vs_tree": tree_rows, "strike_profile": profile}
@@ -560,7 +566,7 @@ def run_compare(cfg, results_root, command):
 # ----------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Heston Bermudan put pipeline")
+    parser = argparse.ArgumentParser(description="Heston LSMC pipeline")
     parser.add_argument("command", choices=["calibrate", "price", "sweep", "compare"])
     parser.add_argument("--config", required=True)
     parser.add_argument("--results-root", default=None)

@@ -98,12 +98,32 @@ def test_dates_with_too_few_itm_paths_are_skipped():
     assert result["bermudan"] == result["european"]
 
 
-def test_singular_correlation_is_valid_for_the_simulator():
-    corr = np.ones((2, 2))
-    market = {"r": 0.04, "q": [0.0, 0.0]}
+def test_simulator_is_single_asset():
     rng = np.random.Generator(np.random.PCG64(3))
-    paths = simulate([PARAMS, PARAMS], corr, market, CONTRACT, SIM, rng)
-    assert paths["S"].shape == (4000, 11, 2)
+    assert simulate([PARAMS], [[1.0]], MARKET, CONTRACT, SIM, rng)["S"].shape == (4000, 11, 1)
+    with pytest.raises(InputError):
+        simulate([PARAMS, PARAMS], np.eye(2), {"r": 0.04, "q": [0.0, 0.0]}, CONTRACT, SIM, rng)
+    with pytest.raises(InputError):
+        simulate([PARAMS], [[0.5]], MARKET, CONTRACT, SIM, rng)
+
+
+def test_contract_kind_must_be_put_or_call():
+    with pytest.raises(InputError):
+        price_bermudan([PARAMS], [[1.0]], MARKET, {**CONTRACT, "kind": "straddle"}, SIM)
+
+
+def test_call_and_put_share_paths_and_satisfy_parity_in_the_european_leg():
+    """Same seed, same paths: C_E - P_E = S0 e^{-qT} - K e^{-rT} up to Monte Carlo error."""
+    call = price_bermudan([PARAMS], [[1.0]], MARKET, {**CONTRACT, "kind": "call"}, SIM)
+    put = price_bermudan([PARAMS], [[1.0]], MARKET, CONTRACT, SIM)
+    parity = 1.0 - math.exp(-MARKET["r"])
+    assert abs(call["european"] - put["european"] - parity) <= 4 * math.hypot(call["se_european"], put["se_european"])
+    assert call["bermudan"] >= call["european"] - 3 * call["se_premium"]
+
+
+def test_call_without_dividend_has_no_early_exercise_premium_beyond_noise():
+    call = price_bermudan([PARAMS], [[1.0]], MARKET, {**CONTRACT, "kind": "call"}, SIM)
+    assert abs(call["premium"]) <= 3 * max(call["se_premium"], 1e-12)
 
 
 def test_paths_store_negative_variance_but_full_truncation_keeps_price_finite():
@@ -179,10 +199,38 @@ def test_ladder_reports_step_3_without_a_cited_kappa(monkeypatch):
     import hestonpricer.calibrate as calibrate
 
     def unusable(grid, r, q, cfg):
-        return {"stable": False, "rms_iv_residual": 1.0}
+        return {"params": {"kappa": 1.0}, "fixed_params": [], "stable": False, "rms_iv_residual": 1.0}
 
     monkeypatch.setattr(calibrate, "calibrate_asset", unusable)
-    assert calibrate_with_ladder(None, 0.04, 0.0, None)["ladder_step"] == 3
+    result = calibrate_with_ladder(None, 0.04, 0.0, None)
+    assert result["ladder_step"] == 3 and result["params"] is None
+
+
+def test_ladder_step_3_keeps_the_lowest_rms_fit_as_the_rejected_fit(monkeypatch):
+    import hestonpricer.calibrate as calibrate
+
+    def two_fits(grid, r, q, cfg):
+        rms = 0.0105 if not cfg["fixed"] else 0.0124
+        return {"params": {"kappa": 5.0 if not cfg["fixed"] else 1.4554}, "fixed_params": sorted(cfg["fixed"]),
+                "stable": True, "rms_iv_residual": rms}
+
+    monkeypatch.setattr(calibrate, "calibrate_asset", two_fits)
+    result = calibrate_with_ladder(None, 0.04, 0.0, 1.4554)
+    rejected = result["rejected_fit"]
+    assert result["ladder_step"] == 3 and result["params"] is None
+    assert rejected["from_step"] == 1 and rejected["rms_iv_residual"] == 0.0105 and rejected["limit"] == 0.01
+    assert [a["step"] for a in result["ladder_attempts"]] == [1, 2]
+
+
+def test_ladder_step_4_when_no_start_converges(monkeypatch):
+    import hestonpricer.calibrate as calibrate
+
+    def never(grid, r, q, cfg):
+        raise HestonError("E_CALIB_FAILED", "no converged start")
+
+    monkeypatch.setattr(calibrate, "calibrate_asset", never)
+    result = calibrate_with_ladder(None, 0.04, 0.0, 1.4554)
+    assert result["ladder_step"] == 4 and result["rejected_fit"] is None
 
 
 # --- correlation (EXT-A API only) ---
@@ -246,39 +294,53 @@ def test_market_inputs_can_set_a_published_assets_dividend(tmp_path):
     inputs.write_text("dividend_yield:\n  GOOG: 0.0031\n")
     config = {"data_mode": "published", "assets": ["GOOG"], "params_source": "configs/published_params.yaml",
               "market_inputs": str(inputs)}
-    _, q, _ = run.load_params(config, ROOT / "results")
-    assert q == 0.0031
+    _, q, _, status = run.load_params(config, ROOT / "results")
+    assert q == 0.0031 and status == "published"
 
 
-def rejected_calibration(tmp_path):
+def rejected_calibration(tmp_path, ladder_step=3):
     fit = {"v0": 0.4, "kappa": 20.0, "theta": 0.3, "xi": 4.0, "rho": -0.1}
+    rejected = {"from_step": 1, "params": fit, "fixed_params": [], "rms_iv_residual": 0.0105,
+                "stable": True, "limit": 0.01} if ladder_step == 3 else None
     (tmp_path / "calibration.json").write_text(json.dumps(
-        {"inputs": [], "assets": {"AMD": {"ladder_step": 3, "q": 0.0, "params": None, "rejected_full_fit": {"params": fit}}}}))
-    return {"data_mode": "market", "assets": ["AMD"], "params_source": "results/calibration.json"}, fit
+        {"inputs": [], "assets": {"GOOG": {"ladder_step": ladder_step, "q": 0.0026, "params": None,
+                                           "rejected_fit": rejected}}}))
+    return {"data_mode": "market", "assets": ["GOOG"], "params_source": "results/calibration_goog/calibration.json"}, fit
 
 
-def test_rejected_fit_is_refused_unless_requested(tmp_path):
+def test_rejected_fit_is_used_and_labelled(tmp_path):
     run = load_run_module()
-    config, _ = rejected_calibration(tmp_path)
+    config, fit = rejected_calibration(tmp_path)
+    params, q, _, status = run.load_params(config, tmp_path)
+    assert params == fit and q == 0.0026 and status == "rejected"
+    label = run.rejected_label(tmp_path, config)
+    assert label["label"] == "REJECTED" and label["rms_iv_residual"] == 0.0105 and label["limit"] == 0.01
+
+
+def test_ladder_step_4_has_nothing_to_price(tmp_path):
+    run = load_run_module()
+    config, _ = rejected_calibration(tmp_path, ladder_step=4)
     with pytest.raises(HestonError) as caught:
         run.load_params(config, tmp_path)
     assert caught.value.code == "E_CALIB_FAILED"
 
 
-def test_rejected_fit_is_available_for_exploratory_runs(tmp_path):
+def test_removed_config_keys_are_unknown(tmp_path):
     run = load_run_module()
-    config, fit = rejected_calibration(tmp_path)
-    params, _, _ = run.load_params({**config, "allow_rejected_fit": True}, tmp_path)
-    assert params == fit
+    for key, value in (("tier", "CORE"), ("allow_rejected_fit", True)):
+        path = tmp_path / f"{key}.yaml"
+        path.write_text(yaml.safe_dump(smoke_config(**{key: value})))
+        with pytest.raises(HestonError) as caught:
+            run.load_config(path)
+        assert caught.value.code == "E_CONFIG"
 
 
-def test_rejected_fit_cannot_be_reported(tmp_path):
+def test_reference_config_matches_the_spec():
     run = load_run_module()
-    path = tmp_path / "bad.yaml"
-    path.write_text(yaml.safe_dump(smoke_config(allow_rejected_fit=True, reported=True)))
-    with pytest.raises(HestonError) as caught:
-        run.load_config(path)
-    assert caught.value.code == "E_CONFIG"
+    cfg = run.load_config(ROOT / "configs" / "core_goog_reference.yaml")
+    assert cfg["data_mode"] == "market" and cfg["snapshot_date"] == "2026-10-13" and cfg["reported"] is True
+    assert cfg["params_source"] == "results/calibration_goog/calibration.json"
+    assert cfg["contract"] == {"strike": 1.0, "maturity": 1.0, "n_exercise": 50, "kind": "put"}
 
 
 def test_named_bad_bar_is_the_only_exclusion():
@@ -362,7 +424,8 @@ def test_run_writes_the_required_files_and_fields(tmp_path):
     assert result["units"] == "fraction_of_initial_spot" and result["data_mode"] == "synthetic"
     assert len(result["diagnostics"]["exercise_fraction_by_date"]) == 50
     manifest = json.loads((run_dir / "manifest.json").read_text())
-    assert manifest["spec_version"] == "1.12" and manifest["data_contract_version"] == "0.8"
+    assert manifest["spec_version"] == "1.13" and manifest["data_contract_version"] == "0.9"
+    assert result["parameter_status"] == "synthetic" and result["contract"]["kind"] == "put"
 
 
 def test_compare_writes_each_comparison(tmp_path):
@@ -370,7 +433,8 @@ def test_compare_writes_each_comparison(tmp_path):
                     "--results-root", str(tmp_path)], cwd=ROOT, check=True, capture_output=True)
     document = json.loads(next(tmp_path.glob("comparisons/*.json")).read_text())
     assert len(document["mc_vs_analytic"]) == 40
-    assert len(document["lsmc_vs_tree"]) == 4
+    assert len(document["lsmc_vs_tree"]) == 8
+    assert {row["kind"] for row in document["lsmc_vs_tree"]} == {"put", "call"}
     assert len(document["strike_profile"]) == 5
 
 

@@ -112,6 +112,12 @@ prototype/ the owner's earlier code and notebook, not part of the assessed work
 
 The list is roughly in dependency order. Items marked **(data)** read licensed data, so the owner must review the committed script before an agent runs it (contract §3.3).
 
+**Progress (2026-11-15, `AI_USE.md` Entry 30):**
+- **Part A is done**, except the VZ-10 to VZ-13 figures, which wait for the item 13 output schema.
+- **Fast tests and smoke still pass.** The smoke price is bit-identical to before.
+- **V-04 now FAILS on one call case**, recorded and not loosened. It needs an owner decision; see section 10.
+- **Before items 14–18 run,** the owner must review the changed `run.py` calibrate and price paths.
+
 **A. Changes that don't touch licensed data (an agent can do these now)**
 
 1. **Version constants.** `scripts/run.py` has `SPEC_VERSION = "1.12"`; set it to `"1.13"`. Do the same for `spec_version` in the `goog_market_test.json` schema (§12.3, §12.6).
@@ -222,7 +228,7 @@ The committed `results/verification_table.csv` predates v1.12 and v1.13. Its las
 | V-01 | Semi-analytic European against published prices (Fang & Oosterlee, via Chan) | PASS (v1.12 table) |
 | V-02 | Put–call parity; Black–Scholes limit when vol-of-vol is tiny | PASS |
 | V-03 | Monte Carlo European against semi-analytic, 40 options | PASS |
-| V-04 | LSMC against a binomial tree with constant volatility | PASS for puts; **calls added in v1.13, not yet supported** |
+| V-04 | LSMC against a binomial tree with constant volatility | Puts PASS. **Calls FAIL on one case:** σ 0.5, K 0.9 is 3.16 SE from the tree. The other three call cases are 1.24–2.02 SE. Diagnosis: LSMC low bias. Early exercise is worthless here (q 0.26%, r 3.96%), and the Monte Carlo European matches Black–Scholes within 0.4 SE, but regression error triggers some early exercises. Not a payoff or path defect |
 | V-05 | One exercise date gives the European price | PASS |
 | V-06 | Bermudan against published American puts (Ikonen & Toivanen) | PASS |
 | V-07 | Vectorized LSMC against an independent scalar version | PASS |
@@ -233,7 +239,7 @@ The committed `results/verification_table.csv` predates v1.12 and v1.13. Its las
 | V-12 | Calibration recovers known parameters on synthetic data | PASS |
 | V-13 | GOOG 2026-10-13 calibration meets RMS ≤ 0.01 and is stable | Will record **FAIL**: RMS 0.01049 is already known |
 | V-14 | Implied-vol conversion: (a) tree round trip; (b, c) checks on the GOOG file | (a) PASS; (b, c) not yet run on GOOG |
-| V-15 | Configured runs complete, finite, with matching hashes | Rerun after the new runs |
+| V-15 | Configured runs complete, finite, with matching hashes | FAIL until `core_goog_reference` has run. The test now fails on a reported config with no run, where before it ignored it |
 | V-16 | No licensed data or secrets in Git | PASS |
 | V-17 | Smoke test passes from a fresh clone | PASS; rerun |
 | V-18 | Every figure and table traces to a result file | Rerun after the new figures |
@@ -277,30 +283,38 @@ Spec changes are recorded in `SPEC.md` §22; the full detail is in `AI_USE.md`.
   - the commit holding spec v1.13, contract v0.9, this handover, the GOOG calibration and the v1.12 market-test results.
 
   `origin/main` is at `ebd457a`. Push only when the owner asks.
-- **In progress:** section 5, part A. See `AI_USE.md` for the latest entry and `git log` for what has landed.
+- **Part A of section 5** is committed locally as well. See `git log` and `AI_USE.md` Entry 30.
+- **Next:** part B, starting with `validate_goog_data.py` and the `test_goog_market.py` rewrite. Both need owner review before they run on licensed data.
 
 ---
 
 ## 10. Open items and decisions for the owner
 
-1. **Review the licensed-data scripts** before an agent runs them: the new `validate_goog_data.py`, the rewritten `test_goog_market.py`, and the `run.py` calibrate changes.
-2. **Open decisions in spec §19:**
+1. **Review the licensed-data scripts** before an agent runs them: the new `validate_goog_data.py`, the rewritten `test_goog_market.py`, and the `run.py` calibrate and price changes.
+   - The `run.py` changes are committed.
+   - A `market` calibration now writes to the folder named by `params_source`, which is `results/calibration_goog/`.
+   - A `market` price run reads from that same folder. It previously read `results/calibration.json`, which is the old AMD fit.
+2. **V-04 call failure** (σ 0.5, K 0.9, 3.16 SE against the 3 SE limit). §1.3 forbids loosening the rule to make it pass. G2, the Nov 20 gate, requires V-04 with calls to pass. The options:
+   - (a) Record the FAIL and disclose it as LSMC low bias.
+   - (b) Change the engine's regression for calls and rerun. This is a real engine change, not a tolerance change, but it was found after viewing, so it needs disclosure.
+   - (c) Change the rule through a §22 row disclosed as made after viewing. For example, a one-sided low-bias allowance like V-06's.
+3. **Open decisions in spec §19:**
    - **OD-4:** confirm the iVolatility header against contract §1.2, and that `stock_price_for_iv` is synchronous with the quotes. The test's normalized prices depend on it.
    - **OD-6:** confirm the reference contract (K = 1, T = 1, M = 50).
    - **OD-8:** raw-file hashes.
    - **OD-9:** licence.
    - **OD-12:** whether to add a constant-volatility baseline to the out-of-sample test.
-3. **Fate of out-of-scope files:** keep as a record or remove. Covers `correlation.py`, `estimate_correlations.py`, `compare_calibration_methods.py`, the NVDA, AMD and INTC configs, and their results.
-4. **The too-strict §8.6 check:** the lower bound should be the value of exercising at the first date, not intrinsic value. Any change needs a §22 row disclosing it was found after viewing.
-5. **Check transcribed values against the papers:** Table 8, Table 10, and the V-01 and V-06 values were read through automated extracts.
-6. **A recent day of GOOG Raw IV** (recommended earlier for an out-of-time test) is outside v1.13, which uses 2026-10-13 only. Adding it would need a spec change.
-7. **Report and slides** (owner). Required disclosures and limitations are listed in spec §18. They include:
+4. **Fate of out-of-scope files:** keep as a record or remove. Covers `correlation.py`, `estimate_correlations.py`, `compare_calibration_methods.py`, the NVDA, AMD and INTC configs, and their results.
+5. **The too-strict §8.6 check:** the lower bound should be the value of exercising at the first date, not intrinsic value. Any change needs a §22 row disclosing it was found after viewing.
+6. **Check transcribed values against the papers:** Table 8, Table 10, and the V-01 and V-06 values were read through automated extracts.
+7. **A recent day of GOOG Raw IV** (recommended earlier for an out-of-time test) is outside v1.13, which uses 2026-10-13 only. Adding it would need a spec change.
+8. **Report and slides** (owner). Required disclosures and limitations are listed in spec §18. They include:
    - the same-day test on neighbouring contracts;
    - the REJECTED label;
    - §6.7 step 3 written after the RMS was seen;
    - the §22 rows marked as viewed;
    - AI use, including agent commits and pushes (OD-7) and the scripts run beyond contract §3.3's list.
-8. **Release:** `LICENSE`, the `v1.0-final` tag, and the Route A package verified as spec §13 describes.
+9. **Release:** `LICENSE`, the `v1.0-final` tag, and the Route A package verified as spec §13 describes.
 
 ---
 

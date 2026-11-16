@@ -1,9 +1,9 @@
-# GOOG CORE result, using the published Google parameters (SPEC.md 2.1).
+# The v1.12 reported run, kept as a record: the reference contract under the published Google
+# parameters. Since v1.13 the reported reference run is core_goog_reference.yaml.
 # It MUST NOT be described as calibrated to current GOOG options, or to AMD, NVDA or INTC.
 schema_version: 1
 run_name: core_goog_production
-tier: CORE
-reported: true
+reported: false
 data_mode: published
 assets: [GOOG]
 snapshot_date: 2026-10-14

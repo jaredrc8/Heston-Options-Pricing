@@ -1,5 +1,5 @@
 """
-Two-pass Least-Squares Monte Carlo pricing of the Bermudan put (SPEC.md section 8).
+Two-pass Least-Squares Monte Carlo pricing of Bermudan puts and calls (SPEC.md section 8).
 
 The exercise rule is fitted on regression set A and the price is computed on an
 independent evaluation set B, so the reported price is low-biased.
@@ -10,13 +10,15 @@ from math import comb
 
 import numpy as np
 
-from hestonpricer.errors import InputError, require
-from hestonpricer.simulate import DEFAULT_SIM, read_contract, simulate
+from hestonpricer.errors import require
+from hestonpricer.simulate import DEFAULT_SIM, contract_kind, read_contract, simulate
 
 
-def payoff(S, strike):
-    """max(K - min_i S_i(t) / S_i(0), 0). S has shape (n_paths, d) and S(0) = 1."""
-    return np.maximum(strike - np.min(S, axis=1), 0.0)
+def payoff(S, strike, kind):
+    """Put max(K - S, 0) or call max(S - K, 0). S has shape (n_paths, 1) and S(0) = 1."""
+    if kind == "call":
+        return np.maximum(S[:, 0] - strike, 0.0)
+    return np.maximum(strike - S[:, 0], 0.0)
 
 
 def regression_features(S, nu):
@@ -48,11 +50,10 @@ def fit_policy(paths, contract, market, basis_degree):
     """Backward induction on set A. Returns a policy dictionary (SPEC.md 10.1)."""
     require(basis_degree in (1, 2, 3, 4), "basis_degree must be 1, 2, 3 or 4")
     S, nu = paths["S"], paths["nu"]
-    # The three-asset basis belongs to EXT-A, which may start only after gate G1.
-    if S.shape[2] != 1:
-        raise InputError("LSMC is single-asset until EXT-A opens (SPEC.md 2.2)")
+    require(S.shape[2] == 1, "LSMC prices one asset (SPEC.md 2.3)")
 
     strike, maturity, M = read_contract(contract)
+    kind = contract_kind(contract)
     r = float(market["r"])
     times = np.arange(M + 1, dtype=float) * maturity / M
     n_paths = S.shape[0]
@@ -63,7 +64,7 @@ def fit_policy(paths, contract, market, basis_degree):
     n_min = max(50, 10 * p)
 
     # Cash flow of each path and the time it is received
-    cash = payoff(S[:, M], strike)
+    cash = payoff(S[:, M], strike, kind)
     tau = np.full(n_paths, maturity, dtype=float)
 
     dates = {}
@@ -72,7 +73,7 @@ def fit_policy(paths, contract, market, basis_degree):
     min_itm = n_paths if M > 1 else 0
 
     for k in range(M - 1, 0, -1):
-        g = payoff(S[:, k], strike)
+        g = payoff(S[:, k], strike, kind)
         itm = np.flatnonzero(g > 0)
         min_itm = min(min_itm, len(itm))
         if len(itm) < n_min:
@@ -114,6 +115,7 @@ def evaluate_policy(policy, paths, contract, market):
     """Apply a fitted policy to set B. Returns a price_result dictionary (SPEC.md 10.1)."""
     S, nu = paths["S"], paths["nu"]
     strike, maturity, M = read_contract(contract)
+    kind = contract_kind(contract)
     r = float(market["r"])
     times = np.arange(M + 1, dtype=float) * maturity / M
     n_paths = S.shape[0]
@@ -126,7 +128,7 @@ def evaluate_policy(policy, paths, contract, market):
     for k in range(1, M):
         if k not in policy["dates"]:
             continue
-        g = payoff(S[:, k], strike)
+        g = payoff(S[:, k], strike, kind)
         candidates = np.flatnonzero(alive & (g > 0))
         if len(candidates) == 0:
             continue
@@ -139,7 +141,7 @@ def evaluate_policy(policy, paths, contract, market):
         exercise_count[k - 1] = len(exercise)
 
     # Paths still alive receive the payoff at maturity
-    g_final = payoff(S[:, M], strike)
+    g_final = payoff(S[:, M], strike, kind)
     g_paid[alive] = g_final[alive]
     exercise_count[M - 1] = np.sum(alive & (g_final > 0))
 

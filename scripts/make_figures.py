@@ -59,6 +59,14 @@ def add_footnote(fig, text):
     fig.text(0.01, 0.005, text, ha="left", va="bottom", fontsize=7, color=MUTED, wrap=True)
 
 
+def status_prefix(document):
+    """The REJECTED label every result of a step-3 fit carries in its heading (SPEC.md 2.4)."""
+    rejected = document.get("rejected_fit")
+    if document.get("parameter_status") != "rejected" or not rejected:
+        return ""
+    return f"REJECTED FIT (RMS IV {rejected['rms_iv_residual']:.5f} > limit {rejected['limit']}). "
+
+
 def find_run(results_root, run_name):
     """The newest completed run with this name, or None."""
     manifests = sorted(Path(results_root).glob(f"runs/{run_name}-*/manifest.json"),
@@ -67,7 +75,7 @@ def find_run(results_root, run_name):
 
 
 def default_run_name(results_root):
-    for name in ("core_amd_production", "core_goog_production", "core_smoke"):
+    for name in ("core_goog_reference", "core_goog_production", "core_smoke"):
         if find_run(results_root, name) is not None:
             return name
     return None
@@ -94,7 +102,7 @@ def price_figure(run_dir, results_root, out_dir):
     right.set_yticks([0], ["Early-exercise premium"])
     right.set_xlabel("Premium (fraction of spot)")
 
-    fig.suptitle(f"Bermudan {pooled['bermudan']:.4f}, premium {pooled['premium']:.4f} "
+    fig.suptitle(f"{status_prefix(result)}Bermudan {pooled['bermudan']:.4f}, premium {pooled['premium']:.4f} "
                  f"(95% interval {pooled['premium_ci95'][0]:.4f} to {pooled['premium_ci95'][1]:.4f})",
                  fontsize=10, x=0.01, ha="left")
     fig.tight_layout(rect=(0, 0.1, 1, 0.97))
@@ -136,7 +144,7 @@ def convergence_figure(run_name, results_root, out_dir):
     for ax in axes[:, 0]:
         ax.set_ylabel("Bermudan price (fraction of spot)")
 
-    fig.suptitle(f"Largest price range across one numerical setting: {max(spreads):.5f} of spot",
+    fig.suptitle(f"{status_prefix(summary)}Largest price range across one numerical setting: {max(spreads):.5f} of spot",
                  fontsize=10, x=0.01, ha="left")
     fig.tight_layout(rect=(0, 0.06, 1, 0.97))
     add_footnote(fig, f"Mode {summary['data_mode']}. Each point pools all configured seeds. Bars: 95% interval. "
@@ -205,20 +213,20 @@ def seed_table(run_dir, results_root, out_dir):
 
 def market_fit_table(results_root, out_dir):
     """Aggregate fit quality only: no market data point is ever plotted (SPEC.md 12.8)."""
-    calibration_file = Path(results_root) / "calibration.json"
+    calibration_file = Path(results_root) / "calibration_goog" / "calibration.json"
     if not calibration_file.exists():
         return []
     document = json.loads(calibration_file.read_text())
-    if document["data_mode"] != "market" or document["assets"]["AMD"]["ladder_step"] == 3:
-        return []    # no accepted market fit to report
-    rows = []
-    for asset, entry in document["assets"].items():
-        for bucket in entry.get("residual_buckets", []):
-            rows.append({"asset": asset, **bucket})
+    entry = document["assets"]["GOOG"]
+    if document["data_mode"] != "market" or "rejected_fit" not in entry or entry["ladder_step"] == 4:
+        return []    # no fit, or a summary from before the v1.13 schema
+    status = "REJECTED" if entry["ladder_step"] == 3 else "accepted"
+    rows = [{"asset": "GOOG", "fit_status": status, "ladder_step": entry["ladder_step"], **bucket}
+            for bucket in entry.get("residual_buckets", [])]
     pd.DataFrame(rows).to_csv(out_dir / "market_fit_buckets.csv", index=False)
     return [{"claim_id": "table_market_fit", "location": "table", "artifact_type": "table",
-             "run_id": "market", "result_path": relative(calibration_file, results_root),
-             "json_pointer": "/assets/AMD/rms_iv_residual", "check_ids": "V-13"}]
+             "run_id": "calibrate_goog", "result_path": relative(calibration_file, results_root),
+             "json_pointer": "/assets/GOOG/rms_iv_residual", "check_ids": "V-13"}]
 
 
 def newest_comparison(run_name, results_root):
@@ -227,11 +235,11 @@ def newest_comparison(run_name, results_root):
     return files[-1] if files else None
 
 
-def render_surface(params, r, q, heading, footnote, path, tenor_low=0.10, tenor_high=1.25):
+def render_surface(params, r, q, heading, footnote, path, tenor_low=0.10, tenor_high=1.25, kf_low=0.80, kf_high=1.20):
     """PyVista 3D surface of the model implied volatility. Model values only."""
     import pyvista as pv
 
-    k_over_f = np.linspace(0.80, 1.20, 41)
+    k_over_f = np.linspace(kf_low, kf_high, 41)
     tenors = np.linspace(tenor_low, tenor_high, 47)
     vols = np.zeros((len(tenors), len(k_over_f)))
     for j, tenor in enumerate(tenors):
@@ -241,7 +249,7 @@ def render_surface(params, r, q, heading, footnote, path, tenor_low=0.10, tenor_
     # The geometry is drawn in a unit box so the surface is readable; the axis labels
     # below show the true values, and the colour scale uses the true implied volatility.
     low, high = float(vols.min()), float(vols.max())
-    x, y = np.meshgrid((k_over_f - 0.80) / 0.40, (tenors - tenor_low) / (tenor_high - tenor_low))
+    x, y = np.meshgrid((k_over_f - kf_low) / (kf_high - kf_low), (tenors - tenor_low) / (tenor_high - tenor_low))
     grid = pv.StructuredGrid(x, y, 0.7 * (vols - low) / max(high - low, 1e-6))
     # Read the colour values back from the points, so they cannot be misordered against the geometry
     grid["Implied volatility"] = low + grid.points[:, 2] / 0.7 * (high - low)
@@ -252,7 +260,7 @@ def render_surface(params, r, q, heading, footnote, path, tenor_low=0.10, tenor_
                      show_edges=True, edge_color="#ffffff", line_width=0.4, lighting=False,
                      scalar_bar_args={"title": "Implied vol", "color": INK, "n_labels": 5, "fmt": "%.2f",
                                       "vertical": True, "position_x": 0.87, "position_y": 0.3})
-    plotter.show_bounds(axes_ranges=[0.80, 1.20, tenor_low, tenor_high, low, high],
+    plotter.show_bounds(axes_ranges=[kf_low, kf_high, tenor_low, tenor_high, low, high],
                         xtitle="Strike / forward", ytitle="Tenor (years)",
                         ztitle="Implied vol", color=MUTED, font_size=12, grid="back", location="outer", n_xlabels=5,
                         n_ylabels=5, n_zlabels=4, fmt="%.2f")
@@ -263,32 +271,35 @@ def render_surface(params, r, q, heading, footnote, path, tenor_low=0.10, tenor_
     plotter.close()
 
 
-def rejected_surface_figure(results_root, out_dir):
-    """VZ-1a: the rejected full AMD fit. It is the only AMD surface, and it is labelled as rejected."""
-    calibration_file = Path(results_root) / "calibration.json"
+def goog_surface_figure(results_root, out_dir):
+    """VZ-1e: the 2026-10-13 GOOG model surface, labelled REJECTED at ladder step 3 (SPEC.md 12.9)."""
+    calibration_file = Path(results_root) / "calibration_goog" / "calibration.json"
     if not calibration_file.exists():
         return []
     document = json.loads(calibration_file.read_text())
-    entry = document["assets"]["AMD"]
-    rejected = entry.get("rejected_full_fit")
-    if document["data_mode"] != "market" or rejected is None:
-        return []
-
-    p = rejected["params"]
-    at_bound = " (at its upper bound)" if p["kappa"] >= 19.999 else ""
-    heading = (f"REJECTED FIT: AMD Heston surface, {document['snapshot_date']}\n"
-               f"Failed acceptance: RMS IV residual {rejected['rms_iv_residual']:.4f} "
-               "above the 0.01 limit. Not used for pricing.")
-    footnote = (f"Model surface from rejected parameters; no market data points shown. "
-                f"v0 {p['v0']:.4f}, kappa {p['kappa']:.2f}{at_bound}, "
-                f"theta {p['theta']:.4f}, xi {p['xi']:.3f}, rho {p['rho']:.3f}.\n"
-                f"Fit: {rejected['grid_size']} grid points, 8 starts; no uncertainty band. Exclusions: filters F1 to F8. "
-                f"Source calibration.json. Code {CODE}.")
-    path = out_dir / "surface_amd_rejected.png"
-    render_surface(p, document["r"], entry["q"], heading, footnote, path)
-    return [{"claim_id": "fig_surface_amd_rejected", "location": "figure", "artifact_type": "figure",
-             "run_id": "market-rejected", "result_path": relative(calibration_file, results_root),
-             "json_pointer": "/assets/AMD/rejected_full_fit/rms_iv_residual", "check_ids": "V-13"}]
+    entry = document["assets"]["GOOG"]
+    if document["data_mode"] != "market" or "rejected_fit" not in entry or entry["ladder_step"] == 4:
+        return []    # no fit, or a summary from before the v1.13 schema
+    if entry["ladder_step"] == 3:
+        fit = entry["rejected_fit"]
+        p, pointer = fit["params"], "/assets/GOOG/rejected_fit/rms_iv_residual"
+        heading = (f"REJECTED FIT: GOOG Heston surface, {document['snapshot_date']}\n"
+                   f"RMS IV residual {fit['rms_iv_residual']:.5f} above the {fit['limit']} limit "
+                   f"(ladder step 3, from step {fit['from_step']}).")
+    else:
+        fit, p, pointer = entry, entry["params"], "/assets/GOOG/rms_iv_residual"
+        heading = (f"GOOG Heston surface, {document['snapshot_date']}\n"
+                   f"Accepted at ladder step {entry['ladder_step']}: RMS IV residual {fit['rms_iv_residual']:.5f}.")
+    footnote = (f"Model surface only; no market data points shown. K/F 0.70-1.30 and tenor 0.06-1.40 years, the test "
+                f"population's range. v0 {p['v0']:.4f}, kappa {p['kappa']:.3f}, theta {p['theta']:.4f}, "
+                f"xi {p['xi']:.3f}, rho {p['rho']:.3f}.\n"
+                f"Fit: {entry['grid_size']} grid points, 8 starts; no uncertainty band. Exclusions: filters F1 to F8. "
+                f"Source {relative(calibration_file, results_root)}. Code {CODE}.")
+    render_surface(p, document["r"], entry["q"], heading, footnote, out_dir / "surface_goog_2026_10_13.png",
+                   tenor_low=0.06, tenor_high=1.40, kf_low=0.70, kf_high=1.30)
+    return [{"claim_id": "fig_surface_goog_2026_10_13", "location": "figure", "artifact_type": "figure",
+             "run_id": "calibrate_goog", "result_path": relative(calibration_file, results_root),
+             "json_pointer": pointer, "check_ids": "V-13"}]
 
 
 def published_surface_figure(comparison_file, results_root, out_dir):
@@ -345,17 +356,19 @@ def comparison_figures(comparison_file, results_root, out_dir):
 
     # VZ-3: LSMC against the binomial tree
     cases = pd.DataFrame(document["lsmc_vs_tree"])
-    fig, ax = plt.subplots(figsize=(7.0, 3.2))
+    fig, ax = plt.subplots(figsize=(7.0, 1.4 + 0.3 * len(cases)))
     y = np.arange(len(cases))[::-1]
     ax.errorbar(cases["lsmc"], y, xerr=3 * cases["se"], fmt="o", color=BLUE, markersize=6, capsize=3, label="LSMC, +/- 3 SE")
     ax.plot(cases["tree"], y, "s", color=ORANGE, markersize=6, markerfacecolor="none", markeredgewidth=1.5, label="CRR tree")
-    ax.set_yticks(y, [f"sigma {a:g}, K {b:g}" for a, b in zip(cases["sigma"], cases["strike"])])
-    ax.set_xlabel("Bermudan put (fraction of spot)")
+    kinds = cases["kind"] if "kind" in cases else ["put"] * len(cases)
+    ax.set_yticks(y, [f"{k}, sigma {a:g}, K {b:g}" for k, a, b in zip(kinds, cases["sigma"], cases["strike"])])
+    ax.set_xlabel("Bermudan price (fraction of spot)")
     ax.legend(frameon=False, loc="lower right")
     worst = ((cases["lsmc"] - cases["tree"]).abs() / cases["se"]).max()
     fig.suptitle(f"Constant-volatility test: largest LSMC to tree gap is {worst:.2f} SE", fontsize=10, x=0.01, ha="left")
     fig.tight_layout(rect=(0, 0.09, 1, 0.97))
-    add_footnote(fig, f"Test model (xi = 0), not the reported parameters. {document['n_paths']} paths per set, 50 dates, "
+    add_footnote(fig, f"Test model (xi = 0), not the reported parameters; puts q = 0, calls q = 0.0026. "
+                      f"{document['n_paths']} paths per set, 50 dates, "
                       f"seed {document['comparison_seed']}; tree 5,000 steps. Source {source}. Code {CODE}.")
     fig.savefig(out_dir / "compare_lsmc_vs_tree.png", dpi=180)
     plt.close(fig)
@@ -378,7 +391,8 @@ def comparison_figures(comparison_file, results_root, out_dir):
     right.set_ylabel("Early-exercise premium (fraction of spot)")
     right.legend(frameon=False)
     largest = profile.loc[profile["premium"].idxmax()]
-    fig.suptitle(f"Largest early-exercise premium: {largest['premium']:.4f} of spot at strike {largest['strike']:g}",
+    fig.suptitle(f"{status_prefix(document)}Largest early-exercise premium: {largest['premium']:.4f} of spot "
+                 f"at strike {largest['strike']:g}",
                  fontsize=10, x=0.01, ha="left")
     fig.tight_layout(rect=(0, 0.08, 1, 0.97))
     add_footnote(fig, f"Mode {mode}. {document['n_paths']} paths per set, {len(document['seeds'])} seed(s), 50 dates. "
@@ -391,31 +405,6 @@ def comparison_figures(comparison_file, results_root, out_dir):
             for name, pointer, checks in (("fig_compare_mc_vs_analytic", "/mc_vs_analytic/0/z", "V-03"),
                                           ("fig_compare_lsmc_vs_tree", "/lsmc_vs_tree/0/lsmc", "V-04"),
                                           ("fig_compare_strike_profile", "/strike_profile/0/bermudan", "V-11"))]
-
-
-def calibrated_surface_figure(ticker, results_root, out_dir):
-    """VZ-1c and VZ-1d: a fit accepted by the ladder, labelled as provisional."""
-    name = ticker.lower()
-    calibration_file = Path(results_root) / f"calibration_{name}" / "calibration.json"
-    if not calibration_file.exists():
-        return []
-    document = json.loads(calibration_file.read_text())
-    entry = document["assets"][ticker]
-    if not entry.get("params"):
-        return []
-    p = entry["params"]
-    at_bound = [label for label, value, limit in (("kappa", p["kappa"], 20.0), ("xi", p["xi"], 5.0)) if value >= limit - 1e-3]
-    warning = f"{' and '.join(at_bound)} at the upper bound; provisional." if at_bound else "Provisional."
-    heading = (f"{ticker} Heston surface, {document['snapshot_date']}\n"
-               f"Passed the fit limit (RMS IV residual {entry['rms_iv_residual']:.4f}, limit 0.01). {warning}")
-    footnote = (f"Model surface; no market data points shown. v0 {p['v0']:.4f}, kappa {p['kappa']:.2f}, theta {p['theta']:.4f}, "
-                f"xi {p['xi']:.3f}, rho {p['rho']:.3f}.\n"
-                f"Fit: {entry['grid_size']} grid points, 8 starts; no uncertainty band. Exclusions: filters F1 to F8. "
-                f"Source {relative(calibration_file, results_root)}. Code {CODE}.")
-    render_surface(p, document["r"], entry["q"], heading, footnote, out_dir / f"surface_{name}_provisional.png")
-    return [{"claim_id": f"fig_surface_{name}_provisional", "location": "figure", "artifact_type": "figure",
-             "run_id": f"calibrate_{name}", "result_path": relative(calibration_file, results_root),
-             "json_pointer": f"/assets/{ticker}/rms_iv_residual", "check_ids": "V-13"}]
 
 
 def google_2015_figure(results_root, out_dir):
@@ -479,10 +468,11 @@ def main():
         comparison_file = newest_comparison(run_name, results_root)
         if comparison_file is not None:
             evidence += comparison_figures(comparison_file, results_root, out_dir)
-            evidence += published_surface_figure(comparison_file, results_root, out_dir)
-    evidence += rejected_surface_figure(results_root, out_dir)
-    evidence += calibrated_surface_figure("NVDA", results_root, out_dir)
-    evidence += calibrated_surface_figure("INTC", results_root, out_dir)
+    # VZ-1b uses the published-mode comparison, which holds the published Google parameters
+    published_comparison = newest_comparison("core_goog_production", results_root)
+    if published_comparison is not None:
+        evidence += published_surface_figure(published_comparison, results_root, out_dir)
+    evidence += goog_surface_figure(results_root, out_dir)
     evidence += google_2015_figure(results_root, out_dir)
     evidence += surface_figure(results_root, out_dir)
     evidence += market_fit_table(results_root, out_dir)

@@ -1,7 +1,6 @@
 # Exploratory one-year Bermudan put on INTC. Not a reported result. Uses the INTC fit accepted by the failure ladder, which is provisional (SPEC.md 8.5).
 schema_version: 1
 run_name: explore_intc
-tier: CORE
 reported: false
 data_mode: market
 assets: [INTC]

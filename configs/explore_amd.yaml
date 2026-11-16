@@ -1,7 +1,6 @@
 # Exploratory one-year Bermudan put on AMD. Not a reported result. Uses AMD's REJECTED full fit, labelled as such (SPEC.md 8.5).
 schema_version: 1
 run_name: explore_amd
-tier: CORE
 reported: false
 data_mode: market
 assets: [AMD]
@@ -11,4 +10,3 @@ params_source: results/calibration.json
 contract: {strike: 1.0, maturity: 1.0, n_exercise: 50}
 simulation: {n_paths: 100000, n_substeps: 4, basis_degree: 3}
 seeds: [620001, 620002, 620003, 620004, 620005]
-allow_rejected_fit: true

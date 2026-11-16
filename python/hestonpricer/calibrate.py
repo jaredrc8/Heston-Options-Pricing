@@ -153,7 +153,11 @@ def calibrate_with_ladder(grid, r, q, fallback_kappa, cfg=None):
     """
     Apply the failure ladder (SPEC.md 6.7). fallback_kappa is the cited value from
     configs/published_params.yaml, or None if the owner has not entered it.
-    Returns the fit dictionary with ladder_step added. At step 3 there are no params.
+
+    Step 1 or 2: the accepted fit, with ladder_step added.
+    Step 3: "params" is None, and the lowest-RMS fit from steps 1 and 2 is kept under
+            "rejected_fit". It is still used for the out-of-sample test, labelled REJECTED.
+    Step 4: no start converged in either step, so no market-calibrated result exists.
     """
     cfg = cfg or {}
 
@@ -167,14 +171,23 @@ def calibrate_with_ladder(grid, r, q, fallback_kappa, cfg=None):
 
     full_fit = attempt({})
     if fit_acceptable(full_fit):
-        return {**full_fit, "ladder_step": 1}
+        return {**full_fit, "ladder_step": 1, "rejected_fit": None}
 
     fixed_fit = None
     if fallback_kappa is not None:
         fixed_fit = attempt({"kappa": float(fallback_kappa)})
         if fit_acceptable(fixed_fit):
-            return {**fixed_fit, "ladder_step": 2}
+            return {**fixed_fit, "ladder_step": 2, "rejected_fit": None}
 
-    # No accepted fit. The rejected fits are kept apart from "params", for diagnosis only.
-    return {"ladder_step": 3, "params": None, "stable": False, "fixed_params": [],
-            "rejected_full_fit": full_fit, "rejected_fixed_kappa_fit": fixed_fit}
+    attempts = [(step, fit) for step, fit in ((1, full_fit), (2, fixed_fit)) if fit is not None]
+    if not attempts:
+        return {"ladder_step": 4, "params": None, "stable": False, "fixed_params": [],
+                "rejected_fit": None, "failure": "E_CALIB_FAILED"}
+
+    # The rejected fit is the attempt with the lowest RMS IV residual
+    from_step, best = min(attempts, key=lambda item: item[1]["rms_iv_residual"])
+    rejected = {"from_step": from_step, "params": best["params"], "fixed_params": best["fixed_params"],
+                "rms_iv_residual": best["rms_iv_residual"], "stable": best["stable"], "limit": 0.01}
+    return {**best, "ladder_step": 3, "params": None, "fixed_params": [], "rejected_fit": rejected,
+            "ladder_attempts": [{"step": step, "rms_iv_residual": fit["rms_iv_residual"], "stable": fit["stable"]}
+                                for step, fit in attempts]}

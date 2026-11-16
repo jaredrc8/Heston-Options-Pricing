@@ -3,7 +3,6 @@
 # The parameters were fitted to the same market prices, so this comparison is in-sample.
 schema_version: 1
 run_name: goog_2015_contract
-tier: CORE
 reported: true
 data_mode: published
 assets: [GOOG]

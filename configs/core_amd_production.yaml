@@ -1,7 +1,6 @@
 # Market-calibrated CORE result. Runs only when authorized (SPEC.md 5.2 and 15).
 schema_version: 1
 run_name: core_amd_production
-tier: CORE
 reported: false   # no accepted market fit (ladder step 3); set true if one is obtained
 data_mode: market
 assets: [AMD]
