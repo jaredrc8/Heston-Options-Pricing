@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "asset": "GOOG",
+  "date": "2026-10-13",
+  "r": 0.04430560928226656,
+  "q": 0.0026,
+  "note": "Same-day, out-of-sample across contracts. Aggregates only.",
+  "fitted_parameter_status": "REJECTED full fit (ladder step 3)",
+  "contracts": {
+    "after_filters": 394,
+    "in_calibration_grid": 48,
+    "held_out": 346,
+    "held_out_and_traded": 299
+  },
+  "calibrated_on_2026_10_13": {
+    "n_priced": 299,
+    "rms_iv_error": 0.015436945709804901,
+    "median_abs_iv_error": 0.008315090585054141,
+    "mean_iv_error": -0.001952201170158336,
+    "share_inside_bid_ask": 0.5785953177257525,
+    "median_abs_price_error_percent": 4.487611905960243,
+    "share_within_5_percent_of_mid": 0.5284280936454849,
+    "by_tenor": [
+      {
+        "tenor_bucket": "T<0.25",
+        "n": 124,
+        "rms_iv_error": 0.020474484520902062
+      },
+      {
+        "tenor_bucket": "0.25<=T<0.5",
+        "n": 96,
+        "rms_iv_error": 0.012162786904131763
+      },
+      {
+        "tenor_bucket": "0.5<=T<1",
+        "n": 46,
+        "rms_iv_error": 0.0063683668773512015
+      },
+      {
+        "tenor_bucket": "T>=1",
+        "n": 33,
+        "rms_iv_error": 0.009851846610917382
+      }
+    ]
+  },
+  "published_2015_parameters": {
+    "n_priced": 299,
+    "rms_iv_error": 0.1215142086075207,
+    "median_abs_iv_error": 0.11408740380418397,
+    "mean_iv_error": -0.11722508976019444,
+    "share_inside_bid_ask": 0.0,
+    "median_abs_price_error_percent": 56.94080559506192,
+    "share_within_5_percent_of_mid": 0.0,
+    "by_tenor": [
+      {
+        "tenor_bucket": "T<0.25",
+        "n": 124,
+        "rms_iv_error": 0.13083324488356246
+      },
+      {
+        "tenor_bucket": "0.25<=T<0.5",
+        "n": 96,
+        "rms_iv_error": 0.10845490052805422
+      },
+      {
+        "tenor_bucket": "0.5<=T<1",
+        "n": 46,
+        "rms_iv_error": 0.11867308464431149
+      },
+      {
+        "tenor_bucket": "T>=1",
+        "n": 33,
+        "rms_iv_error": 0.12496869030268583
+      }
+    ]
+  }
+}

@@ -1,11 +1,11 @@
-# SPEC.md — Calibrated Heston Bermudan Put Pricer
+# SPEC.md — Heston LSMC Pricer: Out-of-Sample Accuracy on GOOG Options
 
 | | |
 |---|---|
 | **Project** | ENSF 620 Fall 2026 final project (individual) |
 | **Owner** | Jared Crebo |
-| **Spec version** | 1.12 (2026-11-13) |
-| **Companion document** | `DATA_CONTRACT.md` v0.8 |
+| **Spec version** | 1.13 (2026-11-15) |
+| **Companion document** | `DATA_CONTRACT.md` v0.9, whose §3.3 matches §15 of this spec |
 | **Audience** | Engineers and AI coding agents writing implementation code and automated tests |
 
 The key words MUST, MUST NOT, SHOULD, and MAY are normative. Requirements are binding until changed through §1.3.
@@ -22,6 +22,7 @@ This spec defines what must be true of the pricing system and how each requireme
 
 When documents conflict, the higher item wins:
 
+1. ENSF 620 course documents and the instructor's written direction, including the proposal feedback.
 2. `DATA_CONTRACT.md`, for schemas, data classification, allowed paths, and what may appear in prompts, logs, and submissions.
 3. This spec, for everything else.
 4. The September 29 proposal. §20 lists where it has been superseded.
@@ -38,35 +39,46 @@ When documents conflict, the higher item wins:
 
 ## 2. Scope
 
-### 2.1 Required core (CORE)
+### 2.1 Question and required core (CORE)
 
-**Primary question.** For a one-year Bermudan put on GOOG, what is the risk-neutral price implied by the published Heston parameters for Google options (`configs/published_params.yaml`), and how much of that price is the early-exercise premium relative to the corresponding European put?
+**Primary question.** How accurately does a Heston model calibrated to one day of GOOG options price GOOG options it was not fitted to?
 
-Earlier versions asked this for AMD with calibrated parameters. The AMD market fit failed its acceptance limit (§6.7), so the question was revised as §17.3 requires. Since v1.11 the project proceeds with GOOG only. Work on NVDA, AMD, and INTC has stopped; their calibrations and exploratory runs (§8.5) stay in `results/` as a record and are not part of the reported analysis.
+**How the project answers it.**
+
+1. Calibrate the five Heston parameters to GOOG's option surface of 2026-10-13 (§6).
+2. Price every contract in the test population (§2.2) as an American option with the LSMC engine, with Monte Carlo uncertainty bounds on each price (§8.5).
+3. Compare the model prices with the market's bid, ask, and mid, and report aggregate accuracy (§8.5). The same test is run with the published 2015 Google parameters as a comparison model.
 
 CORE is the committed result. Its required components are:
 
-- Heston semi-analytic European pricer.
+- Heston semi-analytic European pricer, used by calibration.
 - Quote filtering, implied-volatility conversion, and single-asset calibration.
 - Python/NumPy Monte Carlo simulator.
-- Two-pass Least-Squares Monte Carlo (LSMC) pricer.
-- Verification suite, run provenance, and reviewer smoke path.
+- Two-pass Least-Squares Monte Carlo (LSMC) pricer for puts and calls.
+- Out-of-sample test script (§8.5).
+- Raw-data validation (§11), verification suite, run provenance, and reviewer smoke path.
 
 CORE MUST also run with published parameters and synthetic fixtures so that it does not depend on licensed data (§5.1).
 
-### 2.2 Conditional extensions
+Earlier versions of this spec asked other questions about other tickers. That history is kept in §22 and MUST be disclosed in the report. Since v1.13 the spec covers GOOG only.
 
-| ID | Extension | May start only when | If not completed |
-|---|---|---|---|
-| EXT-A | Optional n-asset correlated extension: a Bermudan call or put on `d >= 2` correlated assets, with a worst-of or weighted-basket payoff (§4.1). It includes worst-of puts on NVDA, AMD, INTC, and GOOG | Gate G1 passes (§17.1) | Omit it from the claims. The final question stays as stated in §2.1. |
-| EXT-B | C++ pricing kernel exposed through pybind11 | The C++ gate passes (§9.4) | The Python engine remains the production engine. |
+### 2.2 Test population
 
-The report, slides, and README MUST NOT present an unfinished extension as a result. Since v1.11 EXT-A is not pursued, because the project prices GOOG only.
+A contract is in the test population if all of the following hold:
 
-### 2.3 Removed or out of scope
+- It is a GOOG option in `data/goog_IV_Oct13.csv` with date 2026-10-13.
+- It passes filters F1 to F8 (§6.2). Among them: 21 to 511 days to expiry, strike between 0.70 and 1.30 times the forward price `F`, out of the money, bid–ask spread at most 50% of mid, open interest at least 10, and a valid implied-volatility root.
+- It traded that day: `volume > 0`.
+- It is not in the calibration grid (§6.4). V-19 checks this.
+
+The strike window is measured against the forward price, as filter F4 has always done. The test set was defined and viewed under that rule, so §1.3 does not allow changing it to spot now. In-the-money contracts are removed by F5 and are outside the claims. Calibration and test use the same snapshot, so this is a test across contracts on one day, not a test over time.
+
+### 2.3 Out of scope
 
 The system MUST NOT implement these within this project:
 
+- C++ or other compiled pricing kernels. The Python/NumPy engine is the only engine.
+- Contracts on more than one asset.
 - Live data feeds or re-downloading data.
 - P&L simulation, delta hedging, backtesting, trading signals, or paper trading.
 - Stochastic rates, jumps, or discrete dividends in the simulated dynamics.
@@ -74,7 +86,9 @@ The system MUST NOT implement these within this project:
 
 ### 2.4 Permitted claims
 
-The headline value is a **model-implied, low-biased Monte Carlo estimate** for the stated data mode, snapshot date, and assumptions. It MUST NOT be described as a market price, tradable quote, or trading signal.
+- The headline result is the out-of-sample accuracy of model prices for the test population on 2026-10-13 (§8.5), stated with its uncertainty and with the calibration status of the parameters used.
+- Each model price is a **low-biased LSMC estimate** with a Monte Carlo standard error. It MUST NOT be described as a market price, a tradable quote, or a trading signal.
+- A parameter set rejected under §6.7 MUST be labelled REJECTED wherever its results appear, together with its RMS implied-volatility residual and the 0.01 limit.
 
 ---
 
@@ -84,91 +98,66 @@ The headline value is a **model-implied, low-biased Monte Carlo estimate** for t
 |---|---|
 | Floating point | IEEE-754 `float64` throughout |
 | Spot normalization | Pricing uses S(0) = 1. All reported values are fractions of initial spot. |
+| Market quantities for comparison | Bid, ask, and mid divided by `stock_price_for_iv`, so they share the model's units |
 | Time | Years, ACT/365 from snapshot date to expiration |
 | Rates and yields | Decimal, continuously compounded |
 | Volatility and variance | σ is annualized decimal volatility; ν is instantaneous variance |
 | Standard error | `SE = s / sqrt(N)`, where `s` is the sample standard deviation with `ddof=1` over `N` independent evaluation paths |
 | Paired SE | SE of the path-by-path difference on the same evaluation paths |
 | Pooled result over R seeds | `mean(V_r)`, with `SE = sqrt(sum(SE_r^2)) / R` |
+| 95% Monte Carlo interval | `[V - 1.96 SE, V + 1.96 SE]` on the pooled estimate. It covers simulation noise only, not LSMC low bias or discretization bias |
 | Absolute prices | Absolute market prices MUST NOT appear in `results/`, logs, figures, or submitted files (§15). The published Google prices of 2015-02-02 in §8.4 are the only exception |
 
 ---
 
 ## 4. Contract and model
 
-### 4.1 Contract
+### 4.1 Contracts
 
-For `d` assets, the payoff at exercise date `t_k` is:
+With spot normalized to S(0) = 1 and normalized strike `K`, the payoff at exercise date `t_k` is:
 
 ```text
-g(t_k) = max( K - min_i[ S_i(t_k) / S_i(0) ], 0 )
+put:  g(t_k) = max(K - S(t_k), 0)
+call: g(t_k) = max(S(t_k) - K, 0)
 ```
 
-CORE is the case `d = 1`.
+The project uses two kinds of contract:
 
-| Term | Default | Rule |
-|---|---|---|
-| Normalized strike `K` | `1.00` | `K > 0` |
-| Maturity `T` | `1.00` year | `T > 0` |
-| Exercise dates `M` | `50` | Integer `M >= 1` |
-| Exercise grid | `t_k = k T / M`, `k = 1..M` | No exercise at `t = 0`; `t_M = T` |
+| Use | Kind | Normalized strike `K` | Maturity `T` | Exercise dates `M` | Sub-steps `n_sub` |
+|---|---|---|---|---|---|
+| Reference contract: verification, sweeps, baselines | put | `1.00` | `1.00` year | `50` | `4` |
+| Test contract (§8.5) | `call_put` of the quote | `strike / stock_price_for_iv` | ACT/365 from 2026-10-13 to expiration | `ceil(252 T)` | `1` |
 
-The corresponding European contract uses the same `K` and `T` and may be exercised only at `T`.
-
-**n-asset payoffs (EXT-A, optional).** For `d >= 2` correlated assets, let `P_i(t) = S_i(t) / S_i(0)`, and define the underlying value `U(t)` by the payoff type:
-
-| Payoff type | `U(t)` | Rule |
-|---|---|---|
-| `worst_of` | `min_i P_i(t)` | |
-| `basket` | `sum_i w_i P_i(t)` | `w_i >= 0`, `sum_i w_i = 1`; equal weights by default |
-
-A put pays `max(K - U(t), 0)` and a call pays `max(U(t) - K, 0)`. The payoff stated above is the `worst_of` put, and CORE is unchanged by these definitions.
+- The exercise grid is `t_k = k T / M`, `k = 1..M`. There is no exercise at `t = 0`, and `t_M = T`.
+- Test contracts approximate American exercise with about one exercise date per trading day. The gap to continuous exercise is a stated limitation.
+- The corresponding European contract uses the same `K` and `T` and may be exercised only at `T`.
 
 ### 4.2 Risk-neutral dynamics
 
 ```text
-dS_i = (r - q_i) S_i dt + sqrt(nu_i) S_i dW_i^S
-dnu_i = kappa_i (theta_i - nu_i) dt + xi_i sqrt(nu_i) dW_i^nu
-d<W_i^S, W_i^nu> = rho_i dt
-d<W_i^S, W_j^S> = R_ij dt
+dS  = (r - q) S dt + sqrt(nu) S dW^S
+dnu = kappa (theta - nu) dt + xi sqrt(nu) dW^nu
+d<W^S, W^nu> = rho dt
 ```
 
-Parameter vector for each asset:
+Parameter vector:
 
 ```text
-phi_i = (nu_i0, kappa_i, theta_i, xi_i, rho_i)
+phi = (nu0, kappa, theta, xi, rho)
 ```
 
-`nu_i0` is **fitted**, not fixed. `r` and `q_i` are constants.
+`nu0` is **fitted**, not fixed. `r` and `q` are constants.
 
 ### 4.3 Rate and dividend inputs
 
-These values live in `configs/market_inputs.yaml`.
+These values live in `configs/market_inputs*.yaml`.
 
-- **Rate.** Let `y` be the U.S. Treasury 1-Year CMT par yield on the snapshot date as a decimal. Then `r = 2 ln(1 + y / 2)`.
+- **Rate.** Let `y` be the U.S. Treasury 1-Year CMT par yield on the snapshot date as a decimal. Then `r = 2 ln(1 + y / 2)`. For 2026-10-13, `y = 4.48%`.
 - **Term structure.** The same flat `r` is used for implied-volatility conversion, calibration, and pricing. Ignoring the term structure is a stated limitation.
-- **CORE dividend yield.** `q_GOOG = 0`, the assumption of the paper the parameters come from. Alphabet has paid a dividend since 2024, so this is a stated limitation for the Oct 14 run; the market comparison in §8.4 uses `q = 0`, as in its source paper. `q_AMD = 0`.
-- **EXT-A dividend yields.** `q_AMD = 0`. `q_INTC = 0` unless the owner records otherwise. `q_NVDA` is the annualized declared dividend divided by the snapshot spot, rounded to the nearest `0.0001` before any use.
-- **Discrete dividends.** They are approximated by this continuous yield in both the tree and the simulation.
-
-### 4.4 Cross-asset shock structure (EXT-A)
-
-Let `Z^S` have correlation matrix `R`. Let `Z^perp` be standard normals independent of `Z^S` and independent across assets. Then:
-
-```text
-Z_i^nu = rho_i Z_i^S + sqrt(1 - rho_i^2) Z_i^perp
-```
-
-This fully determines the 2d × 2d driver correlation matrix:
-
-| Pair | Correlation |
-|---|---|
-| `corr(Z_i^S, Z_j^S)` | `R_ij` |
-| `corr(Z_i^S, Z_i^nu)` | `rho_i` |
-| `corr(Z_i^S, Z_j^nu)` for `i != j` | `rho_j R_ij` |
-| `corr(Z_i^nu, Z_j^nu)` for `i != j` | `rho_i rho_j R_ij` |
-
-`R` is factored by symmetric eigendecomposition, so a singular positive semi-definite `R` is valid input.
+- **Dividend yield.** `q_GOOG = 0.0026` for 2026-10-13, from Alphabet's declared $0.22 quarterly dividend and a GOOG price near $345. It is approximate, which is a stated limitation.
+- **Published parameters in the test.** When the 2015 parameters are used in §8.5, `r` and `q` are the 2026-10-13 values. Only the Heston parameters come from 2015.
+- **2015 comparison (§8.4).** `r = 0.15%` and `q = 0`, as in the source paper.
+- **Discrete dividends.** They are approximated by the continuous yield in both the tree and the simulation.
 
 ---
 
@@ -181,10 +170,10 @@ Every run MUST declare one mode.
 | Mode | Parameter source | Purpose | Licensed data read |
 |---|---|---|---|
 | `synthetic` | Known parameters and `tests/fixtures/` | Tests, CI, reviewer smoke path | None |
-| `published` | `configs/published_params.yaml` | Fallback result and known-answer checks | None |
-| `market` | `results/calibration.json` | Market-calibrated result | Read by the committed scripts only (§15) |
+| `published` | `configs/published_params.yaml` | Comparison model and known-answer checks | None |
+| `market` | `results/calibration_goog/calibration.json` | Calibrated result and out-of-sample test | Read only by committed scripts (§15) |
 
-Each published parameter set MUST include its citation and table or page. Every reported artifact MUST name its mode. A `published` result MUST NOT be described as calibrated to current GOOG options or to AMD, NVDA, or INTC. Its parameters were fitted to Google options on 2015-02-02.
+Each published parameter set MUST include its citation and table or page. Every reported artifact MUST name its mode. A `published` result MUST NOT be described as calibrated to current GOOG options; its parameters were fitted to Google options on 2015-02-02.
 
 ### 5.2 Authority gate for market mode
 
@@ -198,7 +187,6 @@ recorded_on: null
 
 - `market` runs MUST fail with `E_GOV_UNAUTHORIZED` while `market_use_authorized` is `false`.
 - It may be set to `true` only by the owner, or by an agent on the owner's recorded instruction. `basis` must then state where the authority is documented.
-- While it stays `false`, or if it cannot be settled by G1, the `published` result is the reported result (§19, OD-1).
 
 ### 5.3 Data sources
 
@@ -206,25 +194,13 @@ Schemas, classes, and paths are defined by `DATA_CONTRACT.md`; this spec does no
 
 | Dataset | Used by | Notes |
 |---|---|---|
-| iVolatility Raw IV, 2026-10-13 to 2026-10-15 | CORE calibration; EXT-A calibration | Restricted. Primary snapshot date is `2026-10-14`. |
-| Massive minute bars for NVDA, AMD, INTC, GOOG, and GOOGL, November 2011 to July 2026 | Correlation estimates (§5.4) | Restricted. **CORE pricing MUST NOT read Massive data.** |
+| iVolatility Raw IV for GOOG, 2026-10-13 (`data/goog_IV_Oct13.csv`) | Calibration and the test population | Restricted. The only GOOG option date held, so it is the snapshot date |
+| Massive minute bars for GOOG and GOOGL, November 2011 to July 2026 (`data/nvda_amd_intc_goog_minute/bars/`) | Raw-data validation only (§11) | Restricted. Not used by the reported analysis. **Pricing MUST NOT read Massive data** |
 | U.S. Treasury CMT yields | `r` | Public |
-| Published parameters and benchmarks | Fallback and checks | Public; transcribed by the owner |
+| Published parameters and benchmarks | Comparison model and checks | Public |
 | Synthetic fixtures | Tests, CI, smoke path | Public |
 
-The other two iVolatility dates are for day-to-day stability reporting only. The primary date MUST NOT be changed after viewing fit quality.
-
-### 5.4 Correlation estimation
-
-The tickers are NVDA, AMD, INTC, and GOOG. GOOGL is validated but excluded, because it is a share class of the same company as GOOG. Correlations price nothing, so they may be estimated before gate G1; using them to price a multi-asset contract remains part of EXT-A. `scripts/estimate_correlations.py` applies this section.
-
-1. Take split-adjusted last regular-session closes and compute daily log returns.
-2. Inner-join tickers on date.
-3. Estimate the Pearson correlation over the trailing 252 trading days ending at the last available date.
-4. Require a symmetric matrix with unit diagonal, entries in `[-1, 1]`, and minimum eigenvalue `>= -1e-10`. Otherwise raise `E_CORR_NOT_PSD`.
-5. Report sensitivity using 126-day and 504-day windows.
-
-The report MUST state two limitations: the correlation window ends before the option snapshot, and historical correlation is being used inside a risk-neutral model.
+Files for other tickers stay on disk under `DATA_CONTRACT.md`; no reported run reads them.
 
 ---
 
@@ -233,8 +209,8 @@ The report MUST state two limitations: the correlation window ends before the op
 ### 6.1 Pipeline
 
 ```text
-validate_raw -> filter quotes -> convert to implied vol -> select grid
-             -> multi-start least squares -> stability check -> calibration.json
+validate raw data -> filter quotes -> convert to implied vol -> select grid
+                  -> multi-start least squares -> stability check -> calibration.json
 ```
 
 ### 6.2 Quote filters
@@ -243,7 +219,7 @@ Filters are applied in this order, and each drop count is recorded. `S` is `stoc
 
 | ID | Keep a row only if |
 |---|---|
-| F1 | It matches the requested symbol and snapshot date |
+| F1 | It matches symbol GOOG and snapshot date 2026-10-13 |
 | F2 | `iv` is valid under `DATA_CONTRACT.md`, `bid > 0`, and `ask >= bid` |
 | F3 | Days to expiry are in `[21, 511]` |
 | F4 | `K / F` is in `[0.70, 1.30]` |
@@ -264,13 +240,13 @@ Selection is deterministic and has no manual override.
 
 1. For each target tenor in `{0.10, 0.25, 0.50, 0.75, 1.00, 1.25}` years, take the nearest surviving expiry. Remove duplicates.
 2. Within each selected expiry and each target `K/F` in `{0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.20}`, take the nearest surviving strike within `±0.025`. Break ties toward the lower strike. Remove duplicates.
-3. If step 2 produced no contract point (defined below), add the surviving quote nearest the contract strike at the selected expiry nearest the contract maturity.
+3. If step 2 produced no contract point (defined below), add the surviving quote nearest the reference-contract strike at the selected expiry nearest the reference-contract maturity.
 
 The grid MUST satisfy all of the following, or `E_SPARSE_GRID` is raised:
 
 - At least 20 points.
 - At least 3 expiries.
-- A **contract point**: at least one point with tenor in `[0.70, 1.30]` and `|K/S - K_c| <= 0.025`, where `K_c` is the normalized strike in §4.1. The contract strike is a fraction of spot, not of the forward.
+- A **contract point**: at least one point with tenor in `[0.70, 1.30]` and `|K/S - K_c| <= 0.025`, where `K_c` is the reference-contract strike in §4.1. The contract strike is a fraction of spot, not of the forward.
 
 The selected grid is written only to `data/derived/calibration_grid.parquet` and is Restricted. Its `iv` column holds the §6.3 value, never the vendor value.
 
@@ -314,14 +290,17 @@ Apply these in order. The first satisfied step is used and recorded in `calibrat
 | Step | Condition | Action |
 |---|---|---|
 | 1 | Stable and `RMS <= 0.01` | Accept the full five-parameter fit |
-| 2 | Otherwise | Fix `kappa` to the cited value recorded in `configs/published_params.yaml` and refit four parameters; state it as an assumption |
-| 3 | Step 2 still fails, or `E_SPARSE_GRID` | Report no market-calibrated result; use `published` mode |
+| 2 | Otherwise | Fix `kappa` to the cited value recorded in `configs/published_params.yaml` and refit four parameters; state it as an assumption. Accept it if it is stable and `RMS <= 0.01` |
+| 3 | Step 2 still fails | No fit is accepted. The fit with the lowest RMS from steps 1 and 2 is recorded as the **rejected fit**, with its RMS, its stability result, and the 0.01 limit. It is still used for the out-of-sample test (§8.5) and the reference contract, and it is labelled REJECTED wherever its results appear (§2.4) |
+| 4 | `E_SPARSE_GRID`, or no converged start | No market-calibrated result exists; only `published` mode is reported |
+
+The 0.01 limit is unchanged. Step 3 was written after the GOOG fit's RMS of 0.01049 had been viewed, which §22 records and the report MUST disclose. Step 3 sets no "close enough" threshold, because a threshold chosen after seeing 0.01049 would be tuned to that value.
 
 ### 6.8 Synthetic surface fixture
 
 `tests/fixtures/synthetic_raw_iv.csv` follows the `DATA_CONTRACT.md` schema, with these rules:
 
-- The symbol is `SYN1`. `validate_raw.py --source fixtures` accepts `SYN1` to `SYN3` in place of the three real tickers.
+- The symbol is `SYN1`. `validate_raw.py --source fixtures` accepts `SYN1` to `SYN3` in place of real tickers.
 - `style` is `E`, so de-Americanization error cannot enter V-12.
 - Mids are exact Heston European prices with no added noise. `bid` and `ask` are `mid × 0.99` and `mid × 1.01`. `iv` is the Black–Scholes implied volatility of the mid.
 - Strikes and expiries MUST satisfy every §6.4 requirement.
@@ -338,6 +317,7 @@ Full-truncation Euler for variance and log-Euler for spot (Lord et al.). For one
 nu_plus = max(nu_n, 0)
 ln S_{n+1} = ln S_n + (r - q - 0.5 nu_plus) Δ + sqrt(nu_plus Δ) Z^S
 nu_{n+1} = nu_n + kappa (theta - nu_plus) Δ + xi sqrt(nu_plus Δ) Z^nu
+Z^nu = rho Z^S + sqrt(1 - rho^2) Z^perp
 ```
 
 - `nu_n` may be negative in storage. Only `nu_plus` enters drift, diffusion, and regression.
@@ -353,7 +333,7 @@ nu_{n+1} = nu_n + kappa (theta - nu_plus) Δ + xi sqrt(nu_plus Δ) Z^nu
 
 ### 7.3 Path output
 
-The simulator returns `(S, nu)` at `t_0..t_M` only, with shape `(n_paths, M + 1, d)`.
+The simulator returns `(S, nu)` at `t_0..t_M` only, with shape `(n_paths, M + 1, 1)`.
 
 ---
 
@@ -361,7 +341,7 @@ The simulator returns `(S, nu)` at `t_0..t_M` only, with shape `(n_paths, M + 1,
 
 ### 8.1 Algorithm
 
-Use two independent path sets: regression set A and evaluation set B, each with `n_paths` paths.
+Use two independent path sets: regression set A and evaluation set B, each with `n_paths` paths. `g` is the put or call payoff of §4.1.
 
 **Fit on set A:**
 
@@ -386,26 +366,18 @@ The evaluation-set price is the reported price. The in-sample price from set A i
 
 ### 8.2 Regression basis
 
-| Case | Variables | Default | Basis size `p` |
-|---|---|---|---|
-| CORE | `(S/S0, nu_plus)` | Total degree 3 | Degree 2: 6; degree 3: 10; degree 4: 15 |
-| EXT-A `worst_of` | `(w_1, ..., w_d, nu_(1), ..., nu_(d))`, where `w_1 <= ... <= w_d` are sorted performances and `nu_(j)` is the variance of the asset ranked `j` | Total degree 2 | `d = 3`, degree 2: 28; degree 3: 84 |
-| EXT-A `basket` | `(P_1, ..., P_d, nu_1, ..., nu_d)`, using `nu_plus` for each variance | Total degree 2 | `d = 2`: 15; `d = 3`: 28; `d = 5`: 66 |
+The variables are `(S/S0, nu_plus)` with total degree 3 by default. Basis size `p` is 6 at degree 2, 10 at degree 3, and 15 at degree 4. Variance MUST be part of the regression state.
 
-Variance MUST be part of the regression state.
+### 8.3 Baselines for the reference contract
 
-### 8.3 Baselines
-
-CORE reports two baselines:
+The reference contract reports two baselines:
 
 1. **European put.** Both the Monte Carlo `V_E` and the semi-analytic price are reported. The premium uses the paired Monte Carlo difference, so simulation noise and discretization error are shared by both legs.
-2. **Constant-volatility Bermudan.** `crr_price` with `n_steps = 50 M` and exercise at the same dates. `sigma` is the Black–Scholes implied volatility of the fitted Heston European put at the contract `(K, T)`. It uses model output only, so it stays Internal. The gap to the Heston Bermudan is what stochastic volatility adds beyond matching the European level.
+2. **Constant-volatility Bermudan.** `crr_price` with `n_steps = 50 M` and exercise at the same dates. `sigma` is the Black–Scholes implied volatility of the Heston European put at the contract `(K, T)`. It uses model output only, so it stays Internal. The gap to the Heston Bermudan is what stochastic volatility adds beyond matching the European level.
 
-EXT-A has only the Monte Carlo European comparator.
+### 8.4 Engine check: Google puts of 2015-02-02
 
-### 8.4 Market comparison: Google puts of 2015-02-02
-
-The official market comparison uses a put from the same date and options the published parameters were fitted to. Prices come from Burkovska et al. (arXiv:1611.06452, Appendix A, Table 10), stored in `configs/google_2015_american_puts.csv`.
+This check uses a put from the date and options the published parameters were fitted to. Prices come from Burkovska et al. (arXiv:1611.06452, Appendix A, Table 10), stored in `configs/google_2015_american_puts.csv`.
 
 | Term | Value |
 |---|---|
@@ -418,24 +390,52 @@ The official market comparison uses a put from the same date and options the pub
 | Exercise | `M = 240` daily dates with `n_sub = 1`, approximating American exercise |
 | Parameters | Published Google set, fitted to these prices |
 
-`scripts/compare_to_market.py` compares that contract and also prices all 401 published puts with `M = 50`, writing `results/market_comparison.json` and `results/market_comparison_2015.csv`. There is no pass rule. This comparison is **in-sample** and MUST be described that way. At `r = 0.15%` early exercise is worth very little, so it does not test the early-exercise logic; V-06 does.
+`scripts/compare_to_market.py` compares that contract and also prices all 401 published puts with `M = 50`, writing `results/market_comparison.json` and `results/market_comparison_2015.csv`. There is no pass rule. This comparison is **in-sample** and MUST be described that way. It shows that the engine reproduces a published fit; it does not answer §2.1.
 
-### 8.5 Exploratory runs for NVDA, AMD, and INTC
+### 8.5 Out-of-sample test on 2026-10-13 (headline result)
 
-A one-year Bermudan put with `K = 1`, `M = 50`, the production profile, and the snapshot date 2026-10-14 is run for each of NVDA, AMD, and INTC, using configs `explore_nvda`, `explore_amd`, and `explore_intc`. These are exploratory and are not reported results.
+`scripts/test_goog_market.py` runs this test and writes `results/goog_market_test.json` (§12.6).
 
-- NVDA and INTC use the fits accepted by §6.7, which remain provisional (OD-11).
-- AMD uses its rejected full fit, because no accepted fit exists. Its result carries `parameter_status` and MUST be labelled as using a rejected fit. A rejected fit MUST NOT be used for a reported run.
+**Parameter sets.**
 
-### 8.6 GOOG contracts outside the source paper's range
+- (a) The 2026-10-13 calibration (§6, `configs/calibrate_goog.yaml`): the accepted fit, or the rejected fit under §6.7 step 3, labelled REJECTED.
+- (b) The published 2015 Google set, as a comparison model. Its parameters are eleven years old, so it shows the cost of a stale calibration.
+
+**Pricing.**
+
+- Each contract in the test population (§2.2) is priced with `price_bermudan` as an American option, using the test-contract terms of §4.1.
+- Profile: `n_paths = 100_000` per set, the five production seeds, basis degree 3.
+- Paths MAY be simulated once per expiration and seed, and shared by every contract with that expiration. Their Monte Carlo errors are then correlated, which is stated.
+- For each contract the script records the pooled price `V`, its `SE`, the 95% Monte Carlo interval (§3), the Monte Carlo European value, the premium, and the LSMC diagnostics.
+- These per-contract values are written only to `data/derived/goog_test_prices.parquet` and are Restricted. Together with the contract identifiers, they would show which contracts traded and how each compares with its quote.
+
+**Accuracy metrics**, for each parameter set, using market quantities normalized as in §3:
+
+| Metric | Definition |
+|---|---|
+| Median relative price error | median of `|V - mid| / mid` |
+| Inside the spread | share of contracts with `bid <= V <= ask` |
+| Mid inside the Monte Carlo interval | share of contracts whose `mid` lies in `[V - 1.96 SE, V + 1.96 SE]` |
+| Implied-volatility error | invert `V` with `american_implied_vol` (500 steps, as in §6.3); RMS and median of `|model IV - market IV|`, where market IV is the §6.3 value. Inversion failures are counted |
+
+**Breakdowns.** Every metric is also reported by maturity (under 3 months, 3–6 months, 6–12 months, over 12 months), by moneyness `K/F` (0.70–0.90, 0.90–1.10, 1.10–1.30), and by kind (call or put). Only groups with `n >= 5` are reported.
+
+**Uncertainty on the metrics.** A bootstrap resampling expirations rather than contracts, because contracts with the same expiration are correlated. 2000 resamples, seed `620200`, 95% percentile intervals.
+
+**Diagnostic.** For parameter set (a), the metrics are also reported for the v1.12 shortcut, in which the model's European implied volatility is carried through the 500-step American tree. This shows whether pricing with LSMC changes accuracy.
+
+There is no pass rule; the test is descriptive. Its stated limitations are:
+
+- the same snapshot is used for calibration and test, and test contracts sit next to grid points, so the result is optimistic;
+- LSMC low bias;
+- daily exercise approximates American exercise;
+- calibration targets are de-Americanized;
+- `q` is approximate;
+- in-the-money contracts are excluded.
+
+### 8.6 Engine behaviour outside the source paper's range
 
 `scripts/test_goog_out_of_range.py` prices GOOG puts with the published parameters at maturities of 0.08, 3, and 5 years and strikes of 0.4 to 1.8 times spot, outside the paper's data (about 0.48 to 1.68 times spot, 0.20 to 1.97 years). It writes `results/goog_out_of_range.json`. No market prices exist for these contracts, so each result is checked only for behaviour: the Monte Carlo European price within 3 SE of the semi-analytic price, the Bermudan price not below the European price, and not below intrinsic value, each within 3 SE. These results are model extrapolation and MUST NOT be described as validated against a market.
-
-### 8.7 GOOG against the market on 2026-10-13
-
-GOOG is calibrated to its own iVolatility surface of 2026-10-13 with the §6 method and failure ladder (`configs/calibrate_goog.yaml`, results in `results/calibration_goog/`). That is the only GOOG date held, so it is the primary date for this test, chosen before any GOOG fit was viewed. The dividend yield is `0.0026`, from Alphabet's declared $0.22 quarterly dividend and a GOOG price near $345; it is approximate.
-
-`scripts/test_goog_market.py` then prices every GOOG option that passes filters F1 to F8, is not in the calibration grid, and traded on that day (volume above zero). Each model price is the model's implied volatility carried through the same 500-step American tree as §6.3. It reports only aggregates: the RMS and median implied-volatility error, the share of model prices inside the bid–ask spread, and the median relative price error, for the calibrated parameters and for the published 2015 parameters. This is a same-day, out-of-sample test across contracts; it is not a test over time.
 
 ---
 
@@ -443,60 +443,52 @@ GOOG is calibrated to its own iVolatility surface of 2026-10-13 with the §6 met
 
 ### 9.1 Run profiles
 
-| Setting | Smoke | Production |
-|---|---|---|
-| `n_paths` per set | `20_000` | `100_000` |
-| `M` | `50` | `50` |
-| `n_sub` | `4` | `4` |
-| Basis degree | 3 | 3 |
-| Master seeds | `[620001]` | `[620001, 620002, 620003, 620004, 620005]` |
+| Setting | Smoke | Production | Test pricing (§8.5) |
+|---|---|---|---|
+| `n_paths` per set | `20_000` | `100_000` | `100_000` |
+| `M` | `50` | `50` | `ceil(252 T)` per contract |
+| `n_sub` | `4` | `4` | `1` |
+| Basis degree | 3 | 3 | 3 |
+| Master seeds | `[620001]` | `[620001, 620002, 620003, 620004, 620005]` | Same as production |
 
-One production CORE seed performs 8 × 10⁷ state updates (two path sets, two state variables). One production three-asset seed performs 2.4 × 10⁸.
+One production seed on the reference contract performs 8 × 10⁷ state updates (two path sets, two state variables).
 
 ### 9.2 Precision targets
 
-These apply to the pooled production estimate.
+| ID | Applies to | Target | If missed |
+|---|---|---|---|
+| T1 | Reference contract, pooled | `SE(V_B) / V_B <= 0.005` | Raise `n_paths` within the runtime budget; the headline is not reported as meeting T1 otherwise |
+| T2 | Reference contract, pooled | `SE(Premium) / Premium <= 0.10` | Raise `n_paths` within the budget; if still missed, set `premium_resolved = false` and report the 95% interval without a point claim |
+| T3 | Test pricing, parameter set (a) | For at least 90% of test contracts, `1.96 SE <= 0.25 × (ask - bid) / S`: the Monte Carlo half-width is at most half the market's half-spread | Raise `n_paths` to `200_000` within B4; if still missed, report the share and mark T3 unmet |
 
-| ID | Target | If missed |
-|---|---|---|
-| T1 | `SE(V_B) / V_B <= 0.005` | Raise `n_paths` within the runtime budget; the headline is not reported as meeting T1 otherwise |
-| T2 | `SE(Premium) / Premium <= 0.10` | Raise `n_paths` within the budget; if still missed, set `premium_resolved = false` and report the 95% interval without a point claim |
+T3 keeps Monte Carlo noise small next to the spread, so it cannot drive the inside-the-spread metric. A premium whose 95% interval includes zero is a valid finding and is reported that way.
 
-A premium whose 95% interval includes zero is a valid finding and is reported that way.
-
-**Path-reduction rule.** `n_paths` may be reduced for computing reasons only if T1 still holds on the pooled estimate. `n_paths` MUST NOT go below `20_000`. Below that rule, the fallback is to reduce the tier, not the precision.
+**Path-reduction rule.** `n_paths` may be reduced for computing reasons only if T1 (reference contract) and T3 (test pricing) still hold. `n_paths` MUST NOT go below `20_000`.
 
 ### 9.3 Required sweeps
 
-Sweeps vary one factor from the production settings. Each configuration uses all production seeds.
+Sweeps use the reference contract with parameter set (a) and vary one factor from the production settings. Each configuration uses all production seeds.
 
 | Factor | Values |
 |---|---|
 | `n_paths` | `20_000`, `50_000`, `100_000`, `200_000` |
 | `n_sub` | `1`, `2`, `4`, `8` |
 | `M`, at fixed `Δ = 1/200` | `10`, `25`, `50`, `100` |
-| Basis degree | `2`, `3`, `4` (EXT-A: `2`, `3`) |
+| Basis degree | `2`, `3`, `4` |
 | `r` | Base value, `+0.01`, `-0.01` |
-| Calibration date (market mode) | `2026-10-13`, `2026-10-14`, `2026-10-15` |
 
 The `M` sweep is a contract-convergence study, not a numerical convergence test of the 50-date contract.
 
-### 9.4 Runtime budgets and C++ gate
+### 9.4 Runtime budgets
 
 | ID | Budget |
 |---|---|
-| B1 | One production pricing at one seed: `<= 30 s` median wall time over 5 repeats, single process |
+| B1 | One production pricing of the reference contract at one seed: `<= 30 s` median wall time over 5 repeats, single process |
 | B2 | Full required sweep: `<= 6 h` |
 | B3 | Reviewer smoke path from a clean clone: `<= 10 min` |
+| B4 | Full test pricing (§8.5), both parameter sets, all seeds: `<= 2 h` |
 
-EXT-B may start only when all of these hold:
-
-1. B1 or B2 has been measured and missed on the local baseline environment.
-2. The bottleneck has been profiled.
-3. Vectorized NumPy and Numba have been tried.
-4. Reducing paths under §9.2 would break T1.
-
-The local baseline environment is recorded automatically in each manifest.
+The local baseline environment is recorded automatically in each manifest. Meeting these budgets in a single Python process is the computing rationale for the engine, and the report states the measured times.
 
 ---
 
@@ -511,19 +503,14 @@ The package uses plain functions and plain dictionaries. It MUST NOT define data
 The dictionaries below are binding: keys and meanings are part of the public API. Where a key has a default, a caller may leave it out.
 
 ```python
-# One asset's Heston parameters. Functions take one dict, or a list with one dict per asset.
+# Heston parameters. Functions take a list with one dict (single asset).
 params = {"v0": 0.04, "kappa": 1.5, "theta": 0.04, "xi": 0.5, "rho": -0.7}
 
-# Rate and dividend yields.
-market = {"r": 0.04, "q": [0.0]}          # q has one entry per asset
+# Rate and dividend yield.
+market = {"r": 0.04, "q": [0.0]}          # q is a one-entry list
 
 # The contract. Defaults are the values shown.
-contract = {"strike": 1.0, "maturity": 1.0, "n_exercise": 50}
-
-# Optional contract keys, EXT-A only. These defaults leave CORE unchanged.
-#   contract["payoff"]  = "worst_of"    # or "basket"
-#   contract["kind"]    = "put"         # or "call"
-#   contract["weights"] = None          # basket weights; None means equal
+contract = {"strike": 1.0, "maturity": 1.0, "n_exercise": 50, "kind": "put"}   # kind: "put" or "call"
 
 # Simulation settings. n_paths is required; the other defaults are the values shown.
 sim = {
@@ -531,10 +518,9 @@ sim = {
     "n_substeps": 4,
     "basis_degree": 3,
     "master_seed": 620001,
-    "identical_assets_test_mode": False,   # shares Z^perp across assets; V-21 only
 }
 
-# Returned by simulate(). Arrays have shape (n_paths, M + 1, d).
+# Returned by simulate(). Arrays have shape (n_paths, M + 1, 1).
 paths = {"S": ..., "nu": ...}
 
 # Returned by fit_policy().
@@ -578,7 +564,7 @@ def crr_price(kind, s0, strike, maturity, sigma, r, q, n_steps, exercise_steps=N
 
 # simulate.py
 def simulate(params, corr, market, contract, sim, rng, normals=None): ...   # returns a paths dict
-# params is a list of dicts. normals injects a shared fixture; rng is ignored when normals is given.
+# params is a one-element list; corr is [[1.0]]. normals injects a shared fixture; rng is ignored when normals is given.
 
 # lsmc.py
 def fit_policy(paths, contract, market, basis_degree): ...          # returns a policy dict
@@ -590,10 +576,7 @@ def filter_quotes(raw, cfg): ...      # raw is a DataFrame, cfg a dict; returns 
 def select_grid(quotes, cfg): ...     # returns a DataFrame
 
 # calibrate.py
-def calibrate_asset(grid, r, q, cfg): ...                 # returns a dict with the §12.5 asset fields
-
-# correlation.py
-def estimate_correlation(log_returns, window=252): ...    # returns a dict with the §12.6 fields
+def calibrate_asset(grid, r, q, cfg): ...                 # returns a dict with the §12.5 fields
 ```
 
 ### 10.3 Preconditions
@@ -603,9 +586,9 @@ Violations raise `InputError` (§14.1).
 | Function | Requirement |
 |---|---|
 | `heston_european` | `s0, strike, maturity > 0`; `xi > 0`; `\|rho\| < 1`; `v0, kappa, theta > 0` |
-| `simulate` | `xi >= 0`; `\|rho\| <= 1`; `kappa >= 0`; `v0, theta >= 0`; `corr` is d×d, symmetric, unit diagonal, PSD; `len(params) == len(market["q"]) == d` |
+| `simulate` | `xi >= 0`; `\|rho\| <= 1`; `kappa >= 0`; `v0, theta >= 0`; `corr == [[1.0]]`; `len(params) == len(market["q"]) == 1` |
 | `fit_policy` | `basis_degree in {1, 2, 3, 4}` |
-| All pricing functions | All numeric inputs finite |
+| All pricing functions | All numeric inputs finite; `contract["kind"]` is `"put"` or `"call"` |
 
 ---
 
@@ -613,13 +596,14 @@ Violations raise `InputError` (§14.1).
 
 ```bash
 python python/validate_raw.py --source {ivolatility|massive|fixtures}
-python scripts/estimate_correlations.py [--source {market|fixtures}] [--results-root <dir>]
+python scripts/validate_goog_data.py [--iv-file <path>] [--minute-dir <path>]
 python python/make_fixtures.py
 python scripts/inspect_schema.py <path-under-data>
 python scripts/run.py calibrate --config configs/<name>.yaml
 python scripts/run.py price     --config configs/<name>.yaml [--results-root <dir>]
 python scripts/run.py sweep     --config configs/<name>.yaml
 python scripts/run.py compare   --config configs/<name>.yaml
+python scripts/test_goog_market.py
 python scripts/compare_to_market.py
 python scripts/verify_outputs.py
 python scripts/make_figures.py
@@ -635,13 +619,15 @@ bash   scripts/check_no_data.sh
 | `3` | A check, gate, or precision requirement failed |
 | `4` | Governance refusal |
 
-`inspect_schema.py` prints only file names, column names, dtypes, row counts, and null counts. `make_figures.py` MUST NOT read anything under `data/`.
+- `inspect_schema.py` prints only file names, column names, dtypes, row counts, and null counts.
+- `validate_goog_data.py` checks `data/goog_IV_Oct13.csv` and the GOOG rows of the Massive minute bars against every rule in `DATA_CONTRACT.md` §1.1 and §1.2. It writes `results/validation_goog.json` and prints only file and partition names, row counts, rule names, violation counts, row indices, and aggregate counts. It never prints a data value.
+- `make_figures.py` MUST NOT read anything under `data/`.
 
 `smoke.sh` MUST, using only Public material:
 
 1. Regenerate the synthetic fixtures.
 2. Calibrate to the synthetic surface.
-3. Price the CORE contract with the smoke profile, using the fixture's known parameters rather than the fitted ones, so that the comparison does not depend on solver differences across machines.
+3. Price the reference contract with the smoke profile, using the fixture's known parameters rather than the fitted ones, so that the comparison does not depend on solver differences across machines.
 4. Compare the price with `results/smoke/expected.json` at relative tolerance `1e-8`.
 5. Run the `fast` test set (§13) and return non-zero on any failure.
 
@@ -653,20 +639,19 @@ bash   scripts/check_no_data.sh
 
 ```yaml
 schema_version: 1
-run_name: core_amd_production
-tier: CORE                    # CORE | EXT-A | EXT-B
+run_name: core_goog_reference
 reported: true
 data_mode: market             # synthetic | published | market
-assets: [AMD]
-snapshot_date: 2026-10-14
-market_inputs: configs/market_inputs.yaml
-params_source: results/calibration.json
-contract: {strike: 1.0, maturity: 1.0, n_exercise: 50}
+assets: [GOOG]
+snapshot_date: 2026-10-13
+market_inputs: configs/market_inputs_goog_oct13.yaml
+params_source: results/calibration_goog/calibration.json
+contract: {strike: 1.0, maturity: 1.0, n_exercise: 50, kind: put}
 simulation: {n_paths: 100000, n_substeps: 4, basis_degree: 3}
 seeds: [620001, 620002, 620003, 620004, 620005]
 ```
 
-Unknown keys MUST raise `E_CONFIG`.
+Unknown keys MUST raise `E_CONFIG`. The config and market-inputs file names above are the required names for the reference-contract run under parameter set (a).
 
 ### 12.2 Run directory
 
@@ -687,12 +672,12 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
 ```json
 {
   "schema_version": 1,
-  "spec_version": "1.12",
-  "data_contract_version": "0.8",
-  "run_id": "core_amd_production-1a2b3c4d",
+  "spec_version": "1.13",
+  "data_contract_version": "0.9",
+  "run_id": "core_goog_reference-1a2b3c4d",
   "git_commit": "<full hash>",
   "git_dirty": false,
-  "command": "python scripts/run.py price --config configs/core_amd_production.yaml",
+  "command": "python scripts/run.py price --config configs/core_goog_reference.yaml",
   "config_sha256": "<hash>",
   "data_mode": "market",
   "seeds": [620001, 620002, 620003, 620004, 620005],
@@ -702,8 +687,8 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
     "os": "...", "cpu": "...", "cores": 0, "ram_gb": 0
   },
   "inputs": [
-    {"dataset": "ivolatility_raw_iv", "tickers": ["AMD"], "snapshot_date": "2026-10-14",
-     "file_name": "<name>", "row_count": 0}
+    {"dataset": "ivolatility_raw_iv", "tickers": ["GOOG"], "snapshot_date": "2026-10-13",
+     "file_name": "goog_IV_Oct13.csv", "row_count": 0}
   ],
   "outputs": [{"path": "result.json", "sha256": "<hash>"}],
   "started_at": "<UTC ISO-8601>",
@@ -714,17 +699,17 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
 
 Input records contain identifiers and counts only, never data values. Output hashes apply to Public and Internal files only.
 
-### 12.4 `result.json`
+### 12.4 `result.json` (reference contract)
 
 ```json
 {
   "schema_version": 1,
-  "run_id": "core_amd_production-1a2b3c4d",
-  "tier": "CORE",
+  "run_id": "core_goog_reference-1a2b3c4d",
   "data_mode": "market",
+  "parameter_status": "rejected",
   "units": "fraction_of_initial_spot",
-  "assets": ["AMD"],
-  "contract": {"strike": 1.0, "maturity": 1.0, "n_exercise": 50},
+  "assets": ["GOOG"],
+  "contract": {"strike": 1.0, "maturity": 1.0, "n_exercise": 50, "kind": "put"},
   "simulation": {"n_paths": 100000, "n_substeps": 4, "basis_degree": 3},
   "per_seed": [
     {"seed": 620001, "bermudan": 0.0, "se_bermudan": 0.0, "european": 0.0,
@@ -743,28 +728,29 @@ Input records contain identifiers and counts only, never data values. Output has
     "min_itm_count": 0,
     "skipped_dates": 0,
     "rank_deficient_dates": 0,
-    "feller_ratio": [0.0]
+    "feller_ratio": 0.0
   },
   "precision": {"T1": true, "T2": true}
 }
 ```
 
-`european_analytic` and `baseline_const_vol_bermudan` are `null` for EXT-A.
+`parameter_status` is `accepted`, `rejected`, or `published`.
 
-### 12.5 `results/calibration.json`
+### 12.5 `results/calibration_goog/calibration.json`
 
 ```json
 {
   "schema_version": 1,
   "data_mode": "market",
-  "snapshot_date": "2026-10-14",
+  "snapshot_date": "2026-10-13",
   "r": 0.0,
   "assets": {
-    "AMD": {
-      "q": 0.0,
+    "GOOG": {
+      "q": 0.0026,
       "ladder_step": 1,
       "params": {"v0": 0.0, "kappa": 0.0, "theta": 0.0, "xi": 0.0, "rho": 0.0},
       "fixed_params": [],
+      "rejected_fit": null,
       "feller_ratio": 0.0,
       "grid_size": 0,
       "n_expiries": 0,
@@ -778,11 +764,45 @@ Input records contain identifiers and counts only, never data values. Output has
 }
 ```
 
-`residual_buckets` MUST contain only buckets with `n >= 5`. Per-contract residuals are prohibited.
+At ladder step 3, `params` is `null` and `rejected_fit` holds `{"from_step", "params", "fixed_params", "rms_iv_residual", "stable", "limit": 0.01}`. `residual_buckets` MUST contain only buckets with `n >= 5`. Per-contract residuals are prohibited.
 
-### 12.6 `results/estimates.json`
+### 12.6 `results/goog_market_test.json`
 
-This file contains, for each of the 126, 252, and 504-day windows, the window dates, the sample size, per-ticker realized volatility, and the correlation matrix. Return series and prices are prohibited.
+```json
+{
+  "schema_version": 1,
+  "spec_version": "1.13",
+  "symbol": "GOOG",
+  "snapshot_date": "2026-10-13",
+  "units": "fraction_of_initial_spot",
+  "test_set": {
+    "n_after_filters": 0, "n_in_grid_removed": 0, "n_zero_volume_removed": 0,
+    "n_test": 0, "n_calls": 0, "n_puts": 0, "n_expirations": 0, "grid_overlap": 0
+  },
+  "pricing": {"engine": "lsmc", "n_paths": 100000, "seeds": [], "n_substeps": 1,
+              "exercise": "ceil(252 T) dates", "basis_degree": 3},
+  "parameter_sets": {
+    "calibrated_2026_10_13": {"status": "rejected", "rms_iv_residual": 0.0, "limit": 0.01},
+    "published_2015": {"status": "published", "source": "Burkovska et al., Table 8"}
+  },
+  "results": {
+    "<parameter set>": {
+      "overall": {"n": 0, "median_rel_price_error": 0.0, "share_inside_spread": 0.0,
+                  "share_mid_inside_mc_ci95": 0.0, "rms_iv_error": 0.0,
+                  "median_abs_iv_error": 0.0, "n_iv_inversion_failed": 0,
+                  "ci95": {"<metric>": [0.0, 0.0]}},
+      "by_maturity": [{"bucket": "...", "n": 5, "<metric>": 0.0}],
+      "by_moneyness": [{"bucket": "...", "n": 5, "<metric>": 0.0}],
+      "by_kind": [{"bucket": "call", "n": 5, "<metric>": 0.0}]
+    }
+  },
+  "tree_shortcut": {"overall": {}, "by_maturity": []},
+  "precision": {"T3_share": 0.0, "T3_met": true, "median_rel_se": 0.0,
+                "n_paths_used": 100000}
+}
+```
+
+Only aggregates appear. Every group has `n >= 5`.
 
 ### 12.7 Evidence map and verification table
 
@@ -806,11 +826,13 @@ check_id, status, measured, threshold, run_id, commit, evaluated_at
 
 | Evidence | Source |
 |---|---|
+| Out-of-sample accuracy with uncertainty, by group | `results/goog_market_test.json` |
 | Verification table | `results/verification_table.csv` |
+| Raw-data validation report | `results/validation_goog.json` |
 | Convergence plots in paths, sub-steps, exercise dates, and basis degree | §9.3 sweeps |
 | Fitted surface versus known surface | Synthetic fixture only |
 | Market fit quality | Aggregate statistics from `calibration.json`; no market data points plotted |
-| Price, European value, and premium with uncertainty | `result.json` |
+| Reference-contract price, European value, and premium with uncertainty | `result.json` |
 | Seed robustness table | `per_seed` |
 | Test and CI logs, run manifests | CI and `results/runs/` |
 
@@ -825,31 +847,33 @@ This is the plan for the figures in the report and the eight-minute presentation
 
 | ID | Figure | Source | Class | Report | Slides |
 |---|---|---|---|---|---|
-| VZ-1a | PyVista 3D surface of the rejected full AMD fit, labelled as rejected | `rejected_full_fit` in `results/calibration.json` | Internal | Yes | Yes |
-| VZ-1b | PyVista 3D surface of the GOOG 2015 Heston model: the published Google parameters fitted on 2015-02-02 | Parameters in the comparison summary | Public | Yes | Yes |
-| VZ-1c, VZ-1d | PyVista 3D surfaces of the NVDA and INTC fits, labelled as provisional | `results/calibration_nvda/` and `results/calibration_intc/` | Internal | Yes | Optional |
-| VZ-2 | Monte Carlo European vs. semi-analytic prices over the V-03 grid of strikes and maturities, with the difference in SE | Comparison run on the reported parameters | Internal | Yes | Yes |
+| VZ-1b | PyVista 3D surface of the GOOG 2015 Heston model: the published Google parameters fitted on 2015-02-02 | Parameters in the comparison summary | Public | Yes | Optional |
+| VZ-1e | PyVista 3D surface of the 2026-10-13 GOOG model, labelled REJECTED at ladder step 3 | `results/calibration_goog/calibration.json` | Internal | Yes | Yes |
+| VZ-2 | Monte Carlo European vs. semi-analytic prices over the V-03 grid, with the difference in SE | Comparison run | Internal | Yes | Yes |
 | VZ-3 | LSMC Bermudan vs. CRR tree on the V-04 cases | Comparison run | Public | Yes | Yes |
-| VZ-4 | Heston Bermudan, European, and constant-volatility Bermudan across strikes | Comparison run on the reported parameters | Internal | Yes | No |
+| VZ-4 | Heston Bermudan, European, and constant-volatility Bermudan across strikes, parameter set (a) | Comparison run | Internal | Yes | No |
 | VZ-5 | Convergence panels in paths, sub-steps, exercise dates, and basis degree | §9.3 sweeps | Internal | Yes | One panel |
-| VZ-6 | Price, European value, and premium with 95% intervals | `result.json` | Internal | Yes | Yes |
+| VZ-6 | Reference-contract price, European value, and premium with 95% intervals | `result.json` | Internal | Yes | No |
 | VZ-7 | Fitted vs. known surface on the synthetic fixture | `results/smoke/calibration.json` | Public | Yes | No |
 | VZ-8 | Seed robustness table and aggregate fit-quality table | `per_seed`; `residual_buckets` | Internal | Yes | No |
-| VZ-9 | Simulated prices vs. the 401 published Google puts of 2015-02-02, labelled in-sample | `results/market_comparison_2015.csv` | Public | Yes | Yes |
+| VZ-9 | Simulated prices vs. the 401 published Google puts of 2015-02-02, labelled in-sample | `results/market_comparison_2015.csv` | Public | Yes | Optional |
+| VZ-10 | Out-of-sample implied-volatility error by maturity and by moneyness, parameter sets (a) and (b), with bootstrap 95% intervals | `results/goog_market_test.json` | Internal | Yes | Yes |
+| VZ-11 | Share of model prices inside the spread, and share of mids inside the Monte Carlo interval, by maturity and moneyness | `results/goog_market_test.json` | Internal | Yes | Yes |
+| VZ-12 | Monte Carlo half-width relative to market half-spread (T3), as a binned histogram with every bin `n >= 5` | `results/goog_market_test.json` | Internal | Yes | No |
+| VZ-13 | LSMC pricing vs. the tree shortcut, accuracy by maturity | `results/goog_market_test.json` | Internal | Yes | No |
 
 **VZ-1 requirements.**
 
-- Applies to VZ-1a to VZ-1d. VZ-1a is the only AMD surface available, because the market fit ended at ladder step 3 (§6.7). It MUST carry the word REJECTED and the failed limit in the figure itself, and it MUST NOT be used for a reported price (§8.5).
-- Evaluate `sigma_Heston` with `model_implied_vols` on a dense regular grid of `K/F` in `[0.80, 1.20]`, using the stated parameters only. Tenor is `[0.10, 1.25]` for VZ-1a. For VZ-1b it is `[0.20, 1.97]`, the maturity range of the source paper's Google options, with `r = 0.15%` and `q = 0` as in that paper.
+- Evaluate `sigma_Heston` with `model_implied_vols` on a dense regular grid, using the stated parameters only. VZ-1e covers `K/F` in `[0.70, 1.30]` and tenor in `[0.06, 1.40]` years, the test population's range. VZ-1b covers `K/F` in `[0.80, 1.20]` and tenor in `[0.20, 1.97]`, the source paper's range, with `r = 0.15%` and `q = 0`.
+- VZ-1e MUST carry the word REJECTED and the failed limit in the figure itself if the fit is from ladder step 3.
 - VZ-1b MUST state that its parameters date from 2015-02-02 and that it is not a surface for today's market.
-- Show `K/F`, tenor, and implied volatility as labelled axes, with height encoding implied volatility and a single-hue colour ramp with a labelled scale, so the figure does not rely on colour alone.
+- Show `K/F`, tenor, and implied volatility as labelled axes, with height encoding implied volatility and a single-hue colour ramp with a labelled scale.
 - Render off-screen with PyVista to a PNG for the report and slides.
-- Label it as a model surface and state the source of its parameters and their date.
 - It MUST NOT overlay market implied-volatility points, quotes, or per-contract residuals (`DATA_CONTRACT.md` §4.3).
 
-**Comparison runs.** VZ-2, VZ-3, and VZ-4 use `scripts/run.py compare`, which prices the listed contracts and writes Internal summaries under `results/comparisons/`. All values are fractions of initial spot. Numerical-versus-analytical figures test the engine on known answers and do not show that Heston fits AMD (§16).
+**Comparison runs.** VZ-2, VZ-3, and VZ-4 use `scripts/run.py compare`, which writes Internal summaries under `results/comparisons/`. Numerical-versus-analytical figures test the engine on known answers and do not show that Heston fits GOOG (§16).
 
-**Presentation order.** Question and contract; data boundary; VZ-1; VZ-3 and VZ-2 as engine checks; one VZ-5 panel; VZ-6 as the result; limitations.
+**Presentation order.** Question and test population; data boundary; pipeline; VZ-3 and VZ-2 as engine checks; VZ-1e; VZ-10 and VZ-11 as the result; limitations.
 
 **Implementation.** The report's conclusions and narrative are written by the owner.
 
@@ -862,33 +886,29 @@ This is the plan for the figures in the report and the eight-minute presentation
 ├── SPEC.md  README.md  AI_USE.md  LICENSE  DATA_CONTRACT.md
 ├── pyproject.toml  <pinned lock file>
 ├── .gitignore  .claude/settings.json  .github/workflows/
-├── configs/        governance.yaml, market_inputs.yaml, published_params.yaml, one YAML per reported run
+├── configs/        governance.yaml, market_inputs*.yaml, published_params.yaml, one YAML per reported run
 ├── python/         validate_raw.py, make_fixtures.py, hestonpricer/
-├── scripts/        run.py, verify_outputs.py, make_figures.py, inspect_schema.py,
-│                   smoke.sh, check_no_data.sh
+├── scripts/        run.py, verify_outputs.py, make_figures.py, inspect_schema.py, validate_goog_data.py,
+│                   test_goog_market.py, smoke.sh, check_no_data.sh
 ├── tests/          test_*.py, reference_values.yaml, reference_impl.py, fixtures/
-├── results/        calibration.json, estimates.json, runs/, figures/, smoke/,
-│                   evidence_map.csv, verification_table.csv
+├── results/        calibration_goog/, runs/, figures/, smoke/, goog_market_test.json,
+│                   validation_goog.json, evidence_map.csv, verification_table.csv
 ├── prototype/      exploratory notebooks with outputs cleared; not part of the assessed workflow
 └── data/           Git-ignored; Restricted; never in a commit or submission
 ```
-
-Directory `cpp/` is added only if EXT-B opens.
 
 **Tests.** Each check in §16 MUST have a test whose name starts with its ID, such as `test_V03_european_mc_grid`. Statistical tests use fixed seeds. Market-dependent checks are skipped in CI and report `NOT_RUN`, not `PASS`.
 
 Tests use one of two pytest markers:
 
-- `fast`: V-01, V-02, V-05, V-07, V-08, V-12, and part (a) of V-14, using the smoke profile where paths are needed. These run within B3.
+- `fast`: V-01, V-02, V-05, V-07, V-08, V-12, part (a) of V-14, and the synthetic-file tests of `validate_goog_data.py`, using the smoke profile where paths are needed. These run within B3.
 - `slow`: every other check. The owner or an agent runs these, and `verify_outputs.py` records them from completed runs.
-
-Tests for V-25 to V-28 are added when EXT-A opens.
 
 **CI.** Every push runs linting, the `fast` test set, `smoke.sh`, and `check_no_data.sh`. CI has no market data and no data-provider secrets.
 
-**README.** It MUST cover the question, scope, data boundary, setup, inputs, run and verify commands, outputs, limitations, and exactly what a reviewer can and cannot reproduce.
+**README.** It MUST cover the question, scope, test population, data boundary, setup, inputs, run and verify commands, outputs, limitations, and exactly what a reviewer can and cannot reproduce.
 
-**Reviewer boundary.** A reviewer can reproduce the full pipeline on Public fixtures and `published` mode. A reviewer cannot rerun `market` mode. For that result, the reviewer inspects committed code, configs, manifests, Internal outputs, and evidence maps.
+**Reviewer boundary.** A reviewer can reproduce the full pipeline on Public fixtures and `published` mode. A reviewer cannot rerun `market` mode or the out-of-sample test. For those results, the reviewer inspects committed code, configs, manifests, Internal outputs, and evidence maps.
 
 **Final version.** The final commit is annotated tag `v1.0-final`.
 
@@ -912,9 +932,8 @@ All errors derive from `HestonError` and carry a `code`.
 | `E_CONFIG` | Unknown or invalid config key | Stop before computing | 2 |
 | `E_INPUT` (`InputError`) | §10.3 precondition violated | Raise immediately | 2 |
 | `E_SCHEMA` | Data-contract rule violated | Stop; report rule, file, count, row indices only | 2 |
-| `E_SPARSE_GRID` | §6.4 requirements not met | Apply ladder step 3 | 3 |
-| `E_CALIB_FAILED` | No converged start | Apply ladder step 2, then step 3 | 3 |
-| `E_CORR_NOT_PSD` | §5.4 check fails | Stop EXT-A | 3 |
+| `E_SPARSE_GRID` | §6.4 requirements not met | Apply ladder step 4 | 3 |
+| `E_CALIB_FAILED` | No converged start | Apply ladder step 2, then steps 3 and 4 | 3 |
 | `E_NONFINITE` | Any reported output is NaN or infinite | Write no `result.json` | 3 |
 | `E_CHECK_FAILED` | Gated check failed in `verify_outputs.py` | Record `FAIL`; stop dependent reported runs | 3 |
 | `E_DIRTY_TREE` | Reported run with a dirty tree | Stop before computing | 4 |
@@ -935,13 +954,13 @@ Exceptions raised while reading Restricted data MUST be caught and re-raised wit
 | `xi = 0` in `heston_european` | Raise `InputError`; do not silently substitute Black–Scholes |
 | `\|rho\| = 1` in simulation | `Z^nu = ± Z^S` without numerical error |
 | `M = 1` | No regression; Bermudan and European estimates are identical; premium and its SE are exactly 0 |
-| No in-the-money paths at a date, or fewer than `n_min` | Skip exercise at that date; count it |
+| No in-the-money paths at a date, or fewer than `n_min` | Skip exercise at that date; count it. Short, far out-of-the-money test contracts may skip most dates |
 | Rank-deficient regression | Use the minimum-norm solution; count it; do not raise |
 | All values zero, so SE is 0 | A relative target is undefined: report it unmet; comparison checks use `max(SE, 1e-12)` |
-| Singular `R` | Valid; eigendecomposition; do not call Cholesky |
 | Quote `mid` differs from `mean_price` | Use computed `mid`; count rows differing by more than `1e-6` |
 | No implied-volatility root | Drop under F8; count it |
 | Model implied volatility not invertible during fit | Residual `1.0`; count it |
+| LSMC test price cannot be inverted to an implied volatility | Count it; exclude it from the implied-volatility metrics only |
 | `maturity` or `strike` passed as an integer | Cast to `float64` at the API boundary. Time and payoff arrays MUST NOT have an integer dtype, because `np.full(n, 1)` silently truncates later exercise times to 0 and removes discounting |
 | Re-run with a completed `run_id` | Do not overwrite; exit with a clear message, unless `--results-root` names a new location |
 | Run interrupted | Treat the run directory as incomplete; V-15 fails until re-run |
@@ -952,12 +971,17 @@ Exceptions raised while reading Restricted data MUST be caught and re-raised wit
 
 `DATA_CONTRACT.md` governs data handling. These rules apply to every AI agent on the project.
 
+**Licensed-data rule.** Any script committed to the repository MAY read `data/`, provided that:
+
+- its output (terminal, logs, and files outside `data/`) is aggregate and Internal under `DATA_CONTRACT.md` §4, and it never prints or logs a row, a quote, an IV point, or a per-contract result;
+- the owner has reviewed the script, or the change to it, before an agent runs it on licensed data.
+
+An agent MAY run such scripts and see their aggregate output. An agent MUST NOT read `data/` itself.
+
 An agent MUST NOT:
 
-- Read, print, plot, paste, sample, or summarize at row level any value under `data/`. Structure is available only through `scripts/inspect_schema.py`.
-- Run `cat`, `head`, `zcat`, DataFrame previews, or ad hoc scripts against `data/`.
+- Read, print, plot, paste, sample, or summarize at row level any value under `data/`, by any means: file tools, `cat`, `head`, `zcat`, DataFrame previews, uncommitted or ad hoc scripts, or one-liners. Structure is available only through `scripts/inspect_schema.py`.
 - Set `market_use_authorized` or write `configs/governance.yaml` without the owner's recorded instruction.
-- Run `market` mode by any means other than the committed scripts listed below.
 - Hand-edit `results/**`. Those files are written only by pipeline scripts.
 - Generate, recall, or fill in reference values in `tests/reference_values.yaml` or `configs/published_params.yaml`. The owner transcribes them from the cited source and records the table or page. Two exceptions, both on the owner's instruction of 2026-11-08: the agent entered the set in `configs/published_params.yaml` from Burkovska et al. (arXiv:1611.06452, Table 8), and the V-01 and V-06 values in `tests/reference_values.yaml`. The owner remains responsible for checking them against the sources.
 - Write the report, slides, or claims. Reported results and figures come only from pipeline scripts.
@@ -967,10 +991,10 @@ An agent MUST NOT:
 
 An agent MAY:
 
-- Write code, tests, fixtures, and documentation. Owner review may follow the commit.
+- Write code, tests, fixtures, and documentation. Owner review may follow the commit, except for the pre-run review of data-reading scripts above.
 - Commit and push when the owner asks, but only if `data/` is listed in `.gitignore` and `scripts/check_no_data.sh` passes immediately before the push.
 - Run tests and pipelines in `synthetic` and `published` modes.
-- Run `market` mode only through `python/validate_raw.py`, `scripts/run.py`, and `scripts/verify_outputs.py`, whose output is Internal, and run `scripts/make_figures.py`.
+- Run committed, reviewed scripts that read `data/` under the licensed-data rule, and run `scripts/make_figures.py`.
 - Read Public and Internal files.
 
 Debug data problems on fixtures first. If a problem occurs only on licensed data, describe it by file name, row index, column, and rule.
@@ -981,52 +1005,32 @@ Debug data problems on fixtures first. If a problem occurs only on licensed data
 
 ## 16. Verification matrix
 
-Reference values in V-01 and V-06 MUST come from `tests/reference_values.yaml`, with citation and table or page, entered by the owner. All MC-based rules use the fixed test seed `620100` unless stated otherwise. V-09, V-10, and V-11 run on the reported parameter set, or on the published set before a market fit exists. Unless a rule says otherwise, Monte Carlo checks use the production profile.
+Reference values in V-01 and V-06 MUST come from `tests/reference_values.yaml`, with citation and table or page. All MC-based rules use the fixed test seed `620100` unless stated otherwise. V-09, V-10, and V-11 run on the reference contract with parameter set (a). Unless a rule says otherwise, Monte Carlo checks use the production profile.
 
-The report and README MUST state what the checks establish and what they do not. For example, V-03 and V-06 test the engine on known answers. They do not show that Heston is the right model for AMD.
-
-### 16.1 CORE checks
+The report and README MUST state what the checks establish and what they do not. For example, V-03 and V-06 test the engine on known answers. They do not show that Heston is the right model for GOOG.
 
 | ID | Check | Pass rule | Origin |
 |---|---|---|---|
+| V-00 | Raw-data validation: `scripts/validate_goog_data.py` on the GOOG iVolatility file and GOOG minute bars | Zero violations of every `DATA_CONTRACT.md` rule, apart from exceptions recorded in that contract | v1.13 |
 | V-01 | Semi-analytic Heston European vs. published benchmark | Absolute difference `<= max(1e-6, half the last published digit)` | New |
 | V-02 | Put–call parity; small-`xi` limit (`xi = 1e-4`, `rho = 0`, `v0 = theta`) vs. Black–Scholes | Parity residual `<= 1e-10`; BS difference `<= 1e-6` | New |
 | V-03 | Heston European MC vs. analytic, `T` in `{0.25, 0.5, 1, 1.5, 2}` × 8 evenly spaced `K/S` in `[0.80, 1.25]`, `Δ = 1/400`, `200_000` paths | At least 38 of 40 options within 3 SE | Proposal V1 |
-| V-04 | GBM reduction (`xi = 0`, `v0 = theta`): LSMC Bermudan vs. 5,000-step CRR tree on the same exercise dates, for `(sigma, K)` in `{(0.3, 1.0), (0.5, 1.0), (0.5, 0.9), (0.3, 1.1)}` | Difference `<= 3 SE` for each pair | New |
+| V-04 | GBM reduction (`xi = 0`, `v0 = theta`): LSMC Bermudan vs. 5,000-step CRR tree on the same exercise dates, for `(sigma, K)` in `{(0.3, 1.0), (0.5, 1.0), (0.5, 0.9), (0.3, 1.1)}`, for puts and for calls with `q = 0.0026` | Difference `<= 3 SE` for each case | New; calls added v1.13 |
 | V-05 | `M = 1` vs. semi-analytic European | Difference `<= 3 SE` | Proposal V4 |
 | V-06 | Heston Bermudan vs. Ikonen–Toivanen American benchmark `B` at each published spot, `M` in `{25, 50, 100}`, `200_000` paths | At `M = 100`: `\|V - B\| <= max(0.01 B, 3 SE)` and `V - B <= 3 SE`. For each rise in `M`: `V_low - V_high <= 3 sqrt(SE_low^2 + SE_high^2)` | New |
-| V-07 | Vectorized LSMC vs. independent scalar implementation in `tests/reference_impl.py` on `tests/fixtures/shared_normals.npz` | Relative difference `<= 1e-10` | Replaces proposal V7 for CORE |
+| V-07 | Vectorized LSMC vs. independent scalar implementation in `tests/reference_impl.py` on `tests/fixtures/shared_normals.npz` | Relative difference `<= 1e-10` | Proposal V7 |
 | V-08 | Repeat run with same config, seed, commit, and environment, in a new `--results-root` | Numeric fields of `result.json` identical, excluding `wall_seconds` | New |
 | V-09 | Basis degree 2 vs. 3, and 3 vs. 4, on identical paths | Pooled price difference `<= 2 SE` of the higher-degree run | Proposal risk table |
-| V-10 | `n_sub = 4` vs. `8`, pooled | `\|V_4 - V_8\| <= 3 sqrt(SE_4^2 + SE_8^2)`; if not, `8` becomes the production setting before G1 | New |
+| V-10 | `n_sub = 4` vs. `8`, pooled | `\|V_4 - V_8\| <= 3 sqrt(SE_4^2 + SE_8^2)`; if not, `8` becomes the production setting | New |
 | V-11 | All pairs of production seeds | `\|V_a - V_b\| <= 3 sqrt(SE_a^2 + SE_b^2)` | Proposal V8, corrected |
 | V-12 | Calibration on synthetic surface with known parameters | RMS IV `<= 1e-4`; `v0, kappa, theta, xi` within 5% relative; `rho` within `0.05` absolute | Proposal V2, extended |
-| V-13 | Calibration on market grid (`market` mode only) | RMS IV `<= 0.01` and stable under §6.6 | Proposal V3, defined |
-| V-14 | Implied-volatility conversion | (a) Tree-inversion round trip recovers `sigma` within `1e-4`; (b) market mode: for near-the-money pairs with `\|K/F - 1\| <= 0.05`, at least 90% of call and put IVs agree within their bid–ask IV bands; (c) market mode: median `\|own IV - vendor IV\| <= 0.02` | New |
+| V-13 | Calibration on the GOOG 2026-10-13 grid (`market` mode) | RMS IV `<= 0.01` and stable under §6.6 | Proposal V3; GOOG since v1.13 |
+| V-14 | Implied-volatility conversion | (a) Tree-inversion round trip recovers `sigma` within `1e-4`; (b) GOOG file: for near-the-money pairs with `\|K/F - 1\| <= 0.05`, at least 90% of call and put IVs agree within their bid–ask IV bands; (c) GOOG file: median `\|own IV - vendor IV\| <= 0.02` | New; GOOG since v1.13 |
 | V-15 | Output completeness | Every configured run is complete, all values finite, and manifest hashes match | Proposal V9 |
 | V-16 | Governance scan | `git log --all --name-only -- data/` is empty; pre-commit hook active; no prohibited fields or secrets in tracked files or submission package | New |
 | V-17 | Clean-clone reproduction | `smoke.sh` passes from a fresh clone within B3 | Feedback, rubric |
 | V-18 | Traceability | Every evidence-map row resolves; `make_figures.py` regenerates all figures | Rubric |
-
-### 16.2 EXT-A checks
-
-| ID | Check | Pass rule | Origin |
-|---|---|---|---|
-| V-20 | Sample driver correlations vs. §4.4 | All entries within 3 SE of target | New |
-| V-21 | Three identical assets with `R = ones` and `identical_assets_test_mode=True` vs. single asset | Difference `<= 3 SE` | Proposal V5 |
-| V-22 | Ordering on same paths, using paired comparisons: worst-of Bermudan `>=` worst-of European; worst-of Bermudan `>=` each single-asset Bermudan; worst-of European `>=` each single-asset European | Each holds within 3 paired SE | Proposal V6, corrected |
-| V-23 | V-09, V-10, and V-11 repeated for the three-asset contract | Same rules | Proposal V8 |
-| V-24 | Calibration passes V-13 for all three assets | Same rule, or the affected asset's substitution is stated | Proposal scope |
-| V-25 | `d = 1` call and put, both payoff types, vs. the single-asset engine on the shared fixture | Relative difference `<= 1e-10` | v1.2 scope |
-| V-26 | `basket` on identical assets with `R = ones` and `identical_assets_test_mode=True` vs. single asset | Difference `<= 3 SE` | v1.2 scope |
-| V-27 | European basket put–call parity on the same paths: `mean(C - P)` vs. `sum_i w_i exp(-q_i T) - K exp(-r T)` | Difference `<= 3` paired SE | v1.2 scope |
-| V-28 | Bermudan `>=` European, for calls and puts of both payoff types, on the same paths | Each holds within 3 paired SE | v1.2 scope |
-
-### 16.3 EXT-B check
-
-| ID | Check | Pass rule | Origin |
-|---|---|---|---|
-| V-30 | C++ engine vs. Python on the shared fixture | Relative difference `<= 1e-10` | Proposal V7 |
+| V-19 | Test set disjoint from the calibration grid | No `option_symbol` appears in both; both counts recorded | v1.13 |
 
 ---
 
@@ -1037,28 +1041,23 @@ The report and README MUST state what the checks establish and what they do not.
 | Gate | Date | Requires | On failure |
 |---|---|---|---|
 | G0 | Nov 3 | Reviewable repository; method and data boundary documented; smoke test passes from a clean clone | Record the gaps; revise the method or evidence plan |
-| G1 | Nov 14 | V-01 to V-12 and V-15 pass; B1 and B2 pass; §5.2 resolved | EXT-A does not start |
-| G2 | Nov 20 | CORE result frozen: T1 met; V-13, V-14, V-16, and V-18 resolved under §6.7 and §5.2 | Freeze the minimum defensible analysis |
+| G1 | Nov 14 | V-01 to V-12 and V-15 pass; B1 and B2 pass; §5.2 resolved | Freeze the engine; no new engine features |
+| G2 | Nov 20 | V-00, V-04 with calls, and V-19 pass; out-of-sample test (§8.5) run and frozen; V-13 and V-14 recorded; T3 resolved | Freeze the minimum defensible analysis |
 | G3 | Nov 27 | Draft report and slides; figures regenerate; every claim maps to evidence | Remove unsupported claims |
 | G4 | Dec 1 | Eight-minute presentation finishes within the assigned slot | Cut content, not the verification or limitations slides |
 | G5 | Dec 3 | Route A package verified; all CORE checks recorded | Submit the verified minimal package before extras |
 | G6 | Dec 4, 11:59 p.m. | Report and repository uploaded to D2L; exact uploaded files opened and checked | Re-upload before the deadline |
 
-### 17.2 EXT-A sequence
-
-EXT-A is optional. It proceeds from `d = 2` to `d = 3` only after G1. If V-20 to V-24 do not pass by Nov 20, EXT-A is dropped from the claims. The CORE question and results stand.
-
-Basket payoffs, calls, and values of `d` other than 3 need V-25 to V-28 to pass before any claim is made. Massive data covers NVDA, AMD, INTC, GOOG, and GOOGL, and iVolatility covers NVDA, AMD, and INTC only, so other assets use synthetic or published inputs.
-
-### 17.3 Fallback rules
+### 17.2 Fallback rules
 
 | Trigger | Action |
 |---|---|
 | OD-1 is unresolved or negative | `published` mode becomes the reported result; revise the question and claims to match |
 | Calibration fails | Apply §6.7 |
+| V-00 finds violations | Stop licensed-data runs until each violation is explained; record any accepted exception in `DATA_CONTRACT.md` with a §22 row |
 | V-09 fails | Add basis terms or features; report any residual bias |
 | V-10 fails at `n_sub = 8` | Report discretization error as unresolved; do not claim a converged price |
-| B1 or B2 fails | Follow §9.4; reduce paths only under §9.2 |
+| B4 fails | Reduce paths only under §9.2; otherwise share paths across a contract's expiration (§8.5) |
 | Restricted data leak | Stop licensed-data work. If it reached Git history, contact the instructor immediately |
 
 ---
@@ -1067,15 +1066,15 @@ Basket payoffs, calls, and values of `d` other than 3 need V-25 to V-28 to pass 
 
 CORE is complete when all of the following hold:
 
-- [ ] All §16.1 checks are recorded in `results/verification_table.csv`, with no unexplained `FAIL` or `NOT_RUN`.
-- [ ] The production result has T1 met and a resolved or explicitly unresolved T2.
-- [ ] The final price, European value, premium, uncertainty, and data mode appear consistently in report, slides, and README.
+- [ ] All §16 checks are recorded in `results/verification_table.csv`, with no unexplained `FAIL` or `NOT_RUN`.
+- [ ] The out-of-sample test (§8.5) is complete for both parameter sets, with bootstrap intervals and a resolved T3.
+- [ ] The reference-contract result has T1 met and a resolved or explicitly unresolved T2.
+- [ ] The headline accuracy figures, their uncertainty, the test population, and the parameter status appear consistently in report, slides, and README.
 - [ ] Every principal figure and table has an evidence-map row and regenerates from committed Internal outputs.
-- [ ] Limitations cover at least LSMC low bias, discretization bias, American-to-European conversion, flat `r`, Heston's lack of jumps and earnings effects, single-snapshot calibration, and any ladder step used.
-- [ ] Data availability, authority, AI use, and residual AI limitations are disclosed.
+- [ ] Limitations cover at least: same-day test with neighbouring contracts, LSMC low bias, discretization bias, daily exercise as an approximation to American exercise, de-Americanized calibration targets, flat `r`, approximate `q`, Heston's lack of jumps and earnings effects, a single snapshot, excluded in-the-money contracts, and the ladder step used.
+- [ ] Data availability, authority, AI use, and residual AI limitations are disclosed, including the §22 rows marked as viewed.
 - [ ] Both §8.3 baselines are reported, and the report states what the checks do and do not establish.
 - [ ] `v1.0-final` exists, and the Route A package passes §13.
-- [ ] No extension is claimed unless its checks passed.
 
 ---
 
@@ -1085,17 +1084,16 @@ Each item needs an owner decision. Defaults apply until changed through §1.3.
 
 | ID | Priority | Decision | Default in this spec |
 |---|---|---|---|
-| OD-1 | Resolved 2026-11-08 | The iVolatility licence allows every use in `DATA_CONTRACT.md` provided the raw data is not published, and the owner holds written confirmation that derived results may be used for this project (`DATA_CONTRACT.md` §2.2). | Authority recorded; `market` runs stay refused until `configs/governance.yaml` sets `market_use_authorized: true` (§5.2) |
-| OD-2 | Resolved 2026-11-08 | The CORE asset is GOOG until NVDA, AMD, and INTC can be calibrated properly. | GOOG |
-| OD-3 | Resolved 2026-11-08 | Treasury 1-Year CMT yields from the official table: 4.48% (2026-10-13), 4.53% (2026-10-14), 4.49% (2026-10-15). The proposal's fixed `r = 5%` is withdrawn. | Values in `configs/market_inputs.yaml` |
-| OD-4 | High | Compare `DATA_CONTRACT.md` §1.2 with the actual iVolatility header. Confirm that `stock_price_for_iv` is synchronous with the quotes. | Contract schema, unverified |
-| OD-5 | Resolved 2026-11-08 | No published calibration for AMD, NVDA, or INTC was found. The owner chose the Google 2015-02-02 set in Burkovska et al. (arXiv:1611.06452, Table 8, de-Americanization with closed-form solution) as the published parameter set and its `kappa` for §6.7. | Values in `configs/published_params.yaml` |
-| OD-6 | Medium | Confirm contract terms `K = 1.00`, `T = 1.00`, `M = 50`, and primary date `2026-10-14`. If any fit or price has already been viewed, record that in §22. | Values in §4.1 and §5.3 |
-| OD-7 | Medium | The proposal barred repository write access. The owner now allows agent writes, commits, and pushes under `DATA_CONTRACT.md` §3.3. Disclose this change in `AI_USE.md` and the report. | Agent writes, commits, and pushes allowed |
-| OD-8 | Medium | Raw-file hashes were removed from the data contract. Traceability currently relies on file name and row count. Hashes are not values and would strengthen the provenance evidence. | No raw-file hashes |
-| OD-9 | Low | Choose the code licence for `LICENSE`. | Unset |
-| OD-10 | EXT-A only | Confirm `q_INTC = 0` and NVDA's annualized declared dividend on the snapshot date. | §4.3 |
-| OD-11 | Closed 2026-11-13 | Calibrating NVDA, AMD, and INTC. The owner stopped this work; the project proceeds with GOOG only. | Not pursued |
+| OD-1 | Resolved 2026-11-08 | The iVolatility licence allows every use in `DATA_CONTRACT.md` provided the raw data is not published, and the owner holds written confirmation that derived results may be used for this project (`DATA_CONTRACT.md` §2.2) | `market_use_authorized: true` on the owner's instruction |
+| OD-2 | Resolved 2026-11-13 | The project uses GOOG only | GOOG |
+| OD-3 | Resolved 2026-11-08 | Treasury 1-Year CMT yields from the official table: 4.48% on 2026-10-13. The proposal's fixed `r = 5%` is withdrawn | Values in `configs/market_inputs*.yaml` |
+| OD-4 | High | Compare `DATA_CONTRACT.md` §1.2 with the actual iVolatility header, and confirm that `stock_price_for_iv` is synchronous with the quotes. The test's normalized quantities depend on it. `validate_goog_data.py` reports aggregate counts that inform this | Contract schema, unverified |
+| OD-5 | Resolved 2026-11-08 | The published parameter set is the Google 2015-02-02 set in Burkovska et al. (arXiv:1611.06452, Table 8, de-Americanization with closed-form solution), and its `kappa` is used for §6.7 step 2 | Values in `configs/published_params.yaml` |
+| OD-6 | Medium | Confirm the reference-contract terms `K = 1.00`, `T = 1.00`, `M = 50` | Values in §4.1 |
+| OD-7 | Medium | The proposal barred repository write access. The owner now allows agent writes, commits, and pushes, and the running of reviewed data-reading scripts (§15). Disclose this change in `AI_USE.md` and the report | Allowed under §15 |
+| OD-8 | Medium | Raw-file hashes were removed from the data contract. Traceability currently relies on file name and row count. Hashes are not values and would strengthen the provenance evidence | No raw-file hashes |
+| OD-9 | Low | Choose the code licence for `LICENSE` | Unset |
+| OD-12 | Medium | Whether to add a constant-volatility baseline model to the out-of-sample test, so Heston is compared with something simpler than itself, not only with stale parameters | Not included |
 
 ---
 
@@ -1105,17 +1103,16 @@ Each item needs an owner decision. Defaults apply until changed through §1.3.
 
 | Proposal | This spec | Reason |
 |---|---|---|
-| Three-asset worst-of is the primary target | Single-asset CORE; three-asset is conditional | Instructor feedback |
-| C++ pricing engine | Python engine; C++ behind a measured gate | Instructor feedback |
+| Three-asset worst-of is the primary target | Single-asset GOOG study; multi-asset removed | Instructor feedback; owner decision (v1.11, v1.13) |
+| C++ pricing engine | Removed; Python only | Instructor feedback; owner decision (v1.13) |
 | OpenMP tier and HPC mention | Removed | Instructor feedback |
 | Commit raw market snapshot; publish later | Never committed or submitted | Feedback; `DATA_CONTRACT.md` |
 | Fitted surface vs. market quotes figure | Synthetic surface plus aggregate market statistics | `DATA_CONTRACT.md` |
-| `r = 5%`, all `q = 0` | Treasury-derived `r`; asset-specific `q` | Market-consistent inputs; NVDA now pays a material dividend |
+| `r = 5%`, all `q = 0` | Treasury-derived `r`; GOOG dividend yield | Market-consistent inputs |
 | Calibrate directly to BS IV from listed quotes | OTM quotes, de-Americanized IVs | Listed single-stock options are American-style |
-| Correlations and quotes on the same window | Stated gap in windows | Massive data ends in July 2026 |
-| Calibration-grid robustness check (E7, stretch) | Removed | Stretch work; day-to-day stability covers robustness for CORE |
+| Price one calibrated contract | Out-of-sample accuracy over held-out GOOG contracts | Owner decision (v1.13) |
+| Calibration-grid robustness check (E7, stretch) | Removed | Stretch work |
 | Same seeds "agree within 1 SE" | `3 sqrt(SE_a^2 + SE_b^2)` | A 1-SE rule on two independent estimates would fail about half the time even for a correct engine |
-| Worst-of European `>=` each single-asset Bermudan | Corrected ordering in V-22 | False in general; identical assets are a counterexample, and it contradicts proposal V5 |
 
 ### 20.2 Verification ID crosswalk
 
@@ -1125,32 +1122,30 @@ Each item needs an owner decision. Defaults apply until changed through §1.3.
 | V2 | V-12 |
 | V3 | V-13 |
 | V4 | V-05 |
-| V5 | V-21 |
-| V6 | V-22 |
-| V7 | V-07 (CORE), V-30 (EXT-B) |
-| V8 | V-11, V-23 |
+| V5, V6 | Removed with the multi-asset scope |
+| V7 | V-07 |
+| V8 | V-11 |
 | V9 | V-15 |
 
-Proposal Tables 2, 3, A2, and A3 and its evidence list cite V10–V14, which Table 1 does not define. Those citations are retired. Thread invariance was removed with OpenMP.
+Proposal Tables 2, 3, A2, and A3 and its evidence list cite V10–V14, which Table 1 does not define. Those citations are retired.
 
 ### 20.3 Instructor feedback coverage
 
 | Feedback item | Addressed in |
 |---|---|
 | Single-asset study is the committed result | §2.1 |
-| Stay in Python unless a measured bottleneck justifies C++ | §9.4 |
+| Stay in Python unless a measured bottleneck justifies C++ | §2.3, §9.4 |
 | Cut OpenMP | §2.3 |
-| Attempt three assets only after accuracy and runtime gates | §2.2, §17 |
+| Attempt three assets only after accuracy and runtime gates | Not pursued (§2.3) |
 | Provider and retention, commit, and publication terms | §5.2, §5.3, OD-1, `DATA_CONTRACT.md` |
 | One Heston parameterization, including initial variance | §4.2 |
 | Variance discretization | §7.1 |
-| Full cross-asset shock correlation | §4.4 |
 | LSMC basis and regression controls | §8 |
 | Paths, steps, repetitions, MC error target, runtime | §9 |
-| Pass rules fixed before viewing main results | §1.3, §16 |
+| Pass rules fixed before viewing main results | §1.3, §16, §22 |
 | Residual AI limitation was absent | §15, §18 |
 | Minimum precision rule for reducing paths | §9.2 |
-| Revise question and claims if three assets are not completed | §2.2, §17.2 |
+| Revise question and claims if three assets are not completed | §2.1 |
 
 ---
 
@@ -1161,12 +1156,11 @@ Citations follow the proposal unless marked.
 - Albrecher, H., Mayer, P., Schoutens, W., & Tistaert, J. (2007). The little Heston trap. *Wilmott Magazine*, January, 83–92.
 - Burkovska, O., Glau, K., Mahlstedt, M., & Wohlmuth, B. Model reduction for calibration of American options. arXiv:1611.06452. Source of the published parameter set and the ladder-step-2 `kappa`.
 - Burkovska, E., et al. (2018). Calibration to American options: numerical investigation of the de-Americanization method. *Quantitative Finance*. Added here; verify the full citation before use.
-- Clarke, N., & Parrott, K. (1999). Multigrid for American option pricing with stochastic volatility. *Applied Mathematical Finance*, 6(3), 177–195.
 - Chan, T. L. Singular Fourier-Padé series expansion of European option prices. arXiv:1706.06709. Table 10 reproduces the Fang and Oosterlee Heston values used in V-01.
 - Cox, J. C., Ross, S. A., & Rubinstein, M. (1979). Option pricing: A simplified approach. *Journal of Financial Economics*, 7(3), 229–263.
 - Fang, F., & Oosterlee, C. W. (2008). A novel pricing method for European options based on Fourier-cosine series expansions. *SIAM Journal on Scientific Computing*, 31(2), 826–848.
 - Glasserman, P. (2004). *Monte Carlo Methods in Financial Engineering*. Springer.
-- Haentjens, T., & in 't Hout, K. J. (2015). ADI schemes for pricing American options under the Heston model. *Applied Mathematical Finance*. arXiv:1309.0110. Table 2 tabulates the V-06 values of Ikonen and Toivanen and the values of Clarke and Parrott.
+- Haentjens, T., & in 't Hout, K. J. (2015). ADI schemes for pricing American options under the Heston model. *Applied Mathematical Finance*. arXiv:1309.0110. Table 2 tabulates the V-06 values of Ikonen and Toivanen.
 - Heston, S. L. (1993). A closed-form solution for options with stochastic volatility with applications to bond and currency options. *The Review of Financial Studies*, 6(2), 327–343.
 - Longstaff, F. A., & Schwartz, E. S. (2001). Valuing American options by simulation: A simple least-squares approach. *The Review of Financial Studies*, 14(1), 113–147.
 - Lord, R., Koekkoek, R., & van Dijk, D. (2010). A comparison of biased simulation schemes for stochastic volatility models. *Quantitative Finance*, 10(2), 177–194.
@@ -1174,6 +1168,8 @@ Citations follow the proposal unless marked.
 ---
 
 ## 22. Change log
+
+Rows before 1.13 describe earlier scopes, including the AMD, NVDA, and INTC work, and are kept unchanged as the record that §1.3 requires.
 
 | Version | Date | Change | Reason | Main result already viewed? |
 |---|---|---|---|---|
@@ -1190,3 +1186,5 @@ Citations follow the proposal unless marked.
 | 1.10 | 2026-11-08 | Feb 2015 Google put is the official market comparison (§8.4), replacing the 2026 contract, whose Cboe quote was removed; exploratory NVDA, AMD, and INTC runs (§8.5); VZ-1c, VZ-1d, VZ-9 | Owner instruction. Cboe's terms require written consent to store or publish its materials. No pass rule, tolerance, seed, or filter changed | Yes. The 2015 scratch comparison and the 2026 gap had been viewed; the report MUST disclose this and describe §8.4 as in-sample |
 | 1.11 | 2026-11-13 | Project restricted to GOOG; EXT-A and OD-11 closed; out-of-range GOOG tests (§8.6) | Owner instruction. No pass rule, tolerance, seed, or filter changed | Yes. The NVDA, AMD, and INTC results had been viewed; the report MUST disclose that this work was stopped and why |
 | 1.12 | 2026-11-13 | GOOG market test on 2026-10-13 (§8.7); GOOG iVolatility file added (`DATA_CONTRACT.md` v0.8); optional config key `raw_iv_file` | Owner purchased GOOG Raw IV for 2026-10-13. No pass rule, tolerance, seed, or filter changed | No GOOG fit or market comparison had been viewed when this was written |
+| 1.13 | 2026-11-15 | Primary question changed to out-of-sample accuracy on GOOG (§2.1); test population defined (§2.2); headline is the accuracy figures (§2.4); test contracts priced with LSMC as American options with Monte Carlo intervals, precision target T3, budget B4, breakdowns, and an expiration-level bootstrap (§8.5, §9); §6.7 step 3 evaluates the rejected fit and labels it; GOOG uses 2026-10-13 only, and the calibration-date sweep is removed; V-13 and V-14 apply to GOOG; V-00, V-19, and call cases in V-04 added; reference contract kept for verification and sweeps (§4.1); C++ (EXT-B, V-30), multi-asset (EXT-A, V-20 to V-28), correlation estimation, and requirements for NVDA, AMD, and INTC removed; §15 lets any reviewed, committed script read `data/` if its output is aggregate, while agents never read `data/` themselves; precedence item 1 restored (§1.2); `validate_goog_data.py` added (§11) | Owner instruction. Filters F1 to F8, grid rules, the test-set definition, the 0.01 limit, and seed lists are unchanged | Yes. The GOOG 2026-10-13 fit (RMS 0.01049) and the v1.12 market-test aggregates, including RMS by maturity, had been viewed. §6.7 step 3 was written after the fit's RMS was seen; the report MUST disclose this. The LSMC test prices, moneyness and kind breakdowns, bootstrap intervals, and T3 had not been computed when this was written |
+| 1.13 | 2026-11-15 | Header and §12.3 refer to `DATA_CONTRACT.md` v0.9, whose §3.3 now matches §15: any agent may run any committed script on licensed data once the owner has reviewed it | Owner instruction. Documentation only; no pass rule, tolerance, seed, filter, or default changed. The spec version stays 1.13 | Not applicable: no result is affected |

@@ -2,7 +2,7 @@
 
 **Project:** Pricing a Bermudan put under calibrated Heston stochastic volatility
 **Owner:** Jared Crebo
-**Contract version:** 0.8 · **Last updated:** 2026-11-08
+**Contract version:** 0.9 · **Last updated:** 2026-11-15
 
 This contract governs two licensed datasets and everything derived from them:
 
@@ -82,10 +82,13 @@ End-of-day records, one row per listed option contract per trading day, as deliv
 | Session closes | `data/derived/session_close.parquet` | `ticker`, `date` (ET), split-adjusted `close` | **Restricted** (lossless subset of raw prices) |
 | Log returns | `data/derived/log_returns.parquet` | `ticker`, `date`, `log_return` | **Restricted** (prices are recoverable from returns plus one price) |
 | Calibration grid | `data/derived/calibration_grid.parquet` | Selected `(symbol, date, strike, expiration, call_put, iv)` rows | **Restricted** (subset of raw iVolatility data) |
+| GOOG test prices | `data/derived/goog_test_prices.parquet` | Per-contract model prices, SEs, intervals, and diagnostics for the `SPEC.md` §8.5 test, keyed by contract | **Restricted** (with the identifiers, shows which contracts traded and how each compares with its quote) |
 | Estimation summary | `results/estimates.json` | Per-ticker sample size and realised volatility; cross-asset correlation matrix (entries in [−1, 1], symmetric, unit diagonal, positive semi-definite) | **Internal** |
-| Calibration summary | `results/calibration.json` | Per-ticker fitted Heston parameters, grid size, RMS IV residual, convergence status per starting point | **Internal** |
+| Calibration summary | `results/calibration.json`, `results/calibration_goog/calibration.json` | Per-ticker fitted Heston parameters, grid size, RMS IV residual, convergence status per starting point | **Internal** |
+| Market test summary | `results/goog_market_test.json` | Aggregate accuracy metrics, with every group `n >= 5` | **Internal** |
+| Validation reports | `results/validation_*.json` | Rule names, violation counts, row indices, aggregate counts | **Internal** |
 
-`results/estimates.json` and `results/calibration.json` are the only data-derived artifacts that leave the restricted boundary.
+Only aggregate, Internal artifacts like those above may leave the restricted boundary. Each is written by a reviewed script (§3.3).
 
 ### 1.4 Synthetic fixtures
 
@@ -151,7 +154,8 @@ A single Cboe delayed quote was stored in the repository earlier. Cboe's website
 | `results/estimates.json`, `results/calibration.json` | Aggregated estimates and fitted parameters | Internal | Yes | No (written only by pipeline scripts) | Committed |
 | `results/**` (other) | Run logs, summary CSVs, figures | Internal | Yes | No (written only by pipeline scripts) | Committed (small files only) |
 | `tests/fixtures/**` | Synthetic fixtures | Public | Yes | Yes | Committed |
-| `python/**`, `tests/**` | Source code and tests | Public | Yes | Yes (see §3.3) | Committed |
+| `data/derived/**` | Derived Restricted files written by reviewed scripts (§3.3) | Restricted | **No values** | **No** (written only by reviewed scripts) | Ignored |
+| `python/**`, `scripts/**`, `tests/**` | Source code and tests | Public | Yes | Yes (see §3.3) | Committed |
 | `prototype/**` | Exploratory notebooks | Internal | Yes | Yes | Committed with **outputs cleared** |
 | `README.md`, `AI_USE.md`, `DATA_CONTRACT.md`, configs | Documentation | Public | Yes | Yes (see §3.3) | Committed |
 | `.env`, any credentials file | Secrets | Secret | **No** | **No** | Ignored / outside repo |
@@ -190,8 +194,13 @@ Claude Code project settings (`.claude/settings.json`). The agent cannot open, e
 Granted by the owner on 2026-11-08.
 
 - **Commits and pushes.** An agent may commit and push when the owner asks, but only if `data/` is listed in `.gitignore` and `scripts/check_no_data.sh` passes immediately before the push. Owner review of agent-written files may follow the commit.
-- **Licensed-data pipeline.** An agent may run the licensed-data pipeline only through the committed scripts `python/validate_raw.py`, `scripts/run.py`, and `scripts/verify_outputs.py`. Those scripts read the files; the agent sees only their output, which is Internal.
-- **Unchanged.** An agent still may not read, print, or sample any value under `data/`, by these scripts or any other means. Classification in §4 is unchanged: raw data, quotes, and market IV points stay Restricted.
+- **Licensed-data scripts.** Since 2026-11-15, any agent may run any script committed to the repository on licensed data, once the owner has reviewed that script, or the change to it, as committed. Changing a reviewed script requires a new review before the next run on licensed data. The script must meet all of the following:
+  - Everything it prints, logs, or writes outside `data/` is aggregate and Internal under §4. It never shows a row, a quote, an IV point, or a per-contract result.
+  - Any per-contract output goes only to `data/derived/`, where it is Restricted (§1.3).
+  - It catches and sanitizes exceptions as §4.3 requires.
+
+  The agent sees only the script's aggregate output. From 2026-11-08 to 2026-11-15 this clause named only `python/validate_raw.py`, `scripts/run.py`, and `scripts/verify_outputs.py`. During that time, `scripts/estimate_correlations.py`, `scripts/compare_calibration_methods.py`, and `scripts/test_goog_market.py` were also run on licensed data, at the owner's request. That is recorded in `AI_USE.md`.
+- **Unchanged.** An agent still may not read, print, or sample any value under `data/` itself, by file tools, shell commands, ad hoc or uncommitted scripts, or any other means. Classification in §4 is unchanged: raw data, quotes, and market IV points stay Restricted.
 
 ---
 

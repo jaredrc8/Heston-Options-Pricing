@@ -653,3 +653,66 @@ All points use daily exercise, 100,000 paths and 2 sub-steps. This replaces the 
 - **K/S = 1.8:** the "not below intrinsic" check is too strict. The spec allows no exercise at t = 0, so the right lower bound is the value of exercising at the first date (0.79995). The Bermudan price of 0.79964 is 2.9 SE below that, again consistent with low bias.
 
 The AI did not change either check after seeing these results. It reported the second as a defect in its own check.
+
+### Entry 26 — 2026-11-13 — GOOG against the market on 2026-10-13
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Push the two held commits. Using the purchased GOOG Raw IV file for 2026-10-13, price contracts trading near that date and compare them with the market.
+
+**What the AI did:**
+- Pushed the two commits (`89ad4e5`, `ebd457a`).
+- Added the GOOG file to `DATA_CONTRACT.md` v0.8 and `SPEC.md` v1.12 §8.7. Added a `raw_iv_file` config key, `configs/calibrate_goog.yaml` and `scripts/test_goog_market.py`, committed locally before running, as §15 requires.
+- Validation: both iVolatility files pass with 0 violations.
+
+**Calibration (2026-10-13):** ladder step 3. The full fit had RMS IV residual 0.01049 against the limit of 0.01, with all 8 starts agreeing; with the cited `kappa` fixed, 0.01235. The error concentrates at tenors under 0.5 years.
+
+**Market test, aggregates only:** 299 held-out GOOG contracts that traded that day, none in the 48-point fit.
+- **Rejected full fit, labelled as such:** median absolute IV error 0.83 vol points; 58% of model prices inside the bid–ask spread; median absolute price error 4.5% of mid. RMS IV error is 0.020 under 3 months and 0.006 from 6 to 12 months.
+- **Published 2015 parameters:** IV about 11.7 points too low on average; 0% inside the spread; median price error 57%.
+
+**Dividend:** `q = 0.0026` is approximate, because the AI could not find GOOG's 2026-10-13 close.
+
+**Not pushed:** the local commit and the new results, pending the author's word.
+
+### Entry 27 — 2026-11-15 — Handover document
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Create a `HANDOVER.md` with all progress so far, for a new session.
+
+**What the AI did:** wrote `HANDOVER.md`, covering scope, agent rules, environment quirks, the repository map, key results, verification status, the history of decisions, Git state, open items and commands. Nothing was committed.
+
+### Entry 28 — 2026-11-15 — Handover rewritten for spec v1.13
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** The author added `SPEC.md` v1.13. Rewrite `HANDOVER.md` where it no longer matches.
+
+**What the AI did:** read v1.13 in full and compared it with the code. Then rewrote `HANDOVER.md` for the new question: out-of-sample accuracy of LSMC prices for held-out GOOG options on 2026-10-13. The rewrite covers:
+- the widened §15 script rule;
+- the removed scope;
+- the new checks V-00, V-19 and calls in V-04;
+- the gates;
+- a list of what v1.13 requires that the code does not yet do. This includes call support in the LSMC engine, the `tier` config key, the single `rejected_fit` schema, the absent `validate_goog_data.py`, and a `test_goog_market.py` that still uses the tree shortcut rather than LSMC.
+
+**Found:** `DATA_CONTRACT.md` §3.3 still names only three scripts an agent may run on licensed data. Earlier sessions ran `estimate_correlations.py`, `compare_calibration_methods.py` and `test_goog_market.py` on licensed data at the author's request, outside that list. The handover flags this for the §3.3 update and the report.
+
+**Not done:** no code, config, result or contract changed. Nothing was committed.
+
+### Entry 29 — 2026-11-15 — Data contract v0.9: reviewed scripts may read licensed data
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Change `DATA_CONTRACT.md` so that any agent may run any committed script on licensed data once the author has reviewed it. Commit, then begin section 5 of the handover.
+
+**What the AI did:**
+- **`DATA_CONTRACT.md` v0.9:**
+  - §3.3 replaces the three-script list with the reviewed-script rule. A changed script needs a new review, output outside `data/` must be aggregate and Internal, and per-contract output goes only to `data/derived/`.
+  - It records that three other scripts had been run on licensed data, at the author's request, before the change.
+  - §1.3 lists the GOOG test-price file (Restricted) and the newer aggregate outputs (Internal).
+  - §3.1 adds `data/derived/**` and `scripts/**`.
+- **`SPEC.md`:** the header and the §12.3 manifest example now cite contract v0.9, with a §22 row. The spec version stays 1.13, because the change is documentation only.
+- **`HANDOVER.md`:** rules and open items updated to match.
+
+**Not done:** nothing was pushed. Under the new rule, no rewritten or new data-reading script has been run.
