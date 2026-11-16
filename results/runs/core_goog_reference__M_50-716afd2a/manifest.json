@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "spec_version": "1.13",
+  "data_contract_version": "0.9",
+  "run_id": "core_goog_reference__M_50-716afd2a",
+  "git_commit": "716afd2a742eface12e7efb1c8e34d7d8ae2c85d",
+  "git_dirty": false,
+  "command": "python scripts/run.py sweep --config configs/core_goog_reference.yaml",
+  "config_sha256": "8363f0594a6f0dcc9b930eaa8ac83d090f05eec9180c8223ceca65a0a63c67ae",
+  "data_mode": "market",
+  "seeds": [
+    620001,
+    620002,
+    620003,
+    620004,
+    620005
+  ],
+  "environment": {
+    "python": "3.14.3",
+    "packages": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "pandas": "3.1.1"
+    },
+    "os": "macOS-26.2-arm64-arm-64bit-Mach-O",
+    "cpu": "arm",
+    "cores": 14,
+    "ram_gb": 24.0
+  },
+  "inputs": [
+    {
+      "dataset": "ivolatility_raw_iv",
+      "tickers": [
+        "GOOG"
+      ],
+      "snapshot_date": "2026-10-13",
+      "file_name": "goog_IV_Oct13.csv",
+      "row_count": 2306
+    }
+  ],
+  "outputs": [
+    {
+      "path": "result.json",
+      "sha256": "0e8d197f40c74c54b8ddfed8c3693d1695c7926c6ceab0f02bf94dbbf060d667"
+    },
+    {
+      "path": "config.yaml",
+      "sha256": "8363f0594a6f0dcc9b930eaa8ac83d090f05eec9180c8223ceca65a0a63c67ae"
+    },
+    {
+      "path": "run.log",
+      "sha256": "31a4d44bacfe686ef9d62e6e4eb31c2e9cf69eaa8ba82d6ca90465bb00a44408"
+    }
+  ],
+  "started_at": "2026-11-16T21:07:58.990056+00:00",
+  "finished_at": "2026-11-16T21:08:03.424891+00:00",
+  "wall_seconds": 4.434845499999938
+}

@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "run_name": "core_goog_reference",
+  "data_mode": "market",
+  "parameter_status": "rejected",
+  "rejected_fit": {
+    "label": "REJECTED",
+    "rms_iv_residual": 0.010493277523143092,
+    "limit": 0.01,
+    "from_step": 1
+  },
+  "commit": "716afd2a742eface12e7efb1c8e34d7d8ae2c85d",
+  "wall_seconds_this_invocation": 76.9073291249997,
+  "wall_seconds_total": 76.5287829580011,
+  "budget_b2_seconds": 21600,
+  "rows": [
+    {
+      "factor": "n_paths",
+      "value": 20000,
+      "run_id": "core_goog_reference__n_paths_20000-716afd2a",
+      "wall_seconds": 0.8715455830001702,
+      "bermudan": 0.1166525025902295,
+      "se_bermudan": 0.00043081948923677054,
+      "premium": 0.0034984115980461567,
+      "se_premium": 0.00024883265824212936
+    },
+    {
+      "factor": "n_paths",
+      "value": 50000,
+      "run_id": "core_goog_reference__n_paths_50000-716afd2a",
+      "wall_seconds": 2.066338000000087,
+      "bermudan": 0.11669272988569027,
+      "se_bermudan": 0.0002718002645142951,
+      "premium": 0.0033400014819608926,
+      "se_premium": 0.00016018356395038164
+    },
+    {
+      "factor": "n_paths",
+      "value": 100000,
+      "run_id": "core_goog_reference__n_paths_100000-716afd2a",
+      "wall_seconds": 4.390447541999947,
+      "bermudan": 0.11677152823904347,
+      "se_bermudan": 0.00019192892995594267,
+      "premium": 0.003769743983557954,
+      "se_premium": 0.0001129389796580869
+    },
+    {
+      "factor": "n_paths",
+      "value": 200000,
+      "run_id": "core_goog_reference__n_paths_200000-716afd2a",
+      "wall_seconds": 8.9249299170001,
+      "bermudan": 0.11671895506661081,
+      "se_bermudan": 0.0001361955335246184,
+      "premium": 0.0038998567338388588,
+      "se_premium": 7.935667282178184e-05
+    },
+    {
+      "factor": "n_substeps",
+      "value": 1,
+      "run_id": "core_goog_reference__n_substeps_1-716afd2a",
+      "wall_seconds": 2.793102167000143,
+      "bermudan": 0.11731476638111271,
+      "se_bermudan": 0.0001955082860211487,
+      "premium": 0.003940710862740218,
+      "se_premium": 0.0001089770763614733
+    },
+    {
+      "factor": "n_substeps",
+      "value": 2,
+      "run_id": "core_goog_reference__n_substeps_2-716afd2a",
+      "wall_seconds": 3.339335167000172,
+      "bermudan": 0.11684513971134855,
+      "se_bermudan": 0.0001931572875939303,
+      "premium": 0.0037420942508123054,
+      "se_premium": 0.00011153705973638505
+    },
+    {
+      "factor": "n_substeps",
+      "value": 4,
+      "run_id": "core_goog_reference__n_substeps_4-716afd2a",
+      "wall_seconds": 4.429802957999982,
+      "bermudan": 0.11677152823904347,
+      "se_bermudan": 0.00019192892995594267,
+      "premium": 0.003769743983557954,
+      "se_premium": 0.0001129389796580869
+    },
+    {
+      "factor": "n_substeps",
+      "value": 8,
+      "run_id": "core_goog_reference__n_substeps_8-716afd2a",
+      "wall_seconds": 6.550067582999873,
+      "bermudan": 0.11670181451975374,
+      "se_bermudan": 0.00019221502271945143,
+      "premium": 0.0036724067499761736,
+      "se_premium": 0.00011252482907151856
+    },
+    {
+      "factor": "M",
+      "value": 10,
+      "run_id": "core_goog_reference__M_10-716afd2a",
+      "wall_seconds": 2.444781832999979,
+      "bermudan": 0.11639607582444848,
+      "se_bermudan": 0.00019576142868396942,
+      "premium": 0.003394291568962977,
+      "se_premium": 0.00010558825837597165
+    },
+    {
+      "factor": "M",
+      "value": 25,
+      "run_id": "core_goog_reference__M_25-716afd2a",
+      "wall_seconds": 3.221944750000148,
+      "bermudan": 0.11666691965504553,
+      "se_bermudan": 0.00019363538300638333,
+      "premium": 0.0036651353995600317,
+      "se_premium": 0.0001099281526830564
+    },
+    {
+      "factor": "M",
+      "value": 50,
+      "run_id": "core_goog_reference__M_50-716afd2a",
+      "wall_seconds": 4.434845499999938,
+      "bermudan": 0.11677152823904347,
+      "se_bermudan": 0.00019192892995594267,
+      "premium": 0.003769743983557954,
+      "se_premium": 0.0001129389796580869
+    },
+    {
+      "factor": "M",
+      "value": 100,
+      "run_id": "core_goog_reference__M_100-716afd2a",
+      "wall_seconds": 6.705378749999909,
+      "bermudan": 0.11677716887092218,
+      "se_bermudan": 0.00019044539427933972,
+      "premium": 0.003775384615436677,
+      "se_premium": 0.00011516670328914074
+    },
+    {
+      "factor": "basis_degree",
+      "value": 2,
+      "run_id": "core_goog_reference__basis_degree_2-716afd2a",
+      "wall_seconds": 4.027325125000061,
+      "bermudan": 0.11644381786358553,
+      "se_bermudan": 0.00018987412780202984,
+      "premium": 0.003442033608100025,
+      "se_premium": 0.00011487829430986858
+    },
+    {
+      "factor": "basis_degree",
+      "value": 3,
+      "run_id": "core_goog_reference__basis_degree_3-716afd2a",
+      "wall_seconds": 4.399933000000146,
+      "bermudan": 0.11677152823904347,
+      "se_bermudan": 0.00019192892995594267,
+      "premium": 0.003769743983557954,
+      "se_premium": 0.0001129389796580869
+    },
+    {
+      "factor": "basis_degree",
+      "value": 4,
+      "run_id": "core_goog_reference__basis_degree_4-716afd2a",
+      "wall_seconds": 4.987952750000204,
+      "bermudan": 0.11676732846374978,
+      "se_bermudan": 0.0001928216287048706,
+      "premium": 0.0037655442082642583,
+      "se_premium": 0.00011138816810840064
+    },
+    {
+      "factor": "r_shift",
+      "value": 0.0,
+      "run_id": "core_goog_reference__r_shift_0.0-716afd2a",
+      "wall_seconds": 4.295170958000199,
+      "bermudan": 0.11677152823904347,
+      "se_bermudan": 0.00019192892995594267,
+      "premium": 0.003769743983557954,
+      "se_premium": 0.0001129389796580869
+    },
+    {
+      "factor": "r_shift",
+      "value": 0.01,
+      "run_id": "core_goog_reference__r_shift_0.01-716afd2a",
+      "wall_seconds": 4.303071249999903,
+      "bermudan": 0.11305920726830528,
+      "se_bermudan": 0.00018702742104549525,
+      "premium": 0.0049113529253176445,
+      "se_premium": 0.0001152726867707522
+    },
+    {
+      "factor": "r_shift",
+      "value": -0.01,
+      "run_id": "core_goog_reference__r_shift_-0.01-716afd2a",
+      "wall_seconds": 4.342810125000142,
+      "bermudan": 0.12066262975844902,
+      "se_bermudan": 0.000197257309682617,
+      "premium": 0.0026403934266476525,
+      "se_premium": 0.00010968988346977847
+    }
+  ]
+}

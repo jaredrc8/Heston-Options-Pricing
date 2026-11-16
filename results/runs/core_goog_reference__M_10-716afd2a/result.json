@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "run_id": "core_goog_reference__M_10-716afd2a",
+  "data_mode": "market",
+  "parameter_status": "rejected",
+  "units": "fraction_of_initial_spot",
+  "assets": [
+    "GOOG"
+  ],
+  "contract": {
+    "kind": "put",
+    "strike": 1.0,
+    "maturity": 1.0,
+    "n_exercise": 10
+  },
+  "simulation": {
+    "n_paths": 100000,
+    "n_substeps": 20,
+    "basis_degree": 3
+  },
+  "per_seed": [
+    {
+      "seed": 620001,
+      "bermudan": 0.11702835781115432,
+      "se_bermudan": 0.00043629916906369763,
+      "european": 0.11345792699328858,
+      "se_european": 0.0004833574468235436,
+      "premium": 0.003570430817865759,
+      "se_premium": 0.00024123768092656765,
+      "in_sample_bermudan": 0.1163279645828922,
+      "wall_seconds": 0.48800683299987213
+    },
+    {
+      "seed": 620002,
+      "bermudan": 0.11632029417236234,
+      "se_bermudan": 0.0004388632070558207,
+      "european": 0.11289021694613718,
+      "se_european": 0.0004821527827193385,
+      "premium": 0.0034300772262251594,
+      "se_premium": 0.00023150727947781057,
+      "in_sample_bermudan": 0.11573590198694332,
+      "wall_seconds": 0.48349899999993795
+    },
+    {
+      "seed": 620003,
+      "bermudan": 0.11641150649680979,
+      "se_bermudan": 0.0004366525118781477,
+      "european": 0.11338182574962724,
+      "se_european": 0.00048496589950305783,
+      "premium": 0.0030296807471825254,
+      "se_premium": 0.0002382749838389101,
+      "in_sample_bermudan": 0.11600258299488167,
+      "wall_seconds": 0.48430145800011815
+    },
+    {
+      "seed": 620004,
+      "bermudan": 0.11628053216228491,
+      "se_bermudan": 0.0004385563105985734,
+      "european": 0.11276794253948665,
+      "se_european": 0.000482088825144605,
+      "premium": 0.003512589622798273,
+      "se_premium": 0.00023334961593616673,
+      "in_sample_bermudan": 0.1165014943986005,
+      "wall_seconds": 0.48514133300022877
+    },
+    {
+      "seed": 620005,
+      "bermudan": 0.11593968847963107,
+      "se_bermudan": 0.00043830182623552866,
+      "european": 0.1125110090488879,
+      "se_european": 0.0004836820385311516,
+      "premium": 0.0034286794307431673,
+      "se_premium": 0.00023601643447170958,
+      "in_sample_bermudan": 0.11667032791574951,
+      "wall_seconds": 0.48767737500020303
+    }
+  ],
+  "pooled": {
+    "bermudan": 0.11639607582444848,
+    "se_bermudan": 0.00019576142868396942,
+    "european_mc": 0.1130017842554855,
+    "se_european": 0.00021611622805254977,
+    "european_analytic": 0.11302229541356883,
+    "baseline_const_vol_bermudan": 0.11671056926646926,
+    "premium": 0.003394291568962977,
+    "se_premium": 0.00010558825837597165,
+    "premium_ci95": [
+      0.003187338582546072,
+      0.0036012445553798814
+    ],
+    "premium_resolved": true
+  },
+  "diagnostics": {
+    "exercise_fraction_by_date": [
+      0.001878,
+      0.013592000000000002,
+      0.023322,
+      0.035924000000000005,
+      0.046196,
+      0.053464,
+      0.057718000000000005,
+      0.058530000000000006,
+      0.067084,
+      0.174242
+    ],
+    "min_itm_count": 49952,
+    "skipped_dates": 0,
+    "rank_deficient_dates": 0,
+    "feller_ratio": 0.6524779710866391
+  },
+  "precision": {
+    "T1": true,
+    "T2": true
+  },
+  "sweep": {
+    "factor": "M",
+    "value": 10
+  },
+  "rejected_fit": {
+    "label": "REJECTED",
+    "rms_iv_residual": 0.010493277523143092,
+    "limit": 0.01,
+    "from_step": 1
+  }
+}
