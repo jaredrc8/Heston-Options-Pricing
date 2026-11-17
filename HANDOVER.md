@@ -307,37 +307,32 @@ Spec changes are recorded in `SPEC.md` §22; the full detail is in `AI_USE.md`.
 
 ## 10. Open items and decisions for the owner
 
-1. **Review the licensed-data scripts** before an agent runs them: the new `validate_goog_data.py`, the rewritten `test_goog_market.py`, and the `run.py` calibrate and price changes.
-   - The `run.py` changes are committed.
-   - A `market` calibration now writes to the folder named by `params_source`, which is `results/calibration_goog/`.
-   - A `market` price run reads from that same folder. It previously read `results/calibration.json`, which is the old AMD fit.
-2. **Open decisions in spec §19:**
+1. **Open decisions in spec §19:**
    - **OD-4:** confirm the iVolatility header against contract §1.2, and that `stock_price_for_iv` is synchronous with the quotes. The test's normalized prices depend on it.
    - **OD-6:** confirm the reference contract (K = 1, T = 1, M = 50).
    - **OD-8:** raw-file hashes.
    - **OD-9:** licence.
    - **OD-12:** whether to add a constant-volatility baseline to the out-of-sample test.
-3. **Fate of out-of-scope files:** keep as a record or remove. Covers `correlation.py`, `estimate_correlations.py`, `compare_calibration_methods.py`, the NVDA, AMD and INTC configs, and their results.
-4. **The too-strict §8.6 check:** the lower bound should be the value of exercising at the first date, not intrinsic value. Any change needs a §22 row disclosing it was found after viewing.
-5. **Check transcribed values against the papers:** Table 8, Table 10, and the V-01 and V-06 values were read through automated extracts.
-6. **A recent day of GOOG Raw IV** (recommended earlier for an out-of-time test) is outside v1.13, which uses 2026-10-13 only. Adding it would need a spec change.
-7. **Report and slides** (owner). Required disclosures and limitations are listed in spec §18. They include:
+2. **Fate of out-of-scope files:** keep as a record or remove. Covers `correlation.py`, `estimate_correlations.py`, `compare_calibration_methods.py`, the NVDA, AMD and INTC configs, and their results.
+3. **The too-strict §8.6 check:** the lower bound should be the value of exercising at the first date, not intrinsic value. Any change needs a §22 row disclosing it was found after viewing.
+4. **Check transcribed values against the papers:** Table 8, Table 10, and the V-01 and V-06 values were read through automated extracts.
+5. **A recent day of GOOG Raw IV** (recommended earlier for an out-of-time test) is outside v1.13, which uses 2026-10-13 only. Adding it would need a spec change.
+6. **Report and slides** (owner). Required disclosures and limitations are listed in spec §18. They include:
    - the same-day test on neighbouring contracts;
    - the REJECTED label;
    - §6.7 step 3 written after the RMS was seen;
    - the §22 rows marked as viewed;
    - AI use, including agent commits and pushes (OD-7) and the scripts run beyond contract §3.3's list.
-8. **Release:** `LICENSE`, the `v1.0-final` tag, and the Route A package verified as spec §13 describes.
+7. **Release:** `LICENSE`, the `v1.0-final` tag, and the Route A package verified as spec §13 describes.
 
----
-
-9. **The in-sample addition to `test_goog_market.py`.** For the reworded question, the script also prices the calibration grid with the same metrics, under `in_sample_results` and `in_sample_set`. §8.5 and §12.6 don't describe this yet; the owner may want to add it through a §22 row.
+8. **The in-sample addition to `test_goog_market.py`.** For the reworded question, the script also prices the calibration grid with the same metrics, under `in_sample_results` and `in_sample_set`. §8.5 and §12.6 don't describe this yet; the owner may want to add it through a §22 row.
 
 **Decided 2026-11-16:**
 - **V-04 is accepted as a recorded FAIL**, disclosed as LSMC low bias, with no engine or rule change.
 - **The §2.3 edit has its §22 row.**
 - **The prototype notebooks are committed with outputs,** on the owner's instruction (contract §3.1 still says cleared).
 
+---
 
 ## 11. Useful commands
 
