@@ -844,3 +844,19 @@ Nothing was pushed.
   - All other checks pass, including V-00, V-17 (clean-clone smoke, 37 s) and V-19.
 
 **Not done:** contract §3.1 still describes cleared outputs. The §2.3 change still has no §22 row. Nothing was pushed.
+
+### Entry 34 — 2026-11-16 — V-04 accepted as a failure; §22 row for §2.3
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:**
+- Accept V-04 as a failure and move on.
+- Add a change-log row for the §2.3 edit. The author's reason: the spec never mentions using C++ code, so listing it as out of scope is redundant.
+
+**What the AI did:**
+- Added the §22 row. It records that the multi-asset line was removed in the same edit, and that §10.3 still requires one asset.
+- Recorded the V-04 decision in HANDOVER: a disclosed FAIL from LSMC low bias, with no rule or engine change.
+
+G2 therefore has one requirement, V-04, recorded as failed. The author has accepted this.
+
+**Not done:** nothing was pushed.
