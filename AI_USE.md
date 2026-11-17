@@ -829,3 +829,18 @@ The AI did not change either check after seeing these results. It reported the s
 - Older figures for AMD, NVDA and INTC remain in `results/figures/` from before v1.13.
 
 Nothing was pushed.
+
+### Entry 33 — 2026-11-16 — Prototype notebooks committed; full verification table
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Commit the prototype notebooks as they are; the author said cleared outputs don't matter. This departs from `DATA_CONTRACT.md` §3.1, which still says outputs cleared; neither notebook reads `data/`. Keep all figures.
+
+**What the AI did:**
+- Committed both notebooks with their outputs.
+- Ran `verify_outputs.py` from a clean tree: 22 PASS, 2 FAIL, 0 NOT_RUN.
+  - **V-04 FAIL:** one call case at 3.16 SE against the 3 SE limit; LSMC low bias, rule unchanged.
+  - **V-13 FAIL:** GOOG fit RMS 0.01049 against the 0.01 limit; ladder step 3.
+  - All other checks pass, including V-00, V-17 (clean-clone smoke, 37 s) and V-19.
+
+**Not done:** contract §3.1 still describes cleared outputs. The §2.3 change still has no §22 row. Nothing was pushed.
