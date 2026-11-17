@@ -48,7 +48,7 @@ These come from `SPEC.md` §15 (v1.13), `DATA_CONTRACT.md` §3–4, and standing
 - **Per-contract test values** (prices, SEs, intervals) go only to `data/derived/goog_test_prices.parquet`, which is Restricted. Only aggregates with every group `n >= 5` may appear in `results/`.
 - **No absolute market prices** in `results/`, logs, figures or submitted files. The only exception is the published Google prices of 2015-02-02 (spec §3).
 - **No hand edits to `results/**`;** only pipeline scripts write there.
-- **Commits and pushes** only when the owner asks, and only if `data/` is in `.gitignore` and `bash scripts/check_no_data.sh` passes immediately before the push. Work directly on `main`. End commit messages with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- **Commits and pushes** only when the owner asks, and only if `data/` is in `.gitignore` and `bash scripts/check_no_data.sh` passes immediately before the push. Work directly on `main`. **Do not add a `Co-Authored-By` line** to commit messages (owner's instruction, 2026-11-16); AI use is recorded in `AI_USE.md`.
 - **Never change a pass rule, tolerance, seed, filter or bound to make a check pass** (spec §1.3). A failed check is a recorded result. Any spec change needs a new §22 row and, if a result had already been viewed, a disclosure.
 - **Reference values and published parameters:** an agent must not generate or fill them in. The two owner-instructed exceptions are in spec §15.
 - **The report, slides and claims** are written by the owner, not the agent.

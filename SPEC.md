@@ -77,8 +77,6 @@ The strike window is measured against the forward price, as filter F4 has always
 
 The system MUST NOT implement these within this project:
 
-- C++ or other compiled pricing kernels. The Python/NumPy engine is the only engine.
-- Contracts on more than one asset.
 - Live data feeds or re-downloading data.
 - P&L simulation, delta hedging, backtesting, trading signals, or paper trading.
 - Stochastic rates, jumps, or discrete dividends in the simulated dynamics.
