@@ -127,6 +127,14 @@ The list is roughly in dependency order. Items marked **(data)** read licensed d
 - **Expected runtime:** about 10–20 minutes with `--workers 8`, double that at 200,000 paths. This is estimated from a production-size fixture run (148 contracts, 347 s); budget B4 is 2 hours.
 - **V-04 still FAILS on one call case;** this needs an owner decision (section 10).
 
+**Update 2026-11-16 (`AI_USE.md` Entry 32):** both part B scripts were approved and run.
+- **V-00:** 0 violations.
+- **Accuracy test:** 464 s, with B4 and T3 met (98.7%).
+- **Calibrated (REJECTED) set:** 55% inside the spread out of sample and 56% in sample; median |IV error| 0.0095 out of sample and 0.0062 in sample.
+- **Published 2015 set:** 0% inside the spread.
+- **Figures:** regenerated.
+- **Remaining:** `verify_outputs.py` from a clean tree, which waits on the prototype notebooks (contract §3.1, outputs cleared), and the V-04 decision.
+
 **A. Changes that don't touch licensed data (an agent can do these now)**
 
 1. **Version constants.** `scripts/run.py` has `SPEC_VERSION = "1.12"`; set it to `"1.13"`. Do the same for `spec_version` in the `goog_market_test.json` schema (§12.3, §12.6).

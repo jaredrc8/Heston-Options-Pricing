@@ -1,77 +1,1516 @@
 {
   "schema_version": 1,
-  "asset": "GOOG",
-  "date": "2026-10-13",
+  "spec_version": "1.13",
+  "symbol": "GOOG",
+  "snapshot_date": "2026-10-13",
+  "units": "fraction_of_initial_spot",
   "r": 0.04430560928226656,
   "q": 0.0026,
-  "note": "Same-day, out-of-sample across contracts. Aggregates only.",
-  "fitted_parameter_status": "REJECTED full fit (ladder step 3)",
-  "contracts": {
-    "after_filters": 394,
-    "in_calibration_grid": 48,
-    "held_out": 346,
-    "held_out_and_traded": 299
+  "note": "Aggregates only. out_of_sample (results) is the SPEC.md 8.5 test population; in_sample_results prices the calibration grid the fit was made to. Same snapshot for both.",
+  "test_set": {
+    "n_after_filters": 394,
+    "n_in_grid_removed": 48,
+    "n_zero_volume_removed": 47,
+    "n_test": 299,
+    "n_calls": 146,
+    "n_puts": 153,
+    "n_expirations": 12,
+    "grid_overlap": 0
   },
-  "calibrated_on_2026_10_13": {
-    "n_priced": 299,
-    "rms_iv_error": 0.015436945709804901,
-    "median_abs_iv_error": 0.008315090585054141,
-    "mean_iv_error": -0.001952201170158336,
-    "share_inside_bid_ask": 0.5785953177257525,
-    "median_abs_price_error_percent": 4.487611905960243,
-    "share_within_5_percent_of_mid": 0.5284280936454849,
-    "by_tenor": [
+  "in_sample_set": {
+    "n": 48,
+    "n_calls": 22,
+    "n_puts": 26,
+    "n_expirations": 6
+  },
+  "pricing": {
+    "engine": "lsmc",
+    "n_paths": 100000,
+    "seeds": [
+      620001,
+      620002,
+      620003,
+      620004,
+      620005
+    ],
+    "n_substeps": 1,
+    "exercise": "ceil(252 T) dates",
+    "basis_degree": 3,
+    "paths_shared_within_expiration": true,
+    "bootstrap_resamples": 2000,
+    "bootstrap_seed": 620200,
+    "bootstrap_unit": "expiration"
+  },
+  "parameter_sets": {
+    "calibrated_2026_10_13": {
+      "status": "rejected",
+      "ladder_step": 3,
+      "rms_iv_residual": 0.010493277523143092,
+      "limit": 0.01,
+      "from_step": 1,
+      "label": "REJECTED"
+    },
+    "published_2015": {
+      "status": "published",
+      "source": "Burkovska, Glau, Mahlstedt and Wohlmuth, Model reduction for calibration of American options, arXiv:1611.06452, Section 6.4, Table 8, row J_CF (de-Americanization with closed-form solution)"
+    }
+  },
+  "results": {
+    "calibrated_2026_10_13": {
+      "overall": {
+        "n": 299,
+        "median_rel_price_error": 0.05341331713019752,
+        "share_inside_spread": 0.5518394648829431,
+        "share_mid_inside_mc_ci95": 0.09698996655518395,
+        "rms_iv_error": 0.015710440196066763,
+        "median_abs_iv_error": 0.009525716259434547,
+        "mean_iv_error": -0.0028521360484601217,
+        "n_iv_inversion_failed": 0,
+        "ci95": {
+          "median_rel_price_error": [
+            0.033873798056294965,
+            0.07806686959508981
+          ],
+          "share_inside_spread": [
+            0.3898857836424748,
+            0.7127308730873088
+          ],
+          "share_mid_inside_mc_ci95": [
+            0.03609783653221827,
+            0.16024379968494704
+          ],
+          "rms_iv_error": [
+            0.010335478553643957,
+            0.022167849638021986
+          ],
+          "median_abs_iv_error": [
+            0.006627924265620977,
+            0.013173393942154641
+          ]
+        }
+      },
+      "by_maturity": [
+        {
+          "bucket": "under 3 months",
+          "n": 124,
+          "median_rel_price_error": 0.07924624574664645,
+          "share_inside_spread": 0.3870967741935484,
+          "share_mid_inside_mc_ci95": 0.03225806451612903,
+          "rms_iv_error": 0.020344279082944117,
+          "median_abs_iv_error": 0.011494267315128731,
+          "mean_iv_error": -0.006031608350428663,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.054911674706556966,
+              0.17502152543822624
+            ],
+            "share_inside_spread": [
+              0.2184873949579832,
+              0.5643678951228455
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.006622516556291391,
+              0.06796116504854369
+            ],
+            "rms_iv_error": [
+              0.012267291810909494,
+              0.029833935680004097
+            ],
+            "median_abs_iv_error": [
+              0.008418038468370581,
+              0.026913134907211922
+            ]
+          }
+        },
+        {
+          "bucket": "3-6 months",
+          "n": 96,
+          "median_rel_price_error": 0.0348765392323538,
+          "share_inside_spread": 0.6875,
+          "share_mid_inside_mc_ci95": 0.14583333333333334,
+          "rms_iv_error": 0.011804186529228562,
+          "median_abs_iv_error": 0.0075445469946769095,
+          "mean_iv_error": 0.004997691644485446,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.019489752045006088,
+              0.1469139308574669
+            ],
+            "share_inside_spread": [
+              0.19230769230769232,
+              0.9428571428571428
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.2571428571428571
+            ],
+            "rms_iv_error": [
+              0.006870981281150033,
+              0.019534177663716054
+            ],
+            "median_abs_iv_error": [
+              0.003384247448120603,
+              0.018536844502576783
+            ]
+          }
+        },
+        {
+          "bucket": "6-12 months",
+          "n": 46,
+          "median_rel_price_error": 0.018849769843380066,
+          "share_inside_spread": 0.7391304347826086,
+          "share_mid_inside_mc_ci95": 0.2391304347826087,
+          "rms_iv_error": 0.008608961175673066,
+          "median_abs_iv_error": 0.004446334242456329,
+          "mean_iv_error": -0.004885731602631856,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.018243596495126288,
+              0.019455943191633844
+            ],
+            "share_inside_spread": [
+              0.6666666666666666,
+              0.8
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.19047619047619047,
+              0.28
+            ],
+            "rms_iv_error": [
+              0.007737332818901576,
+              0.009543374159603739
+            ],
+            "median_abs_iv_error": [
+              0.0038898367022074387,
+              0.006186486102554123
+            ]
+          }
+        },
+        {
+          "bucket": "over 12 months",
+          "n": 33,
+          "median_rel_price_error": 0.05732645201507253,
+          "share_inside_spread": 0.5151515151515151,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.013131571049571035,
+          "median_abs_iv_error": 0.0102483552361472,
+          "mean_iv_error": -0.010906181429877562,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.053443684646450516,
+              0.06182220088344819
+            ],
+            "share_inside_spread": [
+              0.4444444444444444,
+              0.6
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.012065597956557731,
+              0.01395783215189476
+            ],
+            "median_abs_iv_error": [
+              0.0102483552361472,
+              0.010671002255305428
+            ]
+          }
+        }
+      ],
+      "by_moneyness": [
+        {
+          "bucket": "0.70-0.90",
+          "n": 96,
+          "median_rel_price_error": 0.053169680045436304,
+          "share_inside_spread": 0.6666666666666666,
+          "share_mid_inside_mc_ci95": 0.15625,
+          "rms_iv_error": 0.011091197588317666,
+          "median_abs_iv_error": 0.0073739372968777694,
+          "mean_iv_error": -0.0013997720772191229,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.017276145963514438,
+              0.10168290991617598
+            ],
+            "share_inside_spread": [
+              0.4499859550561798,
+              0.8469146137287726
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.047058823529411764,
+              0.26881720430107525
+            ],
+            "rms_iv_error": [
+              0.00729416097593684,
+              0.015073277264287236
+            ],
+            "median_abs_iv_error": [
+              0.002628434997648199,
+              0.010652872142347808
+            ]
+          }
+        },
+        {
+          "bucket": "0.90-1.10",
+          "n": 124,
+          "median_rel_price_error": 0.046426859438314386,
+          "share_inside_spread": 0.5080645161290323,
+          "share_mid_inside_mc_ci95": 0.04838709677419355,
+          "rms_iv_error": 0.018595264332469073,
+          "median_abs_iv_error": 0.01065092329353709,
+          "mean_iv_error": -0.008223321091222731,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.031141957540015742,
+              0.0655869860194735
+            ],
+            "share_inside_spread": [
+              0.30825621746674375,
+              0.710752984389348
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.016803221288515406,
+              0.08196721311475409
+            ],
+            "rms_iv_error": [
+              0.010543588777206321,
+              0.027282809255892385
+            ],
+            "median_abs_iv_error": [
+              0.007319541337586222,
+              0.01852097073775651
+            ]
+          }
+        },
+        {
+          "bucket": "1.10-1.30",
+          "n": 79,
+          "median_rel_price_error": 0.06834832868945726,
+          "share_inside_spread": 0.4810126582278481,
+          "share_mid_inside_mc_ci95": 0.10126582278481013,
+          "rms_iv_error": 0.015553889815432986,
+          "median_abs_iv_error": 0.010519569920870164,
+          "mean_iv_error": 0.003813686787785797,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.039085329445504996,
+              0.1508917853797768
+            ],
+            "share_inside_spread": [
+              0.31521739130434784,
+              0.6493506493506493
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.025974025974025976,
+              0.18311882790998857
+            ],
+            "rms_iv_error": [
+              0.010523458359425081,
+              0.019604859222909776
+            ],
+            "median_abs_iv_error": [
+              0.0077791865626638534,
+              0.015719979133524742
+            ]
+          }
+        }
+      ],
+      "by_kind": [
+        {
+          "bucket": "call",
+          "n": 146,
+          "median_rel_price_error": 0.0601913047877814,
+          "share_inside_spread": 0.4589041095890411,
+          "share_mid_inside_mc_ci95": 0.0684931506849315,
+          "rms_iv_error": 0.01740805297907179,
+          "median_abs_iv_error": 0.011461199703090424,
+          "mean_iv_error": -0.003508225674493841,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.04399035522188306,
+              0.07875640569472273
+            ],
+            "share_inside_spread": [
+              0.3333333333333333,
+              0.5942079659470964
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0211230670737713,
+              0.11834514170040485
+            ],
+            "rms_iv_error": [
+              0.012404714611853539,
+              0.023379429187040703
+            ],
+            "median_abs_iv_error": [
+              0.009187809367412147,
+              0.01563836884106079
+            ]
+          }
+        },
+        {
+          "bucket": "put",
+          "n": 153,
+          "median_rel_price_error": 0.04236723341202097,
+          "share_inside_spread": 0.6405228758169934,
+          "share_mid_inside_mc_ci95": 0.12418300653594772,
+          "rms_iv_error": 0.013898482630036454,
+          "median_abs_iv_error": 0.007177068774428141,
+          "mean_iv_error": -0.002226063594859317,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.01823150336348114,
+              0.08042562189820308
+            ],
+            "share_inside_spread": [
+              0.42036212195447864,
+              0.8385143257864156
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.039677318295739346,
+              0.21429580306698945
+            ],
+            "rms_iv_error": [
+              0.0075181465952906595,
+              0.020781378780349077
+            ],
+            "median_abs_iv_error": [
+              0.0038308984921381906,
+              0.011756617854322233
+            ]
+          }
+        }
+      ]
+    },
+    "published_2015": {
+      "overall": {
+        "n": 299,
+        "median_rel_price_error": 0.5730769508339326,
+        "share_inside_spread": 0.0,
+        "share_mid_inside_mc_ci95": 0.0,
+        "rms_iv_error": 0.12164165400298804,
+        "median_abs_iv_error": 0.11544211600723406,
+        "mean_iv_error": -0.11747137504571335,
+        "n_iv_inversion_failed": 0,
+        "ci95": {
+          "median_rel_price_error": [
+            0.5205320075969586,
+            0.6394955654977449
+          ],
+          "share_inside_spread": [
+            0.0,
+            0.0
+          ],
+          "share_mid_inside_mc_ci95": [
+            0.0,
+            0.0
+          ],
+          "rms_iv_error": [
+            0.11297687637909429,
+            0.1327090090131493
+          ],
+          "median_abs_iv_error": [
+            0.10577922053169955,
+            0.134049730849874
+          ]
+        }
+      },
+      "by_maturity": [
+        {
+          "bucket": "under 3 months",
+          "n": 124,
+          "median_rel_price_error": 0.7009001317234408,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.1307312528867631,
+          "median_abs_iv_error": 0.12692344760452484,
+          "mean_iv_error": -0.126536075968632,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.6388451015733043,
+              0.7682471064499615
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.11378955925688934,
+              0.15180172448415682
+            ],
+            "median_abs_iv_error": [
+              0.11128257692625085,
+              0.14420119999544986
+            ]
+          }
+        },
+        {
+          "bucket": "3-6 months",
+          "n": 96,
+          "median_rel_price_error": 0.5705150645845841,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.10860059178717507,
+          "median_abs_iv_error": 0.0966943761820705,
+          "mean_iv_error": -0.1047207780442398,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.5439611290032604,
+              0.590756085157977
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.09577620367845821,
+              0.11568509477901269
+            ],
+            "median_abs_iv_error": [
+              0.08082504771738792,
+              0.12016128015853456
+            ]
+          }
+        },
+        {
+          "bucket": "6-12 months",
+          "n": 46,
+          "median_rel_price_error": 0.48589176717670557,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.11919474370238631,
+          "median_abs_iv_error": 0.11045705365240117,
+          "mean_iv_error": -0.1158159086389396,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.4660344846742728,
+              0.5183731286206104
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.11789134056454373,
+              0.12072806792956858
+            ],
+            "median_abs_iv_error": [
+              0.10494572908165822,
+              0.11051192691250575
+            ]
+          }
+        },
+        {
+          "bucket": "over 12 months",
+          "n": 33,
+          "median_rel_price_error": 0.502580105271551,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.12543218701324813,
+          "median_abs_iv_error": 0.11392552026468966,
+          "mean_iv_error": -0.1228103402702933,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.5018967848260473,
+              0.502580105271551
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.11903891093376923,
+              0.13052091616972208
+            ],
+            "median_abs_iv_error": [
+              0.10901915613817795,
+              0.14020785379802053
+            ]
+          }
+        }
+      ],
+      "by_moneyness": [
+        {
+          "bucket": "0.70-0.90",
+          "n": 96,
+          "median_rel_price_error": 0.569564845468246,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.09100074045105642,
+          "median_abs_iv_error": 0.08408206758514233,
+          "mean_iv_error": -0.08909306006141714,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.5075536993753282,
+              0.6524483944250138
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.08276145377699834,
+              0.10065827794312815
+            ],
+            "median_abs_iv_error": [
+              0.07949955827489721,
+              0.09468146179734956
+            ]
+          }
+        },
+        {
+          "bucket": "0.90-1.10",
+          "n": 124,
+          "median_rel_price_error": 0.45301474248774865,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.12021725834383526,
+          "median_abs_iv_error": 0.11625493214177018,
+          "mean_iv_error": -0.11791331273092706,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.4151686006531285,
+              0.5087004963707458
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.10992201991667826,
+              0.1318005423059107
+            ],
+            "median_abs_iv_error": [
+              0.10846335786952324,
+              0.13509541522333102
+            ]
+          }
+        },
+        {
+          "bucket": "1.10-1.30",
+          "n": 79,
+          "median_rel_price_error": 0.8751562929045849,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.15249613010706653,
+          "median_abs_iv_error": 0.14759323962810336,
+          "mean_iv_error": -0.15126274169794043,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.7777997064571666,
+              0.9347700475443407
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.14389300121950688,
+              0.16526704400477082
+            ],
+            "median_abs_iv_error": [
+              0.1423381198878477,
+              0.1564328068725438
+            ]
+          }
+        }
+      ],
+      "by_kind": [
+        {
+          "bucket": "call",
+          "n": 146,
+          "median_rel_price_error": 0.7086556471734837,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.1437389228778467,
+          "median_abs_iv_error": 0.1413346879967904,
+          "mean_iv_error": -0.14219437692480427,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.6336267995324575,
+              0.777851518370184
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.13541014167274754,
+              0.15452488456277938
+            ],
+            "median_abs_iv_error": [
+              0.13470610298338487,
+              0.14716417881029414
+            ]
+          }
+        },
+        {
+          "bucket": "put",
+          "n": 153,
+          "median_rel_price_error": 0.5115036773111513,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.09592081169810655,
+          "median_abs_iv_error": 0.08950910052916894,
+          "mean_iv_error": -0.09387949089965275,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.468008565887053,
+              0.5669992860142695
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.08669405350392252,
+              0.10695227672998338
+            ],
+            "median_abs_iv_error": [
+              0.08247577676320239,
+              0.10148201790187544
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "in_sample_results": {
+    "calibrated_2026_10_13": {
+      "overall": {
+        "n": 48,
+        "median_rel_price_error": 0.038901866791024774,
+        "share_inside_spread": 0.5625,
+        "share_mid_inside_mc_ci95": 0.10416666666666667,
+        "rms_iv_error": 0.01161598043512797,
+        "median_abs_iv_error": 0.006154012095200501,
+        "mean_iv_error": -0.0017269427948724072,
+        "n_iv_inversion_failed": 0,
+        "ci95": {
+          "median_rel_price_error": [
+            0.011746701980383047,
+            0.06420524107582204
+          ],
+          "share_inside_spread": [
+            0.3333333333333333,
+            0.7916666666666666
+          ],
+          "share_mid_inside_mc_ci95": [
+            0.0,
+            0.22916666666666666
+          ],
+          "rms_iv_error": [
+            0.007723150892152487,
+            0.014705203226729083
+          ],
+          "median_abs_iv_error": [
+            0.0029482524256004283,
+            0.013522647794685427
+          ]
+        }
+      },
+      "by_maturity": [
+        {
+          "bucket": "under 3 months",
+          "n": 8,
+          "median_rel_price_error": 0.05463555541227822,
+          "share_inside_spread": 0.25,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.011404056242636199,
+          "median_abs_iv_error": 0.007774303310851938,
+          "mean_iv_error": -0.008373166011723047,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.05463555541227822,
+              0.05463555541227822
+            ],
+            "share_inside_spread": [
+              0.25,
+              0.25
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.011404056242636199,
+              0.011404056242636199
+            ],
+            "median_abs_iv_error": [
+              0.007774303310851938,
+              0.007774303310851938
+            ]
+          }
+        },
+        {
+          "bucket": "3-6 months",
+          "n": 16,
+          "median_rel_price_error": 0.04302826212781665,
+          "share_inside_spread": 0.5625,
+          "share_mid_inside_mc_ci95": 0.1875,
+          "rms_iv_error": 0.012890995216984849,
+          "median_abs_iv_error": 0.008841433221573297,
+          "mean_iv_error": 0.00900209692190574,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.008182548411150002,
+              0.11364774818803712
+            ],
+            "share_inside_spread": [
+              0.125,
+              1.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.375
+            ],
+            "rms_iv_error": [
+              0.0032662406282196244,
+              0.01793564014824171
+            ],
+            "median_abs_iv_error": [
+              0.0016974982515550185,
+              0.017414992595616213
+            ]
+          }
+        },
+        {
+          "bucket": "6-12 months",
+          "n": 16,
+          "median_rel_price_error": 0.015426673146748681,
+          "share_inside_spread": 0.6875,
+          "share_mid_inside_mc_ci95": 0.125,
+          "rms_iv_error": 0.00881766330253299,
+          "median_abs_iv_error": 0.00404787773108406,
+          "mean_iv_error": -0.004880021714642996,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.01254160064359705,
+              0.024958609864446105
+            ],
+            "share_inside_spread": [
+              0.625,
+              0.75
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.25
+            ],
+            "rms_iv_error": [
+              0.007140786477411708,
+              0.01022308860949997
+            ],
+            "median_abs_iv_error": [
+              0.00262026459876058,
+              0.005524917214519948
+            ]
+          }
+        },
+        {
+          "bucket": "over 12 months",
+          "n": 8,
+          "median_rel_price_error": 0.04888174470711873,
+          "share_inside_spread": 0.625,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.013844696545179986,
+          "median_abs_iv_error": 0.00995167454410334,
+          "mean_iv_error": -0.010232641172036885,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.04888174470711873,
+              0.04888174470711873
+            ],
+            "share_inside_spread": [
+              0.625,
+              0.625
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.013844696545179986,
+              0.013844696545179986
+            ],
+            "median_abs_iv_error": [
+              0.00995167454410334,
+              0.00995167454410334
+            ]
+          }
+        }
+      ],
+      "by_moneyness": [
+        {
+          "bucket": "0.70-0.90",
+          "n": 16,
+          "median_rel_price_error": 0.011262686945070061,
+          "share_inside_spread": 0.75,
+          "share_mid_inside_mc_ci95": 0.125,
+          "rms_iv_error": 0.006964200067499987,
+          "median_abs_iv_error": 0.0019584885818727804,
+          "mean_iv_error": 0.0007343643162516164,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.007760766555254621,
+              0.03780976981068448
+            ],
+            "share_inside_spread": [
+              0.42857142857142855,
+              1.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.375
+            ],
+            "rms_iv_error": [
+              0.002098821375431452,
+              0.011483834555643285
+            ],
+            "median_abs_iv_error": [
+              0.0014729726009351518,
+              0.006147343009579032
+            ]
+          }
+        },
+        {
+          "bucket": "0.90-1.10",
+          "n": 24,
+          "median_rel_price_error": 0.04168921133542714,
+          "share_inside_spread": 0.4166666666666667,
+          "share_mid_inside_mc_ci95": 0.08333333333333333,
+          "rms_iv_error": 0.013380947849259592,
+          "median_abs_iv_error": 0.011914748411569864,
+          "mean_iv_error": -0.004816977386149115,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.019522224890738533,
+              0.06415389472321871
+            ],
+            "share_inside_spread": [
+              0.17391304347826086,
+              0.6800454545454544
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.16666666666666666
+            ],
+            "rms_iv_error": [
+              0.009557120881962757,
+              0.016406898581813475
+            ],
+            "median_abs_iv_error": [
+              0.005251431778319826,
+              0.017570028906912005
+            ]
+          }
+        },
+        {
+          "bucket": "1.10-1.30",
+          "n": 8,
+          "median_rel_price_error": 0.057456970203652924,
+          "share_inside_spread": 0.625,
+          "share_mid_inside_mc_ci95": 0.125,
+          "rms_iv_error": 0.013245246227288735,
+          "median_abs_iv_error": 0.009422429967359203,
+          "mean_iv_error": 0.0026205467567096685,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.032826806518658255,
+              0.11667282796101429
+            ],
+            "share_inside_spread": [
+              0.3,
+              1.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.42857142857142855
+            ],
+            "rms_iv_error": [
+              0.0064351189748222265,
+              0.01807140977468113
+            ],
+            "median_abs_iv_error": [
+              0.005448233839783045,
+              0.018513173718714193
+            ]
+          }
+        }
+      ],
+      "by_kind": [
+        {
+          "bucket": "call",
+          "n": 22,
+          "median_rel_price_error": 0.05054014837011155,
+          "share_inside_spread": 0.4090909090909091,
+          "share_mid_inside_mc_ci95": 0.045454545454545456,
+          "rms_iv_error": 0.013843085761796284,
+          "median_abs_iv_error": 0.01249574515735577,
+          "mean_iv_error": -0.005087760775280462,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.03916406594686109,
+              0.06425658742842535
+            ],
+            "share_inside_spread": [
+              0.2608695652173913,
+              0.65
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.13043478260869565
+            ],
+            "rms_iv_error": [
+              0.009390040776080695,
+              0.016899811060438388
+            ],
+            "median_abs_iv_error": [
+              0.006128376554024817,
+              0.01676508071393165
+            ]
+          }
+        },
+        {
+          "bucket": "put",
+          "n": 26,
+          "median_rel_price_error": 0.01254160064359705,
+          "share_inside_spread": 0.6923076923076923,
+          "share_mid_inside_mc_ci95": 0.15384615384615385,
+          "rms_iv_error": 0.009324916076214232,
+          "median_abs_iv_error": 0.002851743835816961,
+          "mean_iv_error": 0.0011168262654728705,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.008284772163515801,
+              0.09702684347777615
+            ],
+            "share_inside_spread": [
+              0.36,
+              1.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.35714285714285715
+            ],
+            "rms_iv_error": [
+              0.002476595188815883,
+              0.013788266532380506
+            ],
+            "median_abs_iv_error": [
+              0.0017367834062409215,
+              0.016155660961300056
+            ]
+          }
+        }
+      ]
+    },
+    "published_2015": {
+      "overall": {
+        "n": 48,
+        "median_rel_price_error": 0.4834049115235933,
+        "share_inside_spread": 0.0,
+        "share_mid_inside_mc_ci95": 0.0,
+        "rms_iv_error": 0.11590590216905361,
+        "median_abs_iv_error": 0.10808038503656742,
+        "mean_iv_error": -0.11277154918917802,
+        "n_iv_inversion_failed": 0,
+        "ci95": {
+          "median_rel_price_error": [
+            0.44967534252591285,
+            0.5650656072080813
+          ],
+          "share_inside_spread": [
+            0.0,
+            0.0
+          ],
+          "share_mid_inside_mc_ci95": [
+            0.0,
+            0.0
+          ],
+          "rms_iv_error": [
+            0.10622227845837688,
+            0.12402465278046394
+          ],
+          "median_abs_iv_error": [
+            0.10040972341445191,
+            0.11777602674059023
+          ]
+        }
+      },
+      "by_maturity": [
+        {
+          "bucket": "under 3 months",
+          "n": 8,
+          "median_rel_price_error": 0.7102931080053623,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.12720832875541543,
+          "median_abs_iv_error": 0.11777602674059023,
+          "mean_iv_error": -0.12501324020642912,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.7102931080053623,
+              0.7102931080053623
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.12720832875541543,
+              0.12720832875541543
+            ],
+            "median_abs_iv_error": [
+              0.11777602674059023,
+              0.11777602674059023
+            ]
+          }
+        },
+        {
+          "bucket": "3-6 months",
+          "n": 16,
+          "median_rel_price_error": 0.49140470150580595,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.10076096824709885,
+          "median_abs_iv_error": 0.09498856895028349,
+          "mean_iv_error": -0.09762844763332693,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.4712817601721354,
+              0.4931193061454666
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.09145020997497658,
+              0.10928130919657952
+            ],
+            "median_abs_iv_error": [
+              0.08142185065836594,
+              0.10244315285311026
+            ]
+          }
+        },
+        {
+          "bucket": "6-12 months",
+          "n": 16,
+          "median_rel_price_error": 0.46076294522517425,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.11877818260341937,
+          "median_abs_iv_error": 0.1145646635669537,
+          "mean_iv_error": -0.11619475864808916,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.4469110757256438,
+              0.47469261026037235
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.11715048028078945,
+              0.12038387888385568
+            ],
+            "median_abs_iv_error": [
+              0.11326705419825871,
+              0.11885715245095517
+            ]
+          }
+        },
+        {
+          "bucket": "over 12 months",
+          "n": 8,
+          "median_rel_price_error": 0.4483392024617816,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.12609937062356547,
+          "median_abs_iv_error": 0.1236597811962037,
+          "mean_iv_error": -0.12396964236580683,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.4483392024617816,
+              0.4483392024617816
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.12609937062356547,
+              0.12609937062356547
+            ],
+            "median_abs_iv_error": [
+              0.1236597811962037,
+              0.1236597811962037
+            ]
+          }
+        }
+      ],
+      "by_moneyness": [
+        {
+          "bucket": "0.70-0.90",
+          "n": 16,
+          "median_rel_price_error": 0.49326087116572226,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.09102053795876601,
+          "median_abs_iv_error": 0.08916674136031874,
+          "mean_iv_error": -0.08991093053817874,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.4470030623976504,
+              0.6484949703676385
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.08034870600480772,
+              0.09981114188273234
+            ],
+            "median_abs_iv_error": [
+              0.08215919272025085,
+              0.09935258163433958
+            ]
+          }
+        },
+        {
+          "bucket": "0.90-1.10",
+          "n": 24,
+          "median_rel_price_error": 0.41266465057201307,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.11900003060228234,
+          "median_abs_iv_error": 0.12002336651550648,
+          "mean_iv_error": -0.11701463515388477,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.38209462289979135,
+              0.48328004984348133
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.10612421075918284,
+              0.12903216831675968
+            ],
+            "median_abs_iv_error": [
+              0.10286593851102874,
+              0.13381766057693714
+            ]
+          }
+        },
+        {
+          "bucket": "1.10-1.30",
+          "n": 8,
+          "median_rel_price_error": 0.7529658686986866,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.14680793723465585,
+          "median_abs_iv_error": 0.14711316652622602,
+          "mean_iv_error": -0.14576352859705635,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.688390174473563,
+              0.8770938215645646
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.1340082880002268,
+              0.16159516358578765
+            ],
+            "median_abs_iv_error": [
+              0.1297951559673547,
+              0.1563817154216547
+            ]
+          }
+        }
+      ],
+      "by_kind": [
+        {
+          "bucket": "call",
+          "n": 22,
+          "median_rel_price_error": 0.5712344016686952,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.13695987239385785,
+          "median_abs_iv_error": 0.13745322938890978,
+          "mean_iv_error": -0.13580771560530056,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.5126437486607225,
+              0.6238204607676464
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.12604748406702204,
+              0.14587549395527047
+            ],
+            "median_abs_iv_error": [
+              0.1297951559673547,
+              0.14235606332241016
+            ]
+          }
+        },
+        {
+          "bucket": "put",
+          "n": 26,
+          "median_rel_price_error": 0.44257738535781455,
+          "share_inside_spread": 0.0,
+          "share_mid_inside_mc_ci95": 0.0,
+          "rms_iv_error": 0.09449550362741052,
+          "median_abs_iv_error": 0.09708891880425885,
+          "mean_iv_error": -0.09327940837553589,
+          "n_iv_inversion_failed": 0,
+          "ci95": {
+            "median_rel_price_error": [
+              0.4281777980488945,
+              0.49300176444748045
+            ],
+            "share_inside_spread": [
+              0.0,
+              0.0
+            ],
+            "share_mid_inside_mc_ci95": [
+              0.0,
+              0.0
+            ],
+            "rms_iv_error": [
+              0.08365995243832496,
+              0.10351566928532457
+            ],
+            "median_abs_iv_error": [
+              0.07723048029804118,
+              0.10216785611550938
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "tree_shortcut": {
+    "parameter_set": "calibrated_2026_10_13",
+    "overall": {
+      "n": 299,
+      "median_rel_price_error": 0.04487611905960193,
+      "share_inside_spread": 0.5785953177257525,
+      "share_mid_inside_mc_ci95": null,
+      "rms_iv_error": 0.015436945709804901,
+      "median_abs_iv_error": 0.008315090585054141,
+      "mean_iv_error": -0.001952201170158336,
+      "n_iv_inversion_failed": 0,
+      "ci95": {}
+    },
+    "by_maturity": [
       {
-        "tenor_bucket": "T<0.25",
+        "bucket": "under 3 months",
         "n": 124,
-        "rms_iv_error": 0.020474484520902062
+        "median_rel_price_error": 0.08152351594239737,
+        "share_inside_spread": 0.3870967741935484,
+        "share_mid_inside_mc_ci95": null,
+        "rms_iv_error": 0.020474484520902062,
+        "median_abs_iv_error": 0.011461813776527219,
+        "mean_iv_error": -0.0062952013164141,
+        "n_iv_inversion_failed": 0,
+        "ci95": {}
       },
       {
-        "tenor_bucket": "0.25<=T<0.5",
+        "bucket": "3-6 months",
         "n": 96,
-        "rms_iv_error": 0.012162786904131763
+        "median_rel_price_error": 0.03156642139845637,
+        "share_inside_spread": 0.6770833333333334,
+        "share_mid_inside_mc_ci95": null,
+        "rms_iv_error": 0.012162786904131763,
+        "median_abs_iv_error": 0.007183320679976235,
+        "mean_iv_error": 0.005990788509217147,
+        "n_iv_inversion_failed": 0,
+        "ci95": {}
       },
       {
-        "tenor_bucket": "0.5<=T<1",
+        "bucket": "6-12 months",
         "n": 46,
-        "rms_iv_error": 0.0063683668773512015
+        "median_rel_price_error": 0.019912377113136655,
+        "share_inside_spread": 0.8260869565217391,
+        "share_mid_inside_mc_ci95": null,
+        "rms_iv_error": 0.0063683668773512015,
+        "median_abs_iv_error": 0.0038717819766025396,
+        "mean_iv_error": -0.0024819284770818116,
+        "n_iv_inversion_failed": 0,
+        "ci95": {}
       },
       {
-        "tenor_bucket": "T>=1",
+        "bucket": "over 12 months",
         "n": 33,
-        "rms_iv_error": 0.009851846610917382
+        "median_rel_price_error": 0.04311955902814195,
+        "share_inside_spread": 0.6666666666666666,
+        "share_mid_inside_mc_ci95": null,
+        "rms_iv_error": 0.009851846610917382,
+        "median_abs_iv_error": 0.009289209532181819,
+        "mean_iv_error": -0.008001520411547777,
+        "n_iv_inversion_failed": 0,
+        "ci95": {}
       }
     ]
   },
-  "published_2015_parameters": {
-    "n_priced": 299,
-    "rms_iv_error": 0.1215142086075207,
-    "median_abs_iv_error": 0.11408740380418397,
-    "mean_iv_error": -0.11722508976019444,
-    "share_inside_bid_ask": 0.0,
-    "median_abs_price_error_percent": 56.94080559506192,
-    "share_within_5_percent_of_mid": 0.0,
-    "by_tenor": [
-      {
-        "tenor_bucket": "T<0.25",
-        "n": 124,
-        "rms_iv_error": 0.13083324488356246
-      },
-      {
-        "tenor_bucket": "0.25<=T<0.5",
-        "n": 96,
-        "rms_iv_error": 0.10845490052805422
-      },
-      {
-        "tenor_bucket": "0.5<=T<1",
-        "n": 46,
-        "rms_iv_error": 0.11867308464431149
-      },
-      {
-        "tenor_bucket": "T>=1",
-        "n": 33,
-        "rms_iv_error": 0.12496869030268583
-      }
-    ]
+  "precision": {
+    "T3_share": 0.9866220735785953,
+    "T3_met": true,
+    "median_rel_se": 0.003388419104717064,
+    "n_paths_used": 100000,
+    "half_width_to_half_spread": {
+      "median": 0.11434888102555954,
+      "t3_limit": 0.5,
+      "bins": [
+        {
+          "low": 0.0,
+          "high": 0.125,
+          "n": 169
+        },
+        {
+          "low": 0.125,
+          "high": 0.25,
+          "n": 97
+        },
+        {
+          "low": 0.25,
+          "high": 0.375,
+          "n": 22
+        },
+        {
+          "low": 0.375,
+          "high": 2.0,
+          "n": 11
+        }
+      ]
+    }
+  },
+  "runtime": {
+    "wall_seconds": 464.4824681249993,
+    "pricing_seconds": {
+      "calibrated_2026_10_13": 240.9832614170009,
+      "published_2015": 209.61088954099978
+    },
+    "budget_b4_seconds": 7200,
+    "b4_met": true,
+    "workers": 8
   }
 }

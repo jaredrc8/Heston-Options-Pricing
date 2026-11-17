@@ -800,3 +800,32 @@ The AI did not change either check after seeing these results. It reported the s
 **Timing:** a production-size fixture run (148 contracts, 6 expirations, 8 workers) took 347 s. GOOG is estimated at 10–20 minutes; budget B4 is 2 hours.
 
 **Not done:** neither new script has run on licensed data; both await the author's review (contract §3.3). V-04 still records one FAIL. The author's uncommitted `SPEC.md` §2.3 edit and `prototype/` changes were left out of the commit. Nothing after `d206a17` was pushed.
+
+### Entry 32 — 2026-11-16 — GOOG validation and the LSMC accuracy test, run on licensed data
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** The author approved `validate_goog_data.py` and `test_goog_market.py` (contract §3.3 review) and asked to continue. Later in the session: commit without a `Co-Authored-By` line, and commit the author's `SPEC.md` §2.3 edit and prototype changes as they are.
+
+**What the AI did:**
+- **V-00 (`validate_goog_data.py`):** 0 violations over the 2,306-row option file and 1,750,158 GOOG minute bars in 177 months.
+- **`test_goog_market.py --workers 8`:** 464 s in all, with B4 met. T3 met: 98.7% of contracts have a Monte Carlo half-width at most half the market half-spread, so there was no 200,000-path rerun. Test set: 299 contracts (146 calls, 153 puts, 12 expirations); 47 zero-volume contracts removed; grid overlap 0 (V-19). In sample: the 48-point grid.
+  - **Calibrated set (REJECTED fit), out of sample:**
+    - median relative error 5.3% (95% interval 3.4–7.8%);
+    - 55% inside the spread (39–71%);
+    - median |IV error| 0.0095 (0.0066–0.0132);
+    - mid inside the Monte Carlo interval for only 9.7%.
+    - By maturity the fit is best at 6–12 months (74% inside, median IV error 0.0044) and worst under 3 months (39% inside, 0.0115).
+  - **Calibrated set, in sample:** median relative error 3.9%, 56% inside, median |IV error| 0.0062.
+  - **Published 2015 set:** 0% inside the spread, median relative error 57%, IV about 11.8 points too low.
+  - **Tree shortcut (diagnostic):** median |IV error| 0.0083 and 58% inside, close to the LSMC results.
+- **Figures:** `make_figures.py` produced 15 outputs, including VZ-1e and VZ-10 to VZ-13, each with an evidence-map row.
+- **Commits:** the author's §2.3 edit and the three prototype figures (synthetic, checked visually), committed as they were.
+
+**Not done:**
+- The two prototype notebooks have saved outputs, but contract §3.1 requires outputs cleared, so they were held back for the author's decision.
+- `verify_outputs.py` waits for a clean tree.
+- §2.3's change has no §22 row yet.
+- Older figures for AMD, NVDA and INTC remain in `results/figures/` from before v1.13.
+
+Nothing was pushed.
