@@ -838,7 +838,7 @@ Nothing was pushed.
 
 **What the AI did:**
 - Committed both notebooks with their outputs.
-- Ran `verify_outputs.py` from a clean tree: 22 PASS, 2 FAIL, 0 NOT_RUN.
+- Ran `verify_outputs.py` from a clean tree: 20 PASS, 2 FAIL, 0 NOT_RUN (22 checks). Corrected 2026-11-18: this entry and commit `ffcbdd8` first said "22 PASS", a miscount.
   - **V-04 FAIL:** one call case at 3.16 SE against the 3 SE limit; LSMC low bias, rule unchanged.
   - **V-13 FAIL:** GOOG fit RMS 0.01049 against the 0.01 limit; ladder step 3.
   - All other checks pass, including V-00, V-17 (clean-clone smoke, 37 s) and V-19.
