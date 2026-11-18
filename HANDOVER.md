@@ -1,6 +1,6 @@
 # Handover: Heston LSMC Pricer, out-of-sample accuracy on GOOG (ENSF 620)
 
-State of the project on 2026-11-15, for whoever picks it up next, whether a new AI session or the owner. Read this first, then `SPEC.md` (**v1.13**, written by the owner on 2026-11-15) and `DATA_CONTRACT.md` (v0.9), which govern the work. `AI_USE.md` holds the detailed log (Entries 1–28).
+State of the project on 2026-11-15, for whoever picks it up next, whether a new AI session or the owner. Read this first, then `SPEC.md` (**v1.13**, written by the owner on 2026-11-15) and `DATA_CONTRACT.md` (v0.10), which govern the work. `AI_USE.md` holds the detailed log (Entries 1–28).
 
 Owner: Jared Crebo. Next gate G2 is 2026-11-20; final submission is due 2026-12-04.
 
@@ -88,15 +88,14 @@ configs/   calibrate_goog.yaml            GOOG calibration, 2026-10-13 (raw_iv_f
            governance.yaml                market_use_authorized: true (owner's instruction)
            smoke.yaml
            core_goog_production.yaml      v1.12 reported run (published params, Oct 14); not the v1.13 reference run
-           market_inputs.yaml, splits.yaml, calibrate_{nvda,intc}.yaml, explore_{nvda,amd,intc}.yaml,
+           market_inputs.yaml, calibrate_{nvda,intc}.yaml, explore_{nvda,amd,intc}.yaml,
            core_amd_production.yaml       out of scope since v1.13; kept as a record
 python/hestonpricer/   analytic, iv, tree, simulate, lsmc, surface, calibrate, errors
-                       (correlation.py is out of scope since v1.13)
 python/validate_raw.py, python/make_fixtures.py
 scripts/   run.py (calibrate, price, sweep, compare), verify_outputs.py, make_figures.py, smoke.sh,
            check_no_data.sh, inspect_schema.py, test_goog_market.py, compare_to_market.py,
            test_goog_out_of_range.py
-           estimate_correlations.py, compare_calibration_methods.py   out of scope; kept as a record
+           compare_calibration_methods.py   out of scope; kept as a record
            validate_goog_data.py          REQUIRED by v1.13; does not exist yet
 tests/     test_checks.py (one test per check), test_units.py, reference_impl.py,
            reference_values.yaml (V-01, V-06), fixtures/
@@ -230,7 +229,7 @@ These aggregates were viewed before v1.13 was written (spec §22, row 1.13). The
   - NVDA: RMS 0.0082, `kappa` at its bound.
   - INTC: RMS 0.0092, bounds hit.
   - AMD: rejected, RMS 0.0105.
-- **Correlations:** four-ticker correlations computed.
+- **Correlations:** computed earlier, then removed with all correlation code on 2026-11-18 (`AI_USE.md` Entry 36).
 - **Calibration method comparison:** the paper's method gave worse implied-vol fits (about 0.016). See `AI_USE.md` Entries 17–25.
 
 ---
@@ -313,7 +312,7 @@ Spec changes are recorded in `SPEC.md` §22; the full detail is in `AI_USE.md`.
    - **OD-8:** raw-file hashes.
    - **OD-9:** licence.
    - **OD-12:** whether to add a constant-volatility baseline to the out-of-sample test.
-2. **Fate of out-of-scope files:** keep as a record or remove. Covers `correlation.py`, `estimate_correlations.py`, `compare_calibration_methods.py`, the NVDA, AMD and INTC configs, and their results.
+2. **Fate of out-of-scope files:** keep as a record or remove. Covers `compare_calibration_methods.py`, the NVDA, AMD and INTC configs, and their results. The correlation work was removed on 2026-11-18.
 3. **The too-strict §8.6 check:** the lower bound should be the value of exercising at the first date, not intrinsic value. Any change needs a §22 row disclosing it was found after viewing.
 4. **Check transcribed values against the papers:** Table 8, Table 10, and the V-01 and V-06 values were read through automated extracts.
 5. **A recent day of GOOG Raw IV** (recommended earlier for an out-of-time test) is outside v1.13, which uses 2026-10-13 only. Adding it would need a spec change.

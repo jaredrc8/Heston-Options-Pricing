@@ -2,11 +2,11 @@
 
 **Project:** Pricing a Bermudan put under calibrated Heston stochastic volatility
 **Owner:** Jared Crebo
-**Contract version:** 0.9 · **Last updated:** 2026-11-15
+**Contract version:** 0.10 · **Last updated:** 2026-11-18
 
 This contract governs two licensed datasets and everything derived from them:
 
-1. **Massive** minute-resolution U.S. stock bars for NVDA, AMD, INTC, GOOG, and GOOGL, used for return and correlation estimation.
+1. **Massive** minute-resolution U.S. stock bars for NVDA, AMD, INTC, GOOG, and GOOGL. Since 2026-11-18 they are used only for raw-data validation (`SPEC.md` V-00); the return and correlation estimation they once fed was removed with the multi-asset scope.
 2. **iVolatility** Raw IV option-contract data for NVDA, AMD, and INTC (2026-10-13 to 2026-10-15), and for GOOG (2026-10-13 only, file `goog_IV_Oct13.csv`), used for Heston calibration.
 
 It defines what the data looks like (Schema), where it came from and under what terms (Provenance), which files an AI agent may touch (Allowed Paths), and what may appear verbatim in prompts, logs, the repository, the report, and the presentation (Classification).
@@ -39,7 +39,7 @@ A Parquet package at `data/nvda_amd_intc_goog_minute/bars/`, partitioned by year
 - No nulls in any column.
 - `window_start`, converted to `America/New_York`, falls between 04:00 and 20:00 (pre-market, regular session, and after-hours). The regular-session filter (09:30–16:00 ET) is applied in the derived layer, not to the raw files. One bar breaks this rule and is omitted by the owner's decision of 2026-11-08: `year=2018/month=7`, row index 2090. It stays in the raw files, and any other bar outside these hours is still a violation.
 - Minutes with no trades have **no row**; missing minutes are expected and are not errors.
-- Prices are treated as **unadjusted** for splits and dividends. NVDA's and GOOG's stock splits inside the 2011–2026 window, listed in `configs/splits.yaml`, must be adjusted for in the derived layer before returns are computed; an unexplained one-minute log return larger than 0.5 in absolute value stops the pipeline.
+- Prices are treated as **unadjusted** for splits and dividends. No returns are computed from them since 2026-11-18, so the earlier split-adjustment rule (and `configs/splits.yaml`) was removed. If returns are ever computed again, NVDA's and GOOG's splits inside the 2011–2026 window must be adjusted for first.
 
 ### 1.2 iVolatility — Raw IV (individual option contracts)
 
@@ -79,11 +79,8 @@ End-of-day records, one row per listed option contract per trading day, as deliv
 
 | Dataset | Path | Contents | Class |
 |---|---|---|---|
-| Session closes | `data/derived/session_close.parquet` | `ticker`, `date` (ET), split-adjusted `close` | **Restricted** (lossless subset of raw prices) |
-| Log returns | `data/derived/log_returns.parquet` | `ticker`, `date`, `log_return` | **Restricted** (prices are recoverable from returns plus one price) |
 | Calibration grid | `data/derived/calibration_grid.parquet` | Selected `(symbol, date, strike, expiration, call_put, iv)` rows | **Restricted** (subset of raw iVolatility data) |
 | GOOG test prices | `data/derived/goog_test_prices.parquet` | Per-contract model prices, SEs, intervals, and diagnostics for the `SPEC.md` §8.5 test, keyed by contract | **Restricted** (with the identifiers, shows which contracts traded and how each compares with its quote) |
-| Estimation summary | `results/estimates.json` | Per-ticker sample size and realised volatility; cross-asset correlation matrix (entries in [−1, 1], symmetric, unit diagonal, positive semi-definite) | **Internal** |
 | Calibration summary | `results/calibration.json`, `results/calibration_goog/calibration.json` | Per-ticker fitted Heston parameters, grid size, RMS IV residual, convergence status per starting point | **Internal** |
 | Market test summary | `results/goog_market_test.json` | Aggregate accuracy metrics, with every group `n >= 5` | **Internal** |
 | Validation reports | `results/validation_*.json` | Rule names, violation counts, row indices, aggregate counts | **Internal** |
@@ -151,7 +148,7 @@ A single Cboe delayed quote was stored in the repository earlier. Cboe's website
 | Path | Contents | Class | Agent read | Agent write | Git |
 |---|---|---|---|---|---|
 | `data/**` | Raw Massive and iVolatility files; all derived Restricted datasets | Restricted | **Headers and structure only** (column names, types, row counts) — never values | **No** | Ignored |
-| `results/estimates.json`, `results/calibration.json` | Aggregated estimates and fitted parameters | Internal | Yes | No (written only by pipeline scripts) | Committed |
+| `results/calibration*.json`, `results/calibration_goog/calibration.json` | Fitted parameters and aggregate fit statistics | Internal | Yes | No (written only by pipeline scripts) | Committed |
 | `results/**` (other) | Run logs, summary CSVs, figures | Internal | Yes | No (written only by pipeline scripts) | Committed (small files only) |
 | `tests/fixtures/**` | Synthetic fixtures | Public | Yes | Yes | Committed |
 | `data/derived/**` | Derived Restricted files written by reviewed scripts (§3.3) | Restricted | **No values** | **No** (written only by reviewed scripts) | Ignored |
@@ -229,7 +226,7 @@ Granted by the owner on 2026-11-08.
 | Report and slides | Yes | Yes | **No** | **No** |
 | Owner's laptop, under `data/` | Yes | Yes | Yes | No (credentials stay outside the repo) |
 
-The D2L submission is built from Public and Internal material only. A reviewer reproduces the pipeline on the synthetic fixtures (§1.4); the market-calibrated result is reported through `results/estimates.json` and `results/calibration.json`.
+The D2L submission is built from Public and Internal material only. A reviewer reproduces the pipeline on the synthetic fixtures (§1.4); the market-calibrated result is reported through `results/calibration_goog/calibration.json` and `results/goog_market_test.json`.
 
 ### 4.3 Verbatim rules for prompts and logs
 
@@ -237,7 +234,7 @@ The D2L submission is built from Public and Internal material only. A reviewer r
 - **Never verbatim:** any row of a Restricted dataset; any price, quote, or IV tied to a specific ticker and timestamp or contract; DataFrame previews (`head`, `tail`, `sample`, printing a DataFrame); stack traces or pandas error messages that echo row contents.
 - **Debugging rule:** to get AI help with a data bug, reproduce it on a synthetic fixture first and share that. If it only occurs on real data, describe it by file name, row index, column, and rule name.
 - **Logging rule:** pipeline code catches exceptions raised while reading Restricted data and re-raises a message containing only the file name, row index, and rule name.
-- **Figures:** may show Internal quantities (correlation heatmaps, fitted parameters, convergence plots, price estimates with error bars, synthetic-fixture surfaces). No figure may plot Restricted values — market prices, market IV points, or per-contract fit residuals — since any of these lets the licensed data be reconstructed. Fit quality on market data is reported as aggregate statistics.
+- **Figures:** may show Internal quantities (fitted parameters, convergence plots, price estimates with error bars, synthetic-fixture surfaces). No figure may plot Restricted values — market prices, market IV points, or per-contract fit residuals — since any of these lets the licensed data be reconstructed. Fit quality on market data is reported as aggregate statistics.
 
 ### 4.4 Stop conditions
 

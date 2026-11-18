@@ -874,3 +874,24 @@ G2 therefore has one requirement, V-04, recorded as failed. The author has accep
 - The table format and the pass rules are unchanged.
 
 **Also corrected:** Entry 33's pass count; the 2026-11-18 rerun showed 20 PASS, 2 FAIL.
+
+### Entry 36 — 2026-11-18 — Correlation work removed
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Remove the correlation work. No correlated basket is priced, so correlations are not needed.
+
+**What the AI did:**
+- **Deleted:**
+  - `python/hestonpricer/correlation.py`, `scripts/estimate_correlations.py`, `configs/splits.yaml` and `results/estimates.json`;
+  - the four correlation unit tests: correlation matrix, split adjustment, large minute moves, and the fixture correlations.
+- **Kept:**
+  - `test_perfect_correlation_runs`, which tests Heston's own rho at ±1;
+  - the minute-bar fixture, which the V-00 validation tests use.
+- **`DATA_CONTRACT.md` v0.10:** the Massive bars are now described as used for validation only. The split-adjustment rule and the derived `session_close`, `log_returns` and `estimates.json` rows were removed, and the reporting sentence now points at the GOOG outputs.
+- **`SPEC.md`:** header and §12.3 updated, plus a §22 row.
+- **Other files:** `run.py` contract-version constant, its test, and HANDOVER.
+
+**Checks:** ruff clean; 61 fast tests pass; smoke OK (see the commit).
+
+**Not done:** `data/derived/session_close.parquet` and `log_returns.parquet` may still exist on the author's disk; agents may not touch `data/`. Old change-log rows and AI_USE entries that mention correlations are history and were kept. Nothing was pushed.

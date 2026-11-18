@@ -42,7 +42,7 @@ from hestonpricer.simulate import simulate
 from hestonpricer.tree import crr_price
 
 SPEC_VERSION = "1.13"
-DATA_CONTRACT_VERSION = "0.9"
+DATA_CONTRACT_VERSION = "0.10"
 RAW_IV_MARKET = ROOT / "data" / "nvda_amd_intc_IV_Oct13-15.csv"
 RAW_IV_SYNTHETIC = ROOT / "tests" / "fixtures" / "synthetic_raw_iv.csv"
 GRID_FILE = ROOT / "data" / "derived" / "calibration_grid.parquet"

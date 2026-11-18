@@ -5,7 +5,7 @@
 | **Project** | ENSF 620 Fall 2026 final project (individual) |
 | **Owner** | Jared Crebo |
 | **Spec version** | 1.13 (2026-11-15) |
-| **Companion document** | `DATA_CONTRACT.md` v0.9, whose §3.3 matches §15 of this spec |
+| **Companion document** | `DATA_CONTRACT.md` v0.10, whose §3.3 matches §15 of this spec |
 | **Audience** | Engineers and AI coding agents writing implementation code and automated tests |
 
 The key words MUST, MUST NOT, SHOULD, and MAY are normative. Requirements are binding until changed through §1.3.
@@ -671,7 +671,7 @@ A run with `reported: true` MUST refuse a dirty working tree (`E_DIRTY_TREE`). C
 {
   "schema_version": 1,
   "spec_version": "1.13",
-  "data_contract_version": "0.9",
+  "data_contract_version": "0.10",
   "run_id": "core_goog_reference-1a2b3c4d",
   "git_commit": "<full hash>",
   "git_dirty": false,
@@ -1188,3 +1188,4 @@ Rows before 1.13 describe earlier scopes, including the AMD, NVDA, and INTC work
 | 1.13 | 2026-11-15 | Header and §12.3 refer to `DATA_CONTRACT.md` v0.9, whose §3.3 now matches §15: any agent may run any committed script on licensed data once the owner has reviewed it | Owner instruction. Documentation only; no pass rule, tolerance, seed, filter, or default changed. The spec version stays 1.13 | Not applicable: no result is affected |
 | 1.13 | 2026-11-16 | Primary question (§2.1) reworded: accuracy on contracts within and outside the calibrated sample | Owner instruction. The rest of the spec, including the test population, filters, pass rules, seeds, and the 0.01 limit, is unchanged | Yes, as for the first 1.13 row: the GOOG fit's RMS and the v1.12 tree-shortcut aggregates had been viewed. No LSMC test price had been computed |
 | 1.13 | 2026-11-16 | §2.3: removed "C++ or other compiled pricing kernels" and "Contracts on more than one asset" from the out-of-scope list | Owner: the spec nowhere mentions using C++ code, so listing it as out of scope is redundant. The multi-asset line was removed in the same edit; §10.3 still requires one asset. No pass rule, tolerance, seed, filter, or default changed | Not applicable: no result is affected |
+| 1.13 | 2026-11-18 | Correlation work removed: `python/hestonpricer/correlation.py`, `scripts/estimate_correlations.py`, `configs/splits.yaml`, `results/estimates.json`, and their tests; header and §12.3 cite `DATA_CONTRACT.md` v0.10, which drops the correlation outputs | Owner instruction: no correlated-basket contract is priced, so correlations are not needed. Already out of scope since the first 1.13 row. No pass rule, tolerance, seed, filter, or default changed | Not applicable: no reported result used correlations |
