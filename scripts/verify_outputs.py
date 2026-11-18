@@ -187,7 +187,7 @@ def print_report(table, code_errors, output):
     else:
         print("Unit tests of the code: all passed (no code errors).")
     if any(row[1] == "FAIL" for row in table):
-        print("Exit code 3 means at least one check recorded FAIL (SPEC.md 14.1), not that the code crashed.")
+        print("Exit code 3 means at least one check recorded FAIL (SPEC.md 14.1).")
 
 
 def combine(rows):

@@ -10,5 +10,5 @@ snapshot_date: 2015-02-02
 market_inputs: configs/market_inputs_goog_2015.yaml
 params_source: configs/published_params.yaml
 contract: {strike: 1.00237707, maturity: 0.9507, n_exercise: 240}
-simulation: {n_paths: 100000, n_substeps: 1, basis_degree: 3}
+simulation: {n_paths: 100000, n_substeps: 1, basis_degree: 2}
 seeds: [620001, 620002, 620003, 620004, 620005]
