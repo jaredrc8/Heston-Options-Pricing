@@ -860,3 +860,17 @@ Nothing was pushed.
 G2 therefore has one requirement, V-04, recorded as failed. The author has accepted this.
 
 **Not done:** nothing was pushed.
+
+### Entry 35 — 2026-11-18 — Readable verification report
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** `verify_outputs.py` printed pytest tracebacks for V-04 and V-13, which looked like broken code. The output should say what each test was and its result.
+
+**What the AI did:**
+- `verify_outputs.py` now hides pytest's output (`--tb=no`) and prints a report. For each check it gives a plain description, then Result, Rule, and a Note for the reviewed failures V-04 and V-13. A final line explains that exit code 3 means a check recorded FAIL, not a crash.
+- `--show-pytest` restores the raw pytest output for debugging.
+- **Defect found and fixed:** failed unit tests (tests that are not numbered checks) used to be ignored silently. They are now listed as CODE ERRORS, and the script exits with code 1.
+- The table format and the pass rules are unchanged.
+
+**Also corrected:** Entry 33's pass count; the 2026-11-18 rerun showed 20 PASS, 2 FAIL.
