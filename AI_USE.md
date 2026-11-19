@@ -895,3 +895,31 @@ G2 therefore has one requirement, V-04, recorded as failed. The author has accep
 **Checks:** ruff clean; 61 fast tests pass; smoke OK (see the commit).
 
 **Not done:** `data/derived/session_close.parquet` and `log_returns.parquet` may still exist on the author's disk; agents may not touch `data/`. Old change-log rows and AI_USE entries that mention correlations are history and were kept. Nothing was pushed.
+
+### Entry 37 — 2026-11-18 — Config-driven market comparison and grid pricing (step 1)
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Fewer, more robust scripts. `run.py` should price any config, and one script should compare any config with its market data, instead of separate scripts for GOOG 2015 and GOOG 2026. The old scripts are to be removed once the new ones reproduce their results (plan approved).
+
+**What the AI did:**
+- **New `python/hestonpricer/market.py`.** It holds the pricing and scoring functions, moved unchanged from `test_goog_market.py`. Exercise is now a parameter: `daily`, or a fixed number of dates with about one sub-step per trading day. It adds loaders for a published price table and for a strike × maturity grid.
+- **New `scripts/market_test.py --config`.** It is driven entirely by the config:
+  - a `table` source: the Public published prices, 2015;
+  - an `ivolatility` source: licensed quotes split into in-sample and out-of-sample, 2026;
+  - any list of parameter sets.
+
+  It enforces the data boundary by source: if an input is under `data/`, the governance gate must be open and per-contract output is allowed only under `data/derived/`.
+- **New `run.py grid`.** It prices any strike × maturity grid with behaviour checks, replacing `test_goog_out_of_range.py`.
+- **Configs:** `market_test_goog_2015.yaml`, `market_test_goog_2026_10_13.yaml` and `grid_goog_out_of_range.yaml`.
+
+**Verification so far:**
+- The new commands reproduce the committed `market_comparison.json`, `market_comparison_2015.csv` and `goog_out_of_range.json` exactly. They ran with several workers, so this also shows the worker count doesn't change results.
+- 66 fast tests pass, and smoke is OK.
+
+**Found:**
+- **Fragile run selection.** The old 2015 script chose the newest `goog_2015_contract` run by file time. An exploratory run (`goog_2015_contract-dcc11b41`: `reported: false`, basis degree 2, dirty tree) was newer, so the old script would have used it. The new script uses the newest run whose saved config is reported.
+- **Run committed by mistake.** That exploratory run was committed by the AI's `git add -A` in `779d666`. Commits now add named files only.
+- **Config out of step.** The author's commit `dcc11b4` set `basis_degree: 2` in the reported config `goog_2015_contract.yaml`, while the reported run used 3. That needs the author's decision.
+
+**Not done:** the old scripts are not removed yet. The 2026 rerun on licensed data waits for the author's review of `market_test.py`. Nothing was pushed.

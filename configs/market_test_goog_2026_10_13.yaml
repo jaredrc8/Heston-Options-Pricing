@@ -1,0 +1,21 @@
+# GOOG options of 2026-10-13, within and outside the calibrated sample (SPEC.md 2.1, 8.5).
+# Reads licensed data: run only where data/ is present, with the owner's review (contract 3.3).
+#   python scripts/market_test.py --config configs/market_test_goog_2026_10_13.yaml --workers 8
+# The first parameter set is the primary one: it gets T3 and the tree-shortcut diagnostic.
+schema_version: 1
+name: goog_2026_10_13
+source: ivolatility
+raw_file: data/goog_IV_Oct13.csv
+symbol: GOOG
+date: 2026-10-13
+market_inputs: configs/market_inputs_goog_oct13.yaml
+parameter_sets:
+  - {name: calibrated_2026_10_13, params_source: results/calibration_goog/calibration.json}
+  - {name: published_2015, params_source: configs/published_params.yaml, set: GOOG}
+exercise: daily
+n_paths: 100000
+seeds: [620001, 620002, 620003, 620004, 620005]
+bootstrap: 2000
+outputs:
+  summary: results/goog_market_test.json
+  per_contract: data/derived/goog_test_prices.parquet

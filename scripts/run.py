@@ -5,6 +5,7 @@ The pipeline commands (SPEC.md sections 11 and 12).
     python scripts/run.py price     --config configs/<name>.yaml [--results-root <dir>]
     python scripts/run.py sweep     --config configs/<name>.yaml [--results-root <dir>]
     python scripts/run.py compare   --config configs/<name>.yaml [--results-root <dir>]
+    python scripts/run.py grid      --config configs/<name>.yaml [--workers N] [--output <file>]
 
 Output never contains a market price, quote or row of Restricted data.
 """
@@ -32,6 +33,7 @@ import pandas as pd
 import scipy
 import yaml
 
+from hestonpricer import market as market_pricing
 from hestonpricer import surface
 from hestonpricer.analytic import heston_european
 from hestonpricer.calibrate import calibrate_with_ladder
@@ -52,7 +54,8 @@ V04_CALL_Q = 0.0026
 
 CONFIG_KEYS = {"schema_version", "run_name", "reported", "data_mode", "assets", "snapshot_date",
                "market_inputs", "params_source", "contract", "simulation", "seeds"}
-OPTIONAL_KEYS = {"raw_iv_file"}           # the licensed iVolatility file under data/ to calibrate to
+OPTIONAL_KEYS = {"raw_iv_file",           # the licensed iVolatility file under data/ to calibrate to
+                 "grid"}                  # strike x maturity cases for `run.py grid`
 CONTRACT_KEYS = {"strike", "maturity", "n_exercise", "kind"}
 SIMULATION_KEYS = {"n_paths", "n_substeps", "basis_degree"}
 
@@ -564,12 +567,71 @@ def run_compare(cfg, results_root, command):
 
 
 # ----------------------------------------------------------------------
+# grid
+# ----------------------------------------------------------------------
+
+def finite_or_none(value):
+    """JSON has no NaN, so a missing number is written as null."""
+    return None if isinstance(value, float) and not math.isfinite(value) else value
+
+
+def run_grid(cfg, workers, output):
+    """
+    Price a strike x maturity grid (config key `grid`) with the run's parameters, and check each
+    contract's behaviour (SPEC.md 8.6): the Monte Carlo European price agrees with the semi-analytic
+    price, and the Bermudan price is not below the European price or intrinsic value, each within 3 SE.
+    These are not market comparisons: no market prices are used.
+    """
+    if "grid" not in cfg:
+        raise HestonError("E_CONFIG", "a grid run needs a `grid` block with `cases`")
+    check_governance(cfg)
+    params, q, _, status = load_params(cfg, ROOT / "results")
+    r = load_rate(cfg)
+    kind = cfg["contract"]["kind"]
+    n_exercise = int(cfg["contract"]["n_exercise"])
+    n_paths = int(cfg["simulation"]["n_paths"])
+
+    contracts = market_pricing.grid_contracts(cfg["grid"]["cases"], kind)
+    priced = market_pricing.price_contracts(params, contracts, r, q, n_paths, cfg["seeds"], workers, n_exercise)
+
+    rows = []
+    for row in priced.itertuples():
+        analytic = heston_european(kind, 1.0, row.strike, row.tenor, params, r, q)
+        intrinsic = max(row.strike - 1.0, 0.0) if kind == "put" else max(1.0 - row.strike, 0.0)
+        rows.append({
+            "maturity": row.tenor, "strike_over_spot": row.strike,
+            "bermudan": row.V, "se_bermudan": row.se, "european_mc": row.european, "se_european": row.se_european,
+            "european_analytic": analytic, "premium": row.premium, "se_premium": row.se_premium,
+            "model_implied_vol": finite_or_none(bs_implied_vol(kind, analytic, 1.0, row.strike, row.tenor, r, q)),
+            "checks": {
+                "european_within_3_se": bool(abs(row.european - analytic) <= 3 * max(row.se_european, 1e-12)),
+                "bermudan_not_below_european": bool(row.premium >= -3 * max(row.se_premium, 1e-12)),
+                "bermudan_not_below_intrinsic": bool(row.V >= intrinsic - 3 * max(row.se, 1e-12)),
+            },
+        })
+
+    document = {"schema_version": 1, "data_mode": cfg["data_mode"], "asset": cfg["assets"][0],
+                "note": cfg["grid"].get("note", "Model behaviour on a strike x maturity grid; no market prices."),
+                "r": r, "q": q, "n_paths": n_paths, "seeds": cfg["seeds"], "n_exercise": n_exercise,
+                "units": "fraction_of_initial_spot", "rows": rows}
+    if status == "rejected":
+        document["rejected_fit"] = rejected_label(ROOT / "results", cfg)
+    output = Path(output or ROOT / cfg["grid"].get("output", f"results/{cfg['run_name']}.json"))
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(document, indent=2))
+    passed = sum(all(row["checks"].values()) for row in rows)
+    print(f"{passed} of {len(rows)} contracts pass all behaviour checks; written to {output}")
+
+
+# ----------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description="Heston LSMC pipeline")
-    parser.add_argument("command", choices=["calibrate", "price", "sweep", "compare"])
+    parser.add_argument("command", choices=["calibrate", "price", "sweep", "compare", "grid"])
     parser.add_argument("--config", required=True)
     parser.add_argument("--results-root", default=None)
+    parser.add_argument("--workers", type=int, default=1, help="grid only: price maturities in parallel")
+    parser.add_argument("--output", default=None, help="grid only: output file (default: the config's grid.output)")
     args = parser.parse_args()
 
     command = "python scripts/run.py " + " ".join(sys.argv[1:])
@@ -582,6 +644,8 @@ def main():
             price_run(cfg, args.config, results_root, command)
         elif args.command == "compare":
             run_compare(cfg, results_root, command)
+        elif args.command == "grid":
+            run_grid(cfg, args.workers, args.output)
         else:
             run_sweep(cfg, results_root, command)
     except HestonError as error:

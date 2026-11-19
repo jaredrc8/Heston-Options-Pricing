@@ -1,5 +1,6 @@
 """Unit tests for the edge cases, errors and data-boundary rules of SPEC.md sections 10 and 14."""
 
+import csv
 import importlib.util
 import json
 import math
@@ -16,6 +17,7 @@ from hestonpricer import surface
 from hestonpricer.analytic import heston_european
 from hestonpricer.calibrate import calibrate_with_ladder, is_stable
 from hestonpricer.errors import HestonError, InputError
+from hestonpricer import market
 from hestonpricer.lsmc import fit_policy, price_bermudan
 from hestonpricer.simulate import simulate
 from hestonpricer.tree import crr_price
@@ -232,19 +234,76 @@ def test_ladder_step_4_when_no_start_converges(monkeypatch):
     assert result["ladder_step"] == 4 and result["rejected_fit"] is None
 
 
-def test_market_comparison_uses_the_published_price(tmp_path):
-    result = tmp_path / "result.json"
-    result.write_text(json.dumps({"run_id": "test", "data_mode": "published",
-                                  "pooled": {"bermudan": 0.08, "se_bermudan": 0.001, "european_analytic": 0.08}}))
+def write_config(path, content):
+    path.write_text(yaml.safe_dump(content, sort_keys=False))
+    return path
+
+
+def table_config(tmp_path, table, highlight=None):
+    content = {"schema_version": 1, "name": "test_table", "source": "table", "table": str(table),
+               "citation": "test table", "symbol": "GOOG", "date": "2015-02-02", "spot": 523.755, "kind": "put",
+               "market_inputs": "configs/market_inputs_goog_2015.yaml",
+               "parameter_sets": [{"name": "published_2015", "params_source": "configs/published_params.yaml", "set": "GOOG"}],
+               "exercise": {"n_exercise": 50}, "n_paths": 2000, "seeds": [620001],
+               "outputs": {"summary": str(tmp_path / "summary.json"), "per_contract": str(tmp_path / "rows.csv")}}
+    if highlight:
+        content["highlight"] = highlight
+    return write_config(tmp_path / "table.yaml", content)
+
+
+def test_table_comparison_prices_every_published_contract(tmp_path):
     table = tmp_path / "table.csv"
-    table.write_text("maturity,strike,market_price\n0.9507,525.0,46.05\n0.9507,500.0,34.6\n")
-    subprocess.run([sys.executable, "scripts/compare_to_market.py", "--result", str(result), "--table", str(table),
-                    "--output-dir", str(tmp_path), "--n-paths", "2000"], cwd=ROOT, check=True, capture_output=True)
-    document = json.loads((tmp_path / "market_comparison.json").read_text())
+    table.write_text("maturity,strike,market_price\n0.9507,525.0,46.05\n0.2,500.0,9.0\n0.9507,500.0,34.6\n")
+    done = subprocess.run([sys.executable, "scripts/market_test.py", "--config", str(table_config(tmp_path, table))],
+                          cwd=ROOT, capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    document = json.loads((tmp_path / "summary.json").read_text())
+    assert document["all_puts"]["n"] == 3 and "official_contract" not in document
+    rows = list(csv.DictReader(open(tmp_path / "rows.csv")))
+    assert [float(r["maturity"]) for r in rows] == [0.2, 0.9507, 0.9507]       # grouped by maturity, table order within
+    assert [float(r["strike"]) for r in rows] == [500.0, 525.0, 500.0]
+
+
+def test_highlight_uses_the_newest_reported_run_not_an_exploratory_one(tmp_path):
+    table = tmp_path / "table.csv"
+    table.write_text("maturity,strike,market_price\n0.9507,525.0,46.05\n")
+    highlight = {"strike": 525.0, "maturity": 0.9507, "reference_run": "goog_2015_contract"}
+    done = subprocess.run([sys.executable, "scripts/market_test.py", "--config", str(table_config(tmp_path, table, highlight))],
+                          cwd=ROOT, capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    document = json.loads((tmp_path / "summary.json").read_text())
     official = document["official_contract"]
+    reported = [p for p in ROOT.glob("results/runs/goog_2015_contract-*/config.yaml")
+                if yaml.safe_load(p.read_text()).get("reported") is True]
+    assert document["run_id"] in {p.parent.name for p in reported}
     assert official["market_usd"] == 46.05
-    assert official["model_usd"] == pytest.approx(0.08 * 523.755)
-    assert document["all_puts"]["n"] == 2
+
+
+def test_licensed_source_keeps_per_contract_output_under_data_derived(tmp_path):
+    content = {"schema_version": 1, "name": "x", "source": "ivolatility", "raw_file": "data/not_a_real_file.csv",
+               "symbol": "GOOG", "date": "2026-10-13", "market_inputs": "configs/market_inputs_goog_oct13.yaml",
+               "parameter_sets": [{"name": "p", "params_source": "configs/published_params.yaml", "set": "GOOG"}],
+               "exercise": "daily", "n_paths": 1000, "seeds": [1], "bootstrap": 0,
+               "outputs": {"summary": str(tmp_path / "s.json"), "per_contract": str(tmp_path / "rows.parquet")}}
+    done = subprocess.run([sys.executable, "scripts/market_test.py", "--config", str(write_config(tmp_path / "c.yaml", content))],
+                          cwd=ROOT, capture_output=True, text=True)
+    assert done.returncode == 2 and "data/derived" in done.stderr
+    assert not (tmp_path / "rows.parquet").exists()
+
+
+def test_grid_command_checks_each_contract(tmp_path):
+    config = yaml.safe_load((ROOT / "configs" / "grid_goog_out_of_range.yaml").read_text())
+    config["simulation"]["n_paths"] = 2000
+    config["seeds"] = [1]
+    config["grid"]["cases"] = [{"maturity": 0.5, "strikes": [0.8, 1.0]}, {"maturity": 2.0, "strikes": [1.2]}]
+    path = write_config(tmp_path / "grid.yaml", config)
+    done = subprocess.run([sys.executable, "scripts/run.py", "grid", "--config", str(path), "--output", str(tmp_path / "g.json")],
+                          cwd=ROOT, capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    rows = json.loads((tmp_path / "g.json").read_text())["rows"]
+    assert [(r["maturity"], r["strike_over_spot"]) for r in rows] == [(0.5, 0.8), (0.5, 1.0), (2.0, 1.2)]
+    assert all(set(r["checks"]) == {"european_within_3_se", "bermudan_not_below_european", "bermudan_not_below_intrinsic"}
+               for r in rows)
 
 
 def test_market_inputs_can_set_a_published_assets_dividend(tmp_path):
@@ -473,20 +532,12 @@ def test_unreadable_raw_file_gives_a_sanitized_error(tmp_path):
     assert caught.value.__suppress_context__ or caught.value.code == "E_SCHEMA"
 
 
-# --- out-of-sample test script (SPEC.md 8.5) ---
-
-def load_market_test_module():
-    spec = importlib.util.spec_from_file_location("goog_market", ROOT / "scripts" / "test_goog_market.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
+# --- market comparison (SPEC.md 8.4, 8.5) ---
 
 def test_shared_paths_give_the_same_price_as_pricing_each_contract_alone():
-    market_test = load_market_test_module()
     tenor = 0.3
     contracts = [{"index": 0, "strike": 0.95, "kind": "put"}, {"index": 1, "strike": 1.08, "kind": "call"}]
-    rows = market_test.price_expiration((PARAMS, 0.04, 0.0026, tenor, contracts, 3000, [11, 12]))
+    rows = market.price_expiration((PARAMS, 0.04, 0.0026, tenor, contracts, 3000, [11, 12], "daily"))
     n_exercise = math.ceil(252 * tenor)
     for contract, row in zip(contracts, rows):
         alone = [price_bermudan([PARAMS], [[1.0]], {"r": 0.04, "q": [0.0026]},
@@ -499,13 +550,29 @@ def test_shared_paths_give_the_same_price_as_pricing_each_contract_alone():
         assert row["se"] == pytest.approx(np.sqrt(sum(a["se_bermudan"] ** 2 for a in alone)) / 2, rel=1e-12)
 
 
+def test_exercise_terms_daily_and_fixed():
+    assert market.exercise_terms(0.5, "daily") == (126, 1)
+    assert market.exercise_terms(0.9507, 50) == (50, 5)       # about one sub-step per trading day
+    assert market.exercise_terms(0.08, 50) == (50, 1)
+
+
+def test_published_table_becomes_a_contract_table():
+    table = pd.DataFrame({"maturity": [0.5, 1.0], "strike": [100.0, 120.0], "market_price": [5.0, 18.0]})
+    contracts = market.price_table_contracts(table, 100.0, "put")
+    assert list(contracts["strike"]) == [1.0, 1.2] and list(contracts["mid"]) == [0.05, 0.18]
+    assert list(contracts["expiration"]) == [0.5, 1.0] and (contracts["kind"] == "put").all()
+
+
 def test_market_test_output_is_aggregate_with_groups_of_five(tmp_path):
     out, prices = tmp_path / "out.json", tmp_path / "prices.parquet"
-    done = subprocess.run([sys.executable, "scripts/test_goog_market.py", "--raw-file", "tests/fixtures/synthetic_raw_iv.csv",
-                           "--calibration", "results/smoke/calibration.json",
-                           "--market-inputs", "tests/fixtures/synthetic_market_inputs.yaml", "--symbol", "SYN1",
-                           "--date", "2026-10-14", "--n-paths", "1000", "--seeds", "1", "--bootstrap", "20",
-                           "--output", str(out), "--prices-out", str(prices)], cwd=ROOT, capture_output=True, text=True)
+    content = {"schema_version": 1, "name": "syn", "source": "ivolatility", "raw_file": "tests/fixtures/synthetic_raw_iv.csv",
+               "symbol": "SYN1", "date": "2026-10-14", "market_inputs": "tests/fixtures/synthetic_market_inputs.yaml",
+               "parameter_sets": [{"name": "calibrated_2026_10_13", "params_source": "results/smoke/calibration.json"},
+                                  {"name": "published_2015", "params_source": "configs/published_params.yaml", "set": "GOOG"}],
+               "exercise": "daily", "n_paths": 1000, "seeds": [1], "bootstrap": 20,
+               "outputs": {"summary": str(out), "per_contract": str(prices)}}
+    done = subprocess.run([sys.executable, "scripts/market_test.py", "--config", str(write_config(tmp_path / "c.yaml", content))],
+                          cwd=ROOT, capture_output=True, text=True)
     assert done.returncode == 0, done.stderr
     document = json.loads(out.read_text())
     assert document["test_set"]["grid_overlap"] == 0
@@ -521,8 +588,7 @@ def test_market_test_output_is_aggregate_with_groups_of_five(tmp_path):
 
 
 def test_histogram_bins_are_merged_until_each_has_five():
-    market_test = load_market_test_module()
     values = np.array([0.1] * 7 + [0.3] * 2 + [0.6] * 4 + [3.0] * 1)
-    bins = market_test.histogram_min5(values, [0.0, 0.25, 0.5, 1.0, np.inf])
+    bins = market.histogram_min5(values, [0.0, 0.25, 0.5, 1.0, np.inf])
     assert all(b["n"] >= 5 for b in bins) and sum(b["n"] for b in bins) == len(values)
     assert all(math.isfinite(b["high"]) for b in bins)
