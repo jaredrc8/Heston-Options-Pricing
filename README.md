@@ -74,8 +74,13 @@ python scripts/run.py calibrate --config configs/calibrate_goog.yaml          # 
 python scripts/run.py price     --config configs/core_goog_reference.yaml     # reference contract
 python scripts/run.py sweep     --config configs/core_goog_reference.yaml     # convergence sweeps
 python scripts/run.py compare   --config configs/core_goog_reference.yaml     # numerical vs analytical
-python scripts/test_goog_market.py                                   # out-of-sample test, aggregates only
-python scripts/compare_to_market.py                                  # engine check: published Feb 2015 Google puts
+python scripts/market_test.py --config configs/market_test_goog_2026_10_13.yaml --workers 8
+                                                                     # accuracy within and outside the calibrated sample (licensed data)
+python scripts/run.py price --config configs/goog_2015_contract.yaml # the $525 Google put of 2015-02-02
+python scripts/market_test.py --config configs/market_test_goog_2015.yaml --workers 5
+                                                                     # engine check: the 401 published Feb 2015 Google puts
+python scripts/run.py grid --config configs/grid_goog_out_of_range.yaml --workers 4
+                                                                     # strikes and maturities outside the 2015 paper's range
 
 bash   scripts/smoke.sh                                              # reviewer smoke path
 python scripts/verify_outputs.py                                     # run checks, write the table
@@ -83,9 +88,108 @@ python scripts/make_figures.py                                       # figures a
 bash   scripts/check_no_data.sh                                      # data boundary check
 ```
 
-Runs marked `reported: true` refuse a working tree with uncommitted changes.
+Each analysis is described by a config, not by its own script. To compare another asset or date with the market, copy a `configs/market_test_*.yaml` and change:
+- `source`, with either `table` (a published price table) or `raw_file` (a licensed iVolatility file);
+- `symbol` and `date`;
+- `market_inputs`;
+- `parameter_sets`;
+- `outputs`.
+
+To price another strike × maturity grid, copy `configs/grid_goog_out_of_range.yaml` and edit `grid.cases`.
+
+Runs marked `reported: true` refuse a working tree with uncommitted changes. To try a contract without committing, set `reported: false` and pass `--results-root <folder>`.
 
 Exit codes: `0` success, `1` internal error, `2` input or schema failure, `3` a check or gate failed, `4` governance refusal.
+
+## Pricing your own contract
+
+These steps price one American put or call of your choice, using a Heston model calibrated to one day of the licensed iVolatility data in `data/`. They are exploratory: the runs are not reported, and their output is kept outside `results/`.
+
+### Inputs
+
+There are two Raw IV files. The minute bars in `data/` are for validation only and must not be used for pricing.
+
+| File | Tickers | Dates |
+|---|---|---|
+| `data/goog_IV_Oct13.csv` | GOOG | 2026-10-13 |
+| `data/nvda_amd_intc_IV_Oct13-15.csv` | NVDA, AMD, INTC | 2026-10-13 to 2026-10-15 |
+
+You can check a file's structure with `python scripts/inspect_schema.py <path>`. It prints structure only, never values.
+
+### Steps
+
+**1. Check the market inputs.** The `market_inputs` file must have the Treasury 1-year yield for the date and a dividend yield for the ticker:
+- `configs/market_inputs_goog_oct13.yaml` covers GOOG on 2026-10-13;
+- `configs/market_inputs.yaml` covers NVDA, AMD and INTC on 2026-10-13 to 2026-10-15.
+
+The run stops with `E_CONFIG` if the yield is missing. The governance gate in `configs/governance.yaml` must also be open (`market_use_authorized: true`).
+
+**2. Write a config.** Copy this, for example to `configs/explore_nvda_2026-10-13.yaml`, and change the asset, date, file and contract:
+
+```yaml
+schema_version: 1
+run_name: explore_nvda_2026-10-13
+reported: false
+data_mode: market
+assets: [NVDA]                                   # one ticker that is in the raw file
+snapshot_date: 2026-10-13                        # a date that is in the raw file
+market_inputs: configs/market_inputs.yaml
+params_source: results/calibration.json         # with --results-root only the file name is used
+raw_iv_file: data/nvda_amd_intc_IV_Oct13-15.csv
+contract: {strike: 1.05, maturity: 0.25, n_exercise: 63, kind: put}
+simulation: {n_paths: 100000, n_substeps: 4, basis_degree: 3}
+seeds: [620001, 620002, 620003, 620004, 620005]
+```
+
+The contract is given in the model's units:
+
+| Key | Meaning | Example |
+|---|---|---|
+| `strike` | Strike divided by the stock price on `snapshot_date` | a $230 strike with the stock at $219 is 230 / 219 ≈ 1.05 |
+| `maturity` | Time to expiry in years, as calendar days / 365 (the calibration uses the same convention) | 91 days is 0.25 |
+| `n_exercise` | Number of exercise dates. About `ceil(252 × maturity)` approximates daily American exercise; `1` gives the European price | 63 |
+| `kind` | `put` or `call` | `put` |
+
+Any key not listed in the example is rejected with `E_CONFIG`.
+
+**3. Calibrate.**
+
+```bash
+python scripts/run.py calibrate --config configs/explore_nvda_2026-10-13.yaml --results-root explore/nvda_2026-10-13
+```
+
+Always pass `--results-root` for an exploratory calibration. Without it, `calibrate` writes the Restricted calibration grid to `data/derived/calibration_grid.parquet`. That would overwrite the grid behind the reported GOOG results.
+
+The command prints the ladder step and the RMS implied-volatility error:
+
+| Ladder step | Meaning | Can you price? |
+|---|---|---|
+| 1 or 2 | Accepted: RMS ≤ 0.01 and stable | Yes |
+| 3 | No fit accepted. The lowest-RMS fit is used | Yes, but every result is labelled **REJECTED** |
+| 4 | Nothing usable | No |
+
+Also look at `params` in `explore/.../calibration.json`. A parameter sitting on its bound (for example `kappa` at 20) means the day's surface did not pin it down.
+
+**4. Price.** Use the same `--results-root`, so `price` reads the `calibration.json` that step 3 wrote:
+
+```bash
+python scripts/run.py price --config configs/explore_nvda_2026-10-13.yaml --results-root explore/nvda_2026-10-13
+```
+
+`result.json` in the run folder holds:
+- the American (Bermudan) price, its standard error and 95% interval;
+- the Monte Carlo European price;
+- the early-exercise premium.
+
+**5. Convert to dollars.** Prices are fractions of the stock price, so multiply by the stock price on `snapshot_date`. For example, 0.062 × $219 ≈ $13.58 per share, or about $1,358 for a 100-share contract.
+
+**6. Other dates and tickers.** Copy the config and change `run_name`, `assets`, `snapshot_date`, `raw_iv_file` and `market_inputs` as needed. Recompute `strike` from that day's stock price, and use a new `--results-root` for each date.
+
+### Limits
+
+- **What the number is:** a low-biased LSMC estimate with a Monte Carlo error. It is not a market price, a quote or a trading signal.
+- **Comparing with the market:** to compare model prices with the market's bid and ask, write a `configs/market_test_*.yaml` and run `scripts/market_test.py` (see Commands). Do not compare them by hand: per-contract market values may only be written under `data/derived/` (`DATA_CONTRACT.md`).
+- **Committing:** do not commit `explore/` output, or configs that name licensed rows or values.
 
 ## Outputs
 
@@ -131,7 +235,7 @@ They do **not** show that Heston is the right model for GOOG. The out-of-sample 
 ```text
 configs/    run configurations and owner-entered inputs
 python/     hestonpricer package, validate_raw.py, make_fixtures.py
-scripts/    run.py, test_goog_market.py, verify_outputs.py, make_figures.py, inspect_schema.py, smoke.sh, check_no_data.sh
+scripts/    run.py, market_test.py, verify_outputs.py, make_figures.py, inspect_schema.py, smoke.sh, check_no_data.sh
 tests/      verification checks, unit tests, reference implementation, fixtures
 results/    Internal outputs, written only by the pipeline scripts
 prototype/  earlier exploratory code, not part of the assessed workflow
