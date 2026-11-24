@@ -923,3 +923,37 @@ G2 therefore has one requirement, V-04, recorded as failed. The author has accep
 - **Config out of step.** The author's commit `dcc11b4` set `basis_degree: 2` in the reported config `goog_2015_contract.yaml`, while the reported run used 3. That needs the author's decision.
 
 **Not done:** the old scripts are not removed yet. The 2026 rerun on licensed data waits for the author's review of `market_test.py`. Nothing was pushed.
+
+### Entry 39 — 2026-11-21 — Presentation plan, slide charts and speaker notes
+
+**Tool:** Claude Code, Claude Opus 5.5.
+
+**Author's request:** Plan an 8-minute presentation for an audience with no finance background. Use one slide for the verification checks. Put the emphasis on the motivation and on the outcome of pricing with the 2015 published parameters versus the 2026 calibrated parameters. The author's draft deck (Google Drive) was read as input.
+
+**What the AI did:**
+- **Plan.** Wrote a 12-slide plan with timings:
+  - motivation;
+  - options basics;
+  - why volatility matters;
+  - the question and the two parameter sets;
+  - Monte Carlo;
+  - one verification slide;
+  - the 2015 in-sample engine check;
+  - the 2015 vs 2026 headline;
+  - a breakdown by maturity;
+  - takeaways.
+- **Slide charts.** A scratch script, kept outside the repo, made four slide charts:
+  - an illustrative payoff diagram;
+  - simulated Heston paths from the published 2015 parameters, with the stock starting at 1;
+  - a headline comparison of share inside the spread, median price error and median IV error;
+  - share inside the spread by maturity for the calibrated set.
+
+  The charts read only aggregates from `results/goog_market_test.json` and `results/market_comparison.json`. No 2026 market price, quote or per-contract value is plotted, and every chart that shows the 2026 set carries the REJECTED label.
+- **Speaker notes.** Drafted about 850 spoken words, with a table that traces each number to its result file.
+
+**Not done:**
+- The Google Slides deck was not edited. The slides and their claims are the author's.
+- Nothing was written to `results/` or committed.
+- "20 of 22 checks pass" should be confirmed by rerunning `verify_outputs.py` from a clean tree. The working copy shows V-17 (clean-clone smoke) as NOT_RUN.
+
+**Found:** HANDOVER §9 cites `AI_USE.md` Entry 38 (script consolidation), but no Entry 38 exists in this file. This entry is numbered 39 so the cited number stays free.

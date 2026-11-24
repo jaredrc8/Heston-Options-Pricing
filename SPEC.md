@@ -388,11 +388,11 @@ This check uses a put from the date and options the published parameters were fi
 | Exercise | `M = 240` daily dates with `n_sub = 1`, approximating American exercise |
 | Parameters | Published Google set, fitted to these prices |
 
-`scripts/compare_to_market.py` compares that contract and also prices all 401 published puts with `M = 50`, writing `results/market_comparison.json` and `results/market_comparison_2015.csv`. There is no pass rule. This comparison is **in-sample** and MUST be described that way. It shows that the engine reproduces a published fit; it does not answer §2.1.
+`scripts/market_test.py --config configs/market_test_goog_2015.yaml` compares that contract and also prices all 401 published puts with `M = 50`, writing `results/market_comparison.json` and `results/market_comparison_2015.csv`. There is no pass rule. This comparison is **in-sample** and MUST be described that way. It shows that the engine reproduces a published fit; it does not answer §2.1.
 
 ### 8.5 Out-of-sample test on 2026-10-13 (headline result)
 
-`scripts/test_goog_market.py` runs this test and writes `results/goog_market_test.json` (§12.6).
+`scripts/market_test.py --config configs/market_test_goog_2026_10_13.yaml` runs this test and writes `results/goog_market_test.json` (§12.6).
 
 **Parameter sets.**
 
@@ -433,7 +433,7 @@ There is no pass rule; the test is descriptive. Its stated limitations are:
 
 ### 8.6 Engine behaviour outside the source paper's range
 
-`scripts/test_goog_out_of_range.py` prices GOOG puts with the published parameters at maturities of 0.08, 3, and 5 years and strikes of 0.4 to 1.8 times spot, outside the paper's data (about 0.48 to 1.68 times spot, 0.20 to 1.97 years). It writes `results/goog_out_of_range.json`. No market prices exist for these contracts, so each result is checked only for behaviour: the Monte Carlo European price within 3 SE of the semi-analytic price, the Bermudan price not below the European price, and not below intrinsic value, each within 3 SE. These results are model extrapolation and MUST NOT be described as validated against a market.
+`scripts/run.py grid --config configs/grid_goog_out_of_range.yaml` prices GOOG puts with the published parameters at maturities of 0.08, 3, and 5 years and strikes of 0.4 to 1.8 times spot, outside the paper's data (about 0.48 to 1.68 times spot, 0.20 to 1.97 years). It writes `results/goog_out_of_range.json`. No market prices exist for these contracts, so each result is checked only for behaviour: the Monte Carlo European price within 3 SE of the semi-analytic price, the Bermudan price not below the European price, and not below intrinsic value, each within 3 SE. These results are model extrapolation and MUST NOT be described as validated against a market.
 
 ---
 
@@ -601,8 +601,8 @@ python scripts/run.py calibrate --config configs/<name>.yaml
 python scripts/run.py price     --config configs/<name>.yaml [--results-root <dir>]
 python scripts/run.py sweep     --config configs/<name>.yaml
 python scripts/run.py compare   --config configs/<name>.yaml
-python scripts/test_goog_market.py
-python scripts/compare_to_market.py
+python scripts/run.py grid      --config configs/<name>.yaml [--workers N] [--output <file>]
+python scripts/market_test.py   --config configs/market_test_<name>.yaml [--workers N]
 python scripts/verify_outputs.py
 python scripts/make_figures.py
 bash   scripts/smoke.sh
@@ -887,7 +887,7 @@ This is the plan for the figures in the report and the eight-minute presentation
 ├── configs/        governance.yaml, market_inputs*.yaml, published_params.yaml, one YAML per reported run
 ├── python/         validate_raw.py, make_fixtures.py, hestonpricer/
 ├── scripts/        run.py, verify_outputs.py, make_figures.py, inspect_schema.py, validate_goog_data.py,
-│                   test_goog_market.py, smoke.sh, check_no_data.sh
+│                   market_test.py, smoke.sh, check_no_data.sh
 ├── tests/          test_*.py, reference_values.yaml, reference_impl.py, fixtures/
 ├── results/        calibration_goog/, runs/, figures/, smoke/, goog_market_test.json,
 │                   validation_goog.json, evidence_map.csv, verification_table.csv
@@ -1189,3 +1189,4 @@ Rows before 1.13 describe earlier scopes, including the AMD, NVDA, and INTC work
 | 1.13 | 2026-11-16 | Primary question (§2.1) reworded: accuracy on contracts within and outside the calibrated sample | Owner instruction. The rest of the spec, including the test population, filters, pass rules, seeds, and the 0.01 limit, is unchanged | Yes, as for the first 1.13 row: the GOOG fit's RMS and the v1.12 tree-shortcut aggregates had been viewed. No LSMC test price had been computed |
 | 1.13 | 2026-11-16 | §2.3: removed "C++ or other compiled pricing kernels" and "Contracts on more than one asset" from the out-of-scope list | Owner: the spec nowhere mentions using C++ code, so listing it as out of scope is redundant. The multi-asset line was removed in the same edit; §10.3 still requires one asset. No pass rule, tolerance, seed, filter, or default changed | Not applicable: no result is affected |
 | 1.13 | 2026-11-18 | Correlation work removed: `python/hestonpricer/correlation.py`, `scripts/estimate_correlations.py`, `configs/splits.yaml`, `results/estimates.json`, and their tests; header and §12.3 cite `DATA_CONTRACT.md` v0.10, which drops the correlation outputs | Owner instruction: no correlated-basket contract is priced, so correlations are not needed. Already out of scope since the first 1.13 row. No pass rule, tolerance, seed, filter, or default changed | Not applicable: no reported result used correlations |
+| 1.13 | 2026-11-18 | Scripts consolidated: `scripts/market_test.py --config` replaces `compare_to_market.py` (§8.4) and `test_goog_market.py` (§8.5), and `run.py grid --config` replaces `test_goog_out_of_range.py` (§8.6); the cases live in `configs/market_test_goog_2015.yaml`, `market_test_goog_2026_10_13.yaml` and `grid_goog_out_of_range.yaml`; §11 and §13 updated | Owner instruction: fewer, config-driven scripts. The new commands reproduce the committed outputs exactly. No pass rule, tolerance, seed, filter, default, or output changed | Not applicable: outputs reproduced unchanged |

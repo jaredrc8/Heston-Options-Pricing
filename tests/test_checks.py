@@ -116,7 +116,7 @@ def test_V19_test_set_disjoint_from_grid(record_property):
         pytest.skip("no results/goog_market_test.json")
     test_set = json.loads(path.read_text()).get("test_set")
     if test_set is None or "grid_overlap" not in test_set:
-        pytest.skip("goog_market_test.json predates the v1.13 schema; rerun scripts/test_goog_market.py")
+        pytest.skip("goog_market_test.json predates the v1.13 schema; rerun scripts/market_test.py")
     record_property("measured", f"overlap {test_set['grid_overlap']}; test {test_set['n_test']}; "
                                 f"grid removed {test_set['n_in_grid_removed']}")
     record_property("threshold", "no option_symbol in both")

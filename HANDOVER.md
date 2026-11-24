@@ -43,7 +43,7 @@ These come from `SPEC.md` §15 (v1.13), `DATA_CONTRACT.md` §3–4, and standing
   - its output is aggregate and Internal, never a row, quote, IV point or per-contract result;
   - **the owner has reviewed the script, or the change to it, as committed.** A changed script needs a new review before its next run on licensed data.
 
-  So the rewritten `scripts/test_goog_market.py`, the new `scripts/validate_goog_data.py` and the changed `run.py calibrate` path each wait for owner review.
+  Reviewed and approved so far: `run.py`, `validate_goog_data.py` and `market_test.py` (2026-11-18). Any later change to one of them needs a new review before it runs on licensed data.
 - **Disclosure for `AI_USE.md` and the report.** Before v0.9, `estimate_correlations.py`, `compare_calibration_methods.py` and `test_goog_market.py` were run on licensed data at the owner's request. At the time, §3.3 named only three scripts. Contract §3.3 now records this.
 - **Per-contract test values** (prices, SEs, intervals) go only to `data/derived/goog_test_prices.parquet`, which is Restricted. Only aggregates with every group `n >= 5` may appear in `results/`.
 - **No absolute market prices** in `results/`, logs, figures or submitted files. The only exception is the published Google prices of 2015-02-02 (spec §3).
@@ -92,11 +92,12 @@ configs/   calibrate_goog.yaml            GOOG calibration, 2026-10-13 (raw_iv_f
            core_amd_production.yaml       out of scope since v1.13; kept as a record
 python/hestonpricer/   analytic, iv, tree, simulate, lsmc, surface, calibrate, errors
 python/validate_raw.py, python/make_fixtures.py
-scripts/   run.py (calibrate, price, sweep, compare), verify_outputs.py, make_figures.py, smoke.sh,
-           check_no_data.sh, inspect_schema.py, test_goog_market.py, compare_to_market.py,
-           test_goog_out_of_range.py
+scripts/   run.py (calibrate, price, sweep, compare, grid), market_test.py (any market comparison, from a config),
+           validate_goog_data.py, verify_outputs.py, make_figures.py, smoke.sh, check_no_data.sh, inspect_schema.py
            compare_calibration_methods.py   out of scope; kept as a record
-           validate_goog_data.py          REQUIRED by v1.13; does not exist yet
+python/hestonpricer/market.py   shared pricing and scoring for market_test.py and run.py grid
+configs/   market_test_goog_2015.yaml, market_test_goog_2026_10_13.yaml, grid_goog_out_of_range.yaml
+           (one config per comparison; a new asset or date needs a new config, not a new script)
 tests/     test_checks.py (one test per check), test_units.py, reference_impl.py,
            reference_values.yaml (V-01, V-06), fixtures/
 results/   Internal outputs only; written by scripts, never by hand
@@ -111,6 +112,8 @@ prototype/ the owner's earlier code and notebook, not part of the assessed work
 ---
 
 ## 5. What v1.13 requires that the code does not yet do
+
+**Note (2026-11-18):** this section is a work log. Since `AI_USE.md` Entries 37–38, `test_goog_market.py`, `compare_to_market.py` and `test_goog_out_of_range.py` are replaced by `market_test.py --config` and `run.py grid --config`, which reproduce their outputs exactly. Mentions of the old names below are history.
 
 The list is roughly in dependency order. Items marked **(data)** read licensed data, so the owner must review the committed script before an agent runs it (contract §3.3).
 
@@ -259,10 +262,10 @@ The committed `results/verification_table.csv` predates v1.12 and v1.13. Its las
 | V-16 | No licensed data or secrets in Git | PASS |
 | V-17 | Smoke test passes from a fresh clone | PASS; rerun |
 | V-18 | Every figure and table traces to a result file | Rerun after the new figures |
-| V-19 | Test set and calibration grid share no `option_symbol` | Implemented; reads `test_set.grid_overlap` once `test_goog_market.py` has run |
+| V-19 | Test set and calibration grid share no `option_symbol` | Implemented; reads `test_set.grid_overlap` from `market_test.py`'s output |
 | B1, B2 | Runtime: one pricing ≤ 30 s (about 0.85 s measured); full sweep ≤ 6 h (72 s measured) | PASS under v1.12 |
-| B3, B4 | Smoke ≤ 10 min from a clean clone; full test pricing ≤ 2 h | B3 passes via V-17; B4 is estimated well inside the budget and recorded by `test_goog_market.py` |
-| T1, T2, T3 | Precision targets for the reference price, its premium, and the test pricing | T1 and T2 met under set (a); T3 is computed by `test_goog_market.py` (rerun at 200,000 paths if missed) |
+| B3, B4 | Smoke ≤ 10 min from a clean clone; full test pricing ≤ 2 h | B3 passes via V-17; B4 is estimated well inside the budget and recorded by `market_test.py` |
+| T1, T2, T3 | Precision targets for the reference price, its premium, and the test pricing | T1 and T2 met under set (a); T3 is computed by `market_test.py` (rerun at 200,000 paths if missed) |
 
 **Gates (spec §17.1):**
 - **G1** (Nov 14) needs V-01 to V-12 and V-15, B1, B2, and the governance gate. All passed in the last table, before V-04's calls were added.
@@ -294,13 +297,9 @@ Spec changes are recorded in `SPEC.md` §22; the full detail is in `AI_USE.md`.
 
 ## 9. Git state at handover
 
-- **Committed locally on `main`, not pushed:**
-  - `a92753d`, the GOOG market test (spec v1.12, contract v0.8);
-  - the commit holding spec v1.13, contract v0.9, this handover, the GOOG calibration and the v1.12 market-test results.
-
-  `origin/main` is at `ebd457a`. Push only when the owner asks.
-- **Part A and the part B scripts** are committed locally; see `git log` and `AI_USE.md` Entry 31.
-- **Next:** once the owner has reviewed them, run `validate_goog_data.py`, then `test_goog_market.py --workers 8`, then `make_figures.py` and `verify_outputs.py` from a clean tree.
+- **Work is on `main`.** Run `git log --oneline origin/main..main` to see the local commits not yet pushed. Push only when the owner asks.
+- **Latest work:** `AI_USE.md` Entry 38, the script consolidation.
+- **Next:** the owner's report, slides and release (section 10).
 
 ---
 
@@ -324,7 +323,7 @@ Spec changes are recorded in `SPEC.md` §22; the full detail is in `AI_USE.md`.
    - AI use, including agent commits and pushes (OD-7) and the scripts run beyond contract §3.3's list.
 7. **Release:** `LICENSE`, the `v1.0-final` tag, and the Route A package verified as spec §13 describes.
 
-8. **The in-sample addition to `test_goog_market.py`.** For the reworded question, the script also prices the calibration grid with the same metrics, under `in_sample_results` and `in_sample_set`. §8.5 and §12.6 don't describe this yet; the owner may want to add it through a §22 row.
+8. **The in-sample addition to the 2026 market test (`market_test.py`).** For the reworded question, the script also prices the calibration grid with the same metrics, under `in_sample_results` and `in_sample_set`. §8.5 and §12.6 don't describe this yet; the owner may want to add it through a §22 row.
 
 **Decided 2026-11-16:**
 - **V-04 is accepted as a recorded FAIL**, disclosed as LSMC low bias, with no engine or rule change.
@@ -341,10 +340,15 @@ PYTHON=$PY bash scripts/smoke.sh                     # reviewer smoke path
 $PY -m pytest -m fast -q                             # fast tests
 .venv/bin/ruff check python scripts tests            # lint
 $PY scripts/verify_outputs.py                        # all checks, writes results/verification_table.csv
-$PY scripts/run.py calibrate --config configs/calibrate_goog.yaml --results-root results/calibration_goog
-$PY scripts/run.py price --config configs/core_goog_reference.yaml     # once the config exists
-$PY scripts/test_goog_market.py                      # headline test, aggregates only (after rewrite and review)
-$PY scripts/compare_to_market.py                     # §8.4 Feb 2015 engine check
+# 2026: GOOG on 2026-10-13 (the first three need data/)
+$PY scripts/validate_goog_data.py                                                    # V-00
+$PY scripts/run.py calibrate --config configs/calibrate_goog.yaml
+$PY scripts/market_test.py --config configs/market_test_goog_2026_10_13.yaml --workers 8   # headline, about 8 min
+$PY scripts/run.py price   --config configs/core_goog_reference.yaml                 # reference put (also sweep, compare)
+# 2015: published Google parameters (Public files only)
+$PY scripts/run.py price --config configs/goog_2015_contract.yaml                    # the $525 put
+$PY scripts/market_test.py --config configs/market_test_goog_2015.yaml --workers 5   # all 401 published puts
+$PY scripts/run.py grid --config configs/grid_goog_out_of_range.yaml --workers 4     # outside the paper's range
 $PY scripts/make_figures.py                          # figures and evidence map
 bash scripts/check_no_data.sh                        # run before every push
 ```
