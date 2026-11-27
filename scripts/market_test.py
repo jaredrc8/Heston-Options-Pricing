@@ -2,7 +2,7 @@
 Compare Heston LSMC prices with market prices, for any asset, date and parameter sets
 (SPEC.md 8.4 and 8.5). Everything about the case lives in the config.
 
-    python scripts/market_test.py --config configs/market_test_<name>.yaml [--workers 8]
+    python scripts/market_test.py --config configs/<ticker>/market_test.yaml [--workers 8]
         [--n-paths N] [--seeds S ...] [--bootstrap B] [--output PATH] [--per-contract-output PATH]
 
 Two kinds of market data (config key `source`):

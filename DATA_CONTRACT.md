@@ -81,9 +81,9 @@ End-of-day records, one row per listed option contract per trading day, as deliv
 |---|---|---|---|
 | Calibration grid | `data/derived/calibration_grid.parquet` | Selected `(symbol, date, strike, expiration, call_put, iv)` rows | **Restricted** (subset of raw iVolatility data) |
 | GOOG test prices | `data/derived/goog_test_prices.parquet` | Per-contract model prices, SEs, intervals, and diagnostics for the `SPEC.md` §8.5 test, keyed by contract | **Restricted** (with the identifiers, shows which contracts traded and how each compares with its quote) |
-| Calibration summary | `results/calibration.json`, `results/calibration_goog/calibration.json` | Per-ticker fitted Heston parameters, grid size, RMS IV residual, convergence status per starting point | **Internal** |
-| Market test summary | `results/goog_market_test.json` | Aggregate accuracy metrics, with every group `n >= 5` | **Internal** |
-| Validation reports | `results/validation_*.json` | Rule names, violation counts, row indices, aggregate counts | **Internal** |
+| Calibration summary | `results/<ticker>/calibration.json` | Per-ticker fitted Heston parameters, grid size, RMS IV residual, convergence status per starting point | **Internal** |
+| Market test summary | `results/<ticker>/market_test.json` | Aggregate accuracy metrics, with every group `n >= 5` | **Internal** |
+| Validation reports | `results/validation/*.json` | Rule names, violation counts, row indices, aggregate counts | **Internal** |
 
 Only aggregate, Internal artifacts like those above may leave the restricted boundary. Each is written by a reviewed script (§3.3).
 
@@ -133,7 +133,7 @@ Both datasets are fixed. They will never be updated, re-downloaded, extended, or
 
 ### 2.4 Published market reference
 
-`configs/google_2015_american_puts.csv` holds the 401 Google American put prices of 2015-02-02 published in Burkovska et al. (arXiv:1611.06452, Appendix A, Table 10), used in `SPEC.md` §8.4. They are **Public**, cited reference data and are not licensed data under §2.1 or §2.2.
+`configs/inputs/google_2015_american_puts.csv` holds the 401 Google American put prices of 2015-02-02 published in Burkovska et al. (arXiv:1611.06452, Appendix A, Table 10), used in `SPEC.md` §8.4. They are **Public**, cited reference data and are not licensed data under §2.1 or §2.2.
 
 A single Cboe delayed quote was stored in the repository earlier. Cboe's website terms require written consent to store or publish its materials, so it was removed on 2026-11-08. It remains in earlier Git history.
 
@@ -148,7 +148,7 @@ A single Cboe delayed quote was stored in the repository earlier. Cboe's website
 | Path | Contents | Class | Agent read | Agent write | Git |
 |---|---|---|---|---|---|
 | `data/**` | Raw Massive and iVolatility files; all derived Restricted datasets | Restricted | **Headers and structure only** (column names, types, row counts) — never values | **No** | Ignored |
-| `results/calibration*.json`, `results/calibration_goog/calibration.json` | Fitted parameters and aggregate fit statistics | Internal | Yes | No (written only by pipeline scripts) | Committed |
+| `results/<ticker>/calibration.json` | Fitted parameters and aggregate fit statistics | Internal | Yes | No (written only by pipeline scripts) | Committed |
 | `results/**` (other) | Run logs, summary CSVs, figures | Internal | Yes | No (written only by pipeline scripts) | Committed (small files only) |
 | `tests/fixtures/**` | Synthetic fixtures | Public | Yes | Yes | Committed |
 | `data/derived/**` | Derived Restricted files written by reviewed scripts (§3.3) | Restricted | **No values** | **No** (written only by reviewed scripts) | Ignored |
@@ -226,7 +226,7 @@ Granted by the owner on 2026-11-08.
 | Report and slides | Yes | Yes | **No** | **No** |
 | Owner's laptop, under `data/` | Yes | Yes | Yes | No (credentials stay outside the repo) |
 
-The D2L submission is built from Public and Internal material only. A reviewer reproduces the pipeline on the synthetic fixtures (§1.4); the market-calibrated result is reported through `results/calibration_goog/calibration.json` and `results/goog_market_test.json`.
+The D2L submission is built from Public and Internal material only. A reviewer reproduces the pipeline on the synthetic fixtures (§1.4); the market-calibrated result is reported through `results/goog/calibration.json` and `results/goog/market_test.json`.
 
 ### 4.3 Verbatim rules for prompts and logs
 

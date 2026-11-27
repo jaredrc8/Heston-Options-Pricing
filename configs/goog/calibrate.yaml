@@ -1,0 +1,14 @@
+# Market calibration of GOOG to its iVolatility surface of 2026-10-13 (SPEC.md 6).
+# Writes results/goog/calibration.json (params_source). Not a pricing run.
+schema_version: 1
+run_name: calibrate_goog
+reported: false
+data_mode: market
+assets: [GOOG]
+snapshot_date: 2026-10-13
+market_inputs: configs/inputs/market_inputs_goog_oct13.yaml
+params_source: results/goog/calibration.json
+raw_iv_file: data/goog_IV_Oct13.csv
+contract: {strike: 1.0, maturity: 1.0, n_exercise: 50}
+simulation: {n_paths: 100000, n_substeps: 4, basis_degree: 3}
+seeds: [620001, 620002, 620003, 620004, 620005]

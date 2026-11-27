@@ -1,0 +1,15 @@
+# Market calibration of AMD to its iVolatility surface of 2026-10-13 (SPEC.md 6). Not a pricing run.
+# Always pass --results-root, so the GOOG calibration grid under data/derived/ is not overwritten:
+#   python scripts/run.py calibrate --config configs/amd/calibrate.yaml --results-root results/amd
+schema_version: 1
+run_name: calibrate_amd
+reported: false
+data_mode: market
+assets: [AMD]
+snapshot_date: 2026-10-13
+market_inputs: configs/inputs/market_inputs.yaml
+params_source: results/amd/calibration.json
+raw_iv_file: data/nvda_amd_intc_IV_Oct13-15.csv
+contract: {strike: 1.0, maturity: 1.0, n_exercise: 50}
+simulation: {n_paths: 100000, n_substeps: 4, basis_degree: 3}
+seeds: [620001, 620002, 620003, 620004, 620005]

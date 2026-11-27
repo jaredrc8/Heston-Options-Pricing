@@ -38,7 +38,7 @@ TREE_STEPS = 500
 SNAPSHOT = "2026-10-14"
 TICKERS = ["AMD", "NVDA", "INTC"]
 RAW_FILE = ROOT / "data" / "nvda_amd_intc_IV_Oct13-15.csv"
-GOOGLE_TABLE = ROOT / "configs" / "google_2015_american_puts.csv"
+GOOGLE_TABLE = ROOT / "configs" / "inputs" / "google_2015_american_puts.csv"
 GOOGLE_SPOT = 523.755
 
 
@@ -112,7 +112,7 @@ def run_market():
     path = ROOT / "configs" / "governance.yaml"
     if not (path.exists() and yaml.safe_load(path.read_text()).get("market_use_authorized") is True):
         raise HestonError("E_GOV_UNAUTHORIZED", "market_use_authorized is not true")
-    inputs = yaml.safe_load((ROOT / "configs" / "market_inputs.yaml").read_text())
+    inputs = yaml.safe_load((ROOT / "configs" / "inputs" / "market_inputs.yaml").read_text())
     y = {str(k): v for k, v in inputs["treasury_1y_cmt_yield"].items()}[SNAPSHOT]
     r = 2.0 * np.log(1.0 + float(y) / 2.0)
     raw = surface.load_raw_iv(RAW_FILE)

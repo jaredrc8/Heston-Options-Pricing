@@ -166,7 +166,7 @@ def sanitized(function, path, tickers):
 def main():
     parser = argparse.ArgumentParser(description="Validate raw data against the data contract")
     parser.add_argument("--source", required=True, choices=["ivolatility", "massive", "fixtures"])
-    parser.add_argument("--report", default=None, help="report path (default results/validation_<source>.json)")
+    parser.add_argument("--report", default=None, help="report path (default results/validation/<source>.json)")
     args = parser.parse_args()
 
     try:
@@ -185,7 +185,7 @@ def main():
         print(str(error), file=sys.stderr)
         return EXIT_CODES[error.code]
 
-    report_path = Path(args.report) if args.report else ROOT / "results" / f"validation_{args.source}.json"
+    report_path = Path(args.report) if args.report else ROOT / "results" / "validation" / f"{args.source}.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps({"source": args.source, "files": files}, indent=2))
 

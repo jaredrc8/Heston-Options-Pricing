@@ -53,17 +53,17 @@ def reference_section(name):
     return section
 
 
-CALIBRATION_GOOG = ROOT / "results" / "calibration_goog" / "calibration.json"
+CALIBRATION_GOOG = ROOT / "results" / "goog" / "calibration.json"
 
 
 def goog_calibration_or_skip():
     """The 2026-10-13 GOOG calibration summary in the v1.13 schema (SPEC.md 12.5), or skip."""
     if not CALIBRATION_GOOG.exists():
-        pytest.skip("market mode only: no results/calibration_goog/calibration.json")
+        pytest.skip("market mode only: no results/goog/calibration.json")
     document = json.loads(CALIBRATION_GOOG.read_text())
     entry = document["assets"]["GOOG"]
     if "rejected_fit" not in entry:
-        pytest.skip("calibration_goog/calibration.json predates the v1.13 schema; rerun run.py calibrate")
+        pytest.skip("results/goog/calibration.json predates the v1.13 schema; rerun run.py calibrate")
     return document, entry
 
 
@@ -99,9 +99,9 @@ def run_price(results_root, config="configs/smoke.yaml"):
 @pytest.mark.slow
 def test_V00_raw_data_validation(record_property):
     """Reads the report written by scripts/validate_goog_data.py (SPEC.md 11)."""
-    path = ROOT / "results" / "validation_goog.json"
+    path = ROOT / "results" / "validation" / "goog.json"
     if not path.exists():
-        pytest.skip("no results/validation_goog.json: run scripts/validate_goog_data.py (owner-reviewed)")
+        pytest.skip("no results/validation/goog.json: run scripts/validate_goog_data.py (owner-reviewed)")
     report = json.loads(path.read_text())
     total = report["total_violations"]
     record_property("measured", f"{total} violations over {len(report['files'])} file group(s)")
@@ -111,12 +111,12 @@ def test_V00_raw_data_validation(record_property):
 
 @pytest.mark.slow
 def test_V19_test_set_disjoint_from_grid(record_property):
-    path = ROOT / "results" / "goog_market_test.json"
+    path = ROOT / "results" / "goog" / "market_test.json"
     if not path.exists():
-        pytest.skip("no results/goog_market_test.json")
+        pytest.skip("no results/goog/market_test.json")
     test_set = json.loads(path.read_text()).get("test_set")
     if test_set is None or "grid_overlap" not in test_set:
-        pytest.skip("goog_market_test.json predates the v1.13 schema; rerun scripts/market_test.py")
+        pytest.skip("results/goog/market_test.json predates the v1.13 schema; rerun scripts/market_test.py")
     record_property("measured", f"overlap {test_set['grid_overlap']}; test {test_set['n_test']}; "
                                 f"grid removed {test_set['n_in_grid_removed']}")
     record_property("threshold", "no option_symbol in both")
@@ -372,7 +372,7 @@ def test_V14bc_market_iv_conversion(record_property):
 @pytest.mark.slow
 def test_V15_output_completeness(record_property):
     reported = []
-    for path in sorted((ROOT / "configs").glob("*.yaml")):
+    for path in sorted((ROOT / "configs").rglob("*.yaml")):
         config = yaml.safe_load(path.read_text())
         if isinstance(config, dict) and config.get("reported") is True:
             reported.append(config["run_name"])

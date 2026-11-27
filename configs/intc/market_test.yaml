@@ -1,0 +1,19 @@
+# INTC options of 2026-10-13, within and outside the calibrated sample (same test as GOOG, SPEC.md 8.5).
+# Reads licensed data: run only where data/ is present, with the owner's review (contract 3.3).
+#   python scripts/market_test.py --config configs/intc/market_test.yaml --workers 8
+schema_version: 1
+name: intc_2026_10_13
+source: ivolatility
+raw_file: data/nvda_amd_intc_IV_Oct13-15.csv
+symbol: INTC
+date: 2026-10-13
+market_inputs: configs/inputs/market_inputs.yaml
+parameter_sets:
+  - {name: calibrated_2026_10_13, params_source: results/intc/calibration.json}
+exercise: daily
+n_paths: 200000                  # 100,000 missed T3 (SPEC.md 9.2)
+seeds: [620001, 620002, 620003, 620004, 620005]
+bootstrap: 2000
+outputs:
+  summary: results/intc/market_test.json
+  per_contract: data/derived/intc_test_prices.parquet

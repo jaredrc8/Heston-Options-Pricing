@@ -1,0 +1,14 @@
+# Reference contract under parameter set (a): the 2026-10-13 GOOG calibration (SPEC.md 4.1, 12.1).
+# The fit ended at ladder step 3, so these are the REJECTED fit's parameters (RMS IV residual above
+# the 0.01 limit), used and labelled as SPEC.md 6.7 step 3 requires. Used for verification and sweeps.
+schema_version: 1
+run_name: core_goog_reference
+reported: true
+data_mode: market
+assets: [GOOG]
+snapshot_date: 2026-10-13
+market_inputs: configs/inputs/market_inputs_goog_oct13.yaml
+params_source: results/goog/calibration.json
+contract: {strike: 1.0, maturity: 1.0, n_exercise: 50, kind: put}
+simulation: {n_paths: 100000, n_substeps: 4, basis_degree: 3}
+seeds: [620001, 620002, 620003, 620004, 620005]

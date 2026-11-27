@@ -56,9 +56,9 @@ METRICS = ("median_rel_price_error", "share_inside_spread", "share_mid_inside_mc
 
 DEFAULTS = {
     "raw_file": ROOT / "data" / "goog_IV_Oct13.csv",
-    "calibration": ROOT / "results" / "calibration_goog" / "calibration.json",
-    "market_inputs": ROOT / "configs" / "market_inputs_goog_oct13.yaml",
-    "output": ROOT / "results" / "goog_market_test.json",
+    "calibration": ROOT / "results" / "goog" / "calibration.json",
+    "market_inputs": ROOT / "configs" / "inputs" / "market_inputs_goog_oct13.yaml",
+    "output": ROOT / "results" / "goog" / "market_test.json",
     "prices_out": ROOT / "data" / "derived" / "goog_test_prices.parquet",
 }
 
@@ -88,7 +88,7 @@ def load_parameter_sets(calibration_file, symbol):
     else:
         raise HestonError("E_CALIB_FAILED", "ladder step 4: no calibrated parameter set (SPEC.md 6.7)")
 
-    published = yaml.safe_load((ROOT / "configs" / "published_params.yaml").read_text())["sets"]["GOOG"]
+    published = yaml.safe_load((ROOT / "configs" / "inputs" / "published_params.yaml").read_text())["sets"]["GOOG"]
     return {
         "calibrated_2026_10_13": fitted,
         "published_2015": {"params": {name: float(published[name]) for name in NAMES}, "status": "published",

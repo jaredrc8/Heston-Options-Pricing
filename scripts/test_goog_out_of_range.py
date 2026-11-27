@@ -40,12 +40,12 @@ def clean(value):
 
 def main():
     parser = argparse.ArgumentParser(description="GOOG puts outside the paper's range")
-    parser.add_argument("--output", default=str(ROOT / "results" / "goog_out_of_range.json"))
+    parser.add_argument("--output", default=str(ROOT / "results" / "goog" / "out_of_range.json"))
     args = parser.parse_args()
 
-    published = yaml.safe_load((ROOT / "configs" / "published_params.yaml").read_text())["sets"]["GOOG"]
+    published = yaml.safe_load((ROOT / "configs" / "inputs" / "published_params.yaml").read_text())["sets"]["GOOG"]
     params = {name: float(published[name]) for name in ("v0", "kappa", "theta", "xi", "rho")}
-    y = yaml.safe_load((ROOT / "configs" / "market_inputs_goog_2015.yaml").read_text())["treasury_1y_cmt_yield"]
+    y = yaml.safe_load((ROOT / "configs" / "inputs" / "market_inputs_goog_2015.yaml").read_text())["treasury_1y_cmt_yield"]
     r = 2.0 * math.log(1.0 + float(next(iter(y.values()))) / 2.0)
     q = 0.0
     market = {"r": r, "q": [q]}

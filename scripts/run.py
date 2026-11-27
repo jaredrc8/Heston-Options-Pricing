@@ -417,13 +417,13 @@ def run_calibrate(cfg, results_root, root_given):
                "file_name": raw_path.name, "row_count": int(len(raw))}]
 
     fallback_kappa = None
-    published = ROOT / "configs" / "published_params.yaml"
+    published = ROOT / "configs" / "inputs" / "published_params.yaml"
     if published.exists():
         fallback = yaml.safe_load(published.read_text()).get("kappa_fallback") or {}
         fallback_kappa = fallback.get("value")
 
     # Without --results-root, a market fit goes where params_source says (for GOOG,
-    # results/calibration_goog/), and synthetic output is kept apart in results/smoke/
+    # results/goog/), and synthetic output is kept apart in results/smoke/
     if not root_given:
         results_root = ROOT / Path(cfg["params_source"]).parent if market else ROOT / "results" / "smoke"
     results_root = Path(results_root)

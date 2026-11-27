@@ -1,0 +1,23 @@
+# Model against the 401 published Google American puts of 2015-02-02 (SPEC.md 8.4).
+# In-sample: the published parameters were fitted to these same prices.
+#   python scripts/market_test.py --config configs/goog/market_test_2015.yaml
+# The highlighted $525 put uses its own reported run: run.py price --config configs/goog/contract_2015.yaml
+schema_version: 1
+name: goog_2015
+source: table
+table: configs/inputs/google_2015_american_puts.csv
+citation: Burkovska, Glau, Mahlstedt and Wohlmuth, arXiv:1611.06452, Appendix A, Table 10
+symbol: GOOG
+date: 2015-02-02
+spot: 523.755
+kind: put
+market_inputs: configs/inputs/market_inputs_goog_2015.yaml
+parameter_sets:
+  - {name: published_2015, params_source: configs/inputs/published_params.yaml, set: GOOG}
+exercise: {n_exercise: 50}
+n_paths: 100000
+seeds: [620001]
+highlight: {strike: 525.0, maturity: 0.9507, reference_run: goog_2015_contract}
+outputs:
+  summary: results/goog/market_comparison_2015.json
+  per_contract: results/goog/market_comparison_2015.csv

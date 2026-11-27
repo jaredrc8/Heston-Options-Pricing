@@ -52,13 +52,13 @@ ln -sf ../../scripts/check_no_data.sh .git/hooks/pre-commit
 | Mode | Parameters come from | Who can run it |
 |---|---|---|
 | `synthetic` | `tests/fixtures/` (made-up parameters) | Anyone |
-| `published` | `configs/published_params.yaml` (Burkovska et al., arXiv:1611.06452, Table 8) | Anyone |
-| `market` | `results/calibration_goog/calibration.json` | Only where the licensed data is present, and only when authorized in `configs/governance.yaml` |
+| `published` | `configs/inputs/published_params.yaml` (Burkovska et al., arXiv:1611.06452, Table 8) | Anyone |
+| `market` | `results/goog/calibration.json` | Only where the licensed data is present, and only when authorized in `configs/governance.yaml` |
 
 Inputs entered by hand:
 
-- `configs/market_inputs_goog_oct13.yaml`: the Treasury yield and the GOOG dividend yield for 2026-10-13.
-- `configs/published_params.yaml`: the published parameters.
+- `configs/inputs/market_inputs_goog_oct13.yaml`: the Treasury yield and the GOOG dividend yield for 2026-10-13.
+- `configs/inputs/published_params.yaml`: the published parameters.
 - `tests/reference_values.yaml`: the benchmarks.
 
 `market` runs stop with `E_GOV_UNAUTHORIZED` unless `configs/governance.yaml` contains `market_use_authorized: true`.
@@ -70,16 +70,16 @@ python python/make_fixtures.py                                       # regenerat
 python python/validate_raw.py --source fixtures                      # check fixtures against the contract
 python scripts/inspect_schema.py <path-under-data>                   # structure only, never values
 
-python scripts/run.py calibrate --config configs/calibrate_goog.yaml          # GOOG, 2026-10-13
-python scripts/run.py price     --config configs/core_goog_reference.yaml     # reference contract
-python scripts/run.py sweep     --config configs/core_goog_reference.yaml     # convergence sweeps
-python scripts/run.py compare   --config configs/core_goog_reference.yaml     # numerical vs analytical
-python scripts/market_test.py --config configs/market_test_goog_2026_10_13.yaml --workers 8
+python scripts/run.py calibrate --config configs/goog/calibrate.yaml          # GOOG, 2026-10-13
+python scripts/run.py price     --config configs/goog/core_reference.yaml     # reference contract
+python scripts/run.py sweep     --config configs/goog/core_reference.yaml     # convergence sweeps
+python scripts/run.py compare   --config configs/goog/core_reference.yaml     # numerical vs analytical
+python scripts/market_test.py --config configs/goog/market_test.yaml --workers 8
                                                                      # accuracy within and outside the calibrated sample (licensed data)
-python scripts/run.py price --config configs/goog_2015_contract.yaml # the $525 Google put of 2015-02-02
-python scripts/market_test.py --config configs/market_test_goog_2015.yaml --workers 5
+python scripts/run.py price --config configs/goog/contract_2015.yaml # the $525 Google put of 2015-02-02
+python scripts/market_test.py --config configs/goog/market_test_2015.yaml --workers 5
                                                                      # engine check: the 401 published Feb 2015 Google puts
-python scripts/run.py grid --config configs/grid_goog_out_of_range.yaml --workers 4
+python scripts/run.py grid --config configs/goog/grid_out_of_range.yaml --workers 4
                                                                      # strikes and maturities outside the 2015 paper's range
 
 bash   scripts/smoke.sh                                              # reviewer smoke path
@@ -88,14 +88,14 @@ python scripts/make_figures.py                                       # figures a
 bash   scripts/check_no_data.sh                                      # data boundary check
 ```
 
-Each analysis is described by a config, not by its own script. To compare another asset or date with the market, copy a `configs/market_test_*.yaml` and change:
+Each analysis is described by a config, not by its own script. To compare another asset or date with the market, copy a `configs/<ticker>/market_test.yaml` and change:
 - `source`, with either `table` (a published price table) or `raw_file` (a licensed iVolatility file);
 - `symbol` and `date`;
 - `market_inputs`;
 - `parameter_sets`;
 - `outputs`.
 
-To price another strike × maturity grid, copy `configs/grid_goog_out_of_range.yaml` and edit `grid.cases`.
+To price another strike × maturity grid, copy `configs/goog/grid_out_of_range.yaml` and edit `grid.cases`.
 
 Runs marked `reported: true` refuse a working tree with uncommitted changes. To try a contract without committing, set `reported: false` and pass `--results-root <folder>`.
 
@@ -119,8 +119,8 @@ You can check a file's structure with `python scripts/inspect_schema.py <path>`.
 ### Steps
 
 **1. Check the market inputs.** The `market_inputs` file must have the Treasury 1-year yield for the date and a dividend yield for the ticker:
-- `configs/market_inputs_goog_oct13.yaml` covers GOOG on 2026-10-13;
-- `configs/market_inputs.yaml` covers NVDA, AMD and INTC on 2026-10-13 to 2026-10-15.
+- `configs/inputs/market_inputs_goog_oct13.yaml` covers GOOG on 2026-10-13;
+- `configs/inputs/market_inputs.yaml` covers NVDA, AMD and INTC on 2026-10-13 to 2026-10-15.
 
 The run stops with `E_CONFIG` if the yield is missing. The governance gate in `configs/governance.yaml` must also be open (`market_use_authorized: true`).
 
@@ -133,7 +133,7 @@ reported: false
 data_mode: market
 assets: [NVDA]                                   # one ticker that is in the raw file
 snapshot_date: 2026-10-13                        # a date that is in the raw file
-market_inputs: configs/market_inputs.yaml
+market_inputs: configs/inputs/market_inputs.yaml
 params_source: results/calibration.json         # with --results-root only the file name is used
 raw_iv_file: data/nvda_amd_intc_IV_Oct13-15.csv
 contract: {strike: 1.05, maturity: 0.25, n_exercise: 63, kind: put}
@@ -188,17 +188,17 @@ python scripts/run.py price --config configs/explore_nvda_2026-10-13.yaml --resu
 ### Limits
 
 - **What the number is:** a low-biased LSMC estimate with a Monte Carlo error. It is not a market price, a quote or a trading signal.
-- **Comparing with the market:** to compare model prices with the market's bid and ask, write a `configs/market_test_*.yaml` and run `scripts/market_test.py` (see Commands). Do not compare them by hand: per-contract market values may only be written under `data/derived/` (`DATA_CONTRACT.md`).
+- **Comparing with the market:** to compare model prices with the market's bid and ask, write a `configs/<ticker>/market_test.yaml` and run `scripts/market_test.py` (see Commands). Do not compare them by hand: per-contract market values may only be written under `data/derived/` (`DATA_CONTRACT.md`).
 - **Committing:** do not commit `explore/` output, or configs that name licensed rows or values.
 
 ## Outputs
 
 | Path | Contents |
 |---|---|
-| `results/goog_market_test.json` | Out-of-sample accuracy by parameter set, with breakdowns and intervals (aggregates only) |
-| `results/calibration_goog/calibration.json` | The 2026-10-13 fit, its ladder step, and aggregate fit statistics |
+| `results/goog/market_test.json` | Out-of-sample accuracy by parameter set, with breakdowns and intervals (aggregates only) |
+| `results/goog/calibration.json` | The 2026-10-13 fit, its ladder step, and aggregate fit statistics |
 | `results/runs/<run_id>/` | `config.yaml`, `manifest.json`, `result.json`, `run.log` |
-| `results/market_comparison.json` | Engine check against the published Google puts of 2015-02-02 (in-sample) |
+| `results/goog/market_comparison_2015.json` | Engine check against the published Google puts of 2015-02-02 (in-sample) |
 | `results/sweeps/` | Convergence sweep summaries |
 | `results/verification_table.csv` | PASS, FAIL or NOT_RUN for each check |
 | `results/evidence_map.csv` | Links each figure and table to its source |
@@ -222,7 +222,7 @@ They do **not** show that Heston is the right model for GOOG. The out-of-sample 
 - **Rate and dividend:** the rate is flat, ignoring the term structure, and the dividend yield is approximate.
 - **Model limits:** Heston has no jumps and no earnings effects.
 - **Exclusions:** in-the-money contracts are not tested.
-- **Calibration status:** the ladder step used is recorded in `results/calibration_goog/calibration.json`.
+- **Calibration status:** the ladder step used is recorded in `results/goog/calibration.json`.
 
 ## What a reviewer can and cannot reproduce
 

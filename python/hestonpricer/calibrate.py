@@ -152,7 +152,7 @@ def fit_acceptable(result):
 def calibrate_with_ladder(grid, r, q, fallback_kappa, cfg=None):
     """
     Apply the failure ladder (SPEC.md 6.7). fallback_kappa is the cited value from
-    configs/published_params.yaml, or None if the owner has not entered it.
+    configs/inputs/published_params.yaml, or None if the owner has not entered it.
 
     Step 1 or 2: the accepted fit, with ladder_step added.
     Step 3: "params" is None, and the lowest-RMS fit from steps 1 and 2 is kept under

@@ -242,8 +242,9 @@ def write_config(path, content):
 def table_config(tmp_path, table, highlight=None):
     content = {"schema_version": 1, "name": "test_table", "source": "table", "table": str(table),
                "citation": "test table", "symbol": "GOOG", "date": "2015-02-02", "spot": 523.755, "kind": "put",
-               "market_inputs": "configs/market_inputs_goog_2015.yaml",
-               "parameter_sets": [{"name": "published_2015", "params_source": "configs/published_params.yaml", "set": "GOOG"}],
+               "market_inputs": "configs/inputs/market_inputs_goog_2015.yaml",
+               "parameter_sets": [{"name": "published_2015", "params_source": "configs/inputs/published_params.yaml",
+                                   "set": "GOOG"}],
                "exercise": {"n_exercise": 50}, "n_paths": 2000, "seeds": [620001],
                "outputs": {"summary": str(tmp_path / "summary.json"), "per_contract": str(tmp_path / "rows.csv")}}
     if highlight:
@@ -281,8 +282,8 @@ def test_highlight_uses_the_newest_reported_run_not_an_exploratory_one(tmp_path)
 
 def test_licensed_source_keeps_per_contract_output_under_data_derived(tmp_path):
     content = {"schema_version": 1, "name": "x", "source": "ivolatility", "raw_file": "data/not_a_real_file.csv",
-               "symbol": "GOOG", "date": "2026-10-13", "market_inputs": "configs/market_inputs_goog_oct13.yaml",
-               "parameter_sets": [{"name": "p", "params_source": "configs/published_params.yaml", "set": "GOOG"}],
+               "symbol": "GOOG", "date": "2026-10-13", "market_inputs": "configs/inputs/market_inputs_goog_oct13.yaml",
+               "parameter_sets": [{"name": "p", "params_source": "configs/inputs/published_params.yaml", "set": "GOOG"}],
                "exercise": "daily", "n_paths": 1000, "seeds": [1], "bootstrap": 0,
                "outputs": {"summary": str(tmp_path / "s.json"), "per_contract": str(tmp_path / "rows.parquet")}}
     done = subprocess.run([sys.executable, "scripts/market_test.py", "--config", str(write_config(tmp_path / "c.yaml", content))],
@@ -292,7 +293,7 @@ def test_licensed_source_keeps_per_contract_output_under_data_derived(tmp_path):
 
 
 def test_grid_command_checks_each_contract(tmp_path):
-    config = yaml.safe_load((ROOT / "configs" / "grid_goog_out_of_range.yaml").read_text())
+    config = yaml.safe_load((ROOT / "configs" / "goog" / "grid_out_of_range.yaml").read_text())
     config["simulation"]["n_paths"] = 2000
     config["seeds"] = [1]
     config["grid"]["cases"] = [{"maturity": 0.5, "strikes": [0.8, 1.0]}, {"maturity": 2.0, "strikes": [1.2]}]
@@ -310,7 +311,7 @@ def test_market_inputs_can_set_a_published_assets_dividend(tmp_path):
     run = load_run_module()
     inputs = tmp_path / "inputs.yaml"
     inputs.write_text("dividend_yield:\n  GOOG: 0.0031\n")
-    config = {"data_mode": "published", "assets": ["GOOG"], "params_source": "configs/published_params.yaml",
+    config = {"data_mode": "published", "assets": ["GOOG"], "params_source": "configs/inputs/published_params.yaml",
               "market_inputs": str(inputs)}
     _, q, _, status = run.load_params(config, ROOT / "results")
     assert q == 0.0031 and status == "published"
@@ -323,7 +324,7 @@ def rejected_calibration(tmp_path, ladder_step=3):
     (tmp_path / "calibration.json").write_text(json.dumps(
         {"inputs": [], "assets": {"GOOG": {"ladder_step": ladder_step, "q": 0.0026, "params": None,
                                            "rejected_fit": rejected}}}))
-    return {"data_mode": "market", "assets": ["GOOG"], "params_source": "results/calibration_goog/calibration.json"}, fit
+    return {"data_mode": "market", "assets": ["GOOG"], "params_source": "results/goog/calibration.json"}, fit
 
 
 def test_rejected_fit_is_used_and_labelled(tmp_path):
@@ -355,9 +356,9 @@ def test_removed_config_keys_are_unknown(tmp_path):
 
 def test_reference_config_matches_the_spec():
     run = load_run_module()
-    cfg = run.load_config(ROOT / "configs" / "core_goog_reference.yaml")
+    cfg = run.load_config(ROOT / "configs" / "goog" / "core_reference.yaml")
     assert cfg["data_mode"] == "market" and cfg["snapshot_date"] == "2026-10-13" and cfg["reported"] is True
-    assert cfg["params_source"] == "results/calibration_goog/calibration.json"
+    assert cfg["params_source"] == "results/goog/calibration.json"
     assert cfg["contract"] == {"strike": 1.0, "maturity": 1.0, "n_exercise": 50, "kind": "put"}
 
 
@@ -568,7 +569,8 @@ def test_market_test_output_is_aggregate_with_groups_of_five(tmp_path):
     content = {"schema_version": 1, "name": "syn", "source": "ivolatility", "raw_file": "tests/fixtures/synthetic_raw_iv.csv",
                "symbol": "SYN1", "date": "2026-10-14", "market_inputs": "tests/fixtures/synthetic_market_inputs.yaml",
                "parameter_sets": [{"name": "calibrated_2026_10_13", "params_source": "results/smoke/calibration.json"},
-                                  {"name": "published_2015", "params_source": "configs/published_params.yaml", "set": "GOOG"}],
+                                  {"name": "published_2015", "params_source": "configs/inputs/published_params.yaml",
+                                   "set": "GOOG"}],
                "exercise": "daily", "n_paths": 1000, "seeds": [1], "bootstrap": 20,
                "outputs": {"summary": str(out), "per_contract": str(prices)}}
     done = subprocess.run([sys.executable, "scripts/market_test.py", "--config", str(write_config(tmp_path / "c.yaml", content))],

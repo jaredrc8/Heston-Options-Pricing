@@ -213,7 +213,7 @@ def seed_table(run_dir, results_root, out_dir):
 
 def market_fit_table(results_root, out_dir):
     """Aggregate fit quality only: no market data point is ever plotted (SPEC.md 12.8)."""
-    calibration_file = Path(results_root) / "calibration_goog" / "calibration.json"
+    calibration_file = Path(results_root) / "goog" / "calibration.json"
     if not calibration_file.exists():
         return []
     document = json.loads(calibration_file.read_text())
@@ -273,7 +273,7 @@ def render_surface(params, r, q, heading, footnote, path, tenor_low=0.10, tenor_
 
 def goog_surface_figure(results_root, out_dir):
     """VZ-1e: the 2026-10-13 GOOG model surface, labelled REJECTED at ladder step 3 (SPEC.md 12.9)."""
-    calibration_file = Path(results_root) / "calibration_goog" / "calibration.json"
+    calibration_file = Path(results_root) / "goog" / "calibration.json"
     if not calibration_file.exists():
         return []
     document = json.loads(calibration_file.read_text())
@@ -409,8 +409,8 @@ def comparison_figures(comparison_file, results_root, out_dir):
 
 def google_2015_figure(results_root, out_dir):
     """VZ-9: the model against all 401 published Google puts of 2015-02-02."""
-    table_file = Path(results_root) / "market_comparison_2015.csv"
-    summary_file = Path(results_root) / "market_comparison.json"
+    table_file = Path(results_root) / "goog" / "market_comparison_2015.csv"
+    summary_file = Path(results_root) / "goog" / "market_comparison_2015.json"
     if not table_file.exists() or not summary_file.exists():
         return []
     rows = pd.read_csv(table_file)
@@ -495,7 +495,7 @@ def plot_grouped(ax, document, key, metric, label_fn=None):
 
 
 def accuracy_figures(results_root, out_dir):
-    path = Path(results_root) / "goog_market_test.json"
+    path = Path(results_root) / "goog" / "market_test.json"
     if not path.exists():
         return []
     document = json.loads(path.read_text())

@@ -7,7 +7,7 @@ Checks data/goog_IV_Oct13.csv against every rule in DATA_CONTRACT.md section 1.2
 rows of the Massive minute bars against every rule in section 1.1. The rules themselves live in
 python/validate_raw.py, so both scripts apply the same contract.
 
-Writes results/validation_goog.json. Output holds only file and partition names, row counts,
+Writes results/validation/goog.json. Output holds only file and partition names, row counts,
 rule names, violation counts, row indices and aggregate counts. It never holds a data value.
 Bar row indices are positions in the whole month table, the convention of the contract's
 named exclusions.
@@ -26,7 +26,7 @@ from hestonpricer.errors import EXIT_CODES, HestonError
 
 IV_FILE = ROOT / "data" / "goog_IV_Oct13.csv"
 MINUTE_DIR = ROOT / "data" / "nvda_amd_intc_goog_minute" / "bars"
-REPORT = ROOT / "results" / "validation_goog.json"
+REPORT = ROOT / "results" / "validation" / "goog.json"
 SYMBOL = "GOOG"
 DATE = "2026-10-13"
 

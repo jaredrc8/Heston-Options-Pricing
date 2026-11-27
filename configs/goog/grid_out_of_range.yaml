@@ -1,0 +1,23 @@
+# GOOG puts outside the source paper's strike and maturity range, with the published 2015 parameters
+# (SPEC.md 8.6). No market prices exist here: each contract gets behaviour checks only.
+#   python scripts/run.py grid --config configs/goog/grid_out_of_range.yaml
+schema_version: 1
+run_name: grid_goog_out_of_range
+reported: false
+data_mode: published
+assets: [GOOG]
+snapshot_date: 2015-02-02
+market_inputs: configs/inputs/market_inputs_goog_2015.yaml
+params_source: configs/inputs/published_params.yaml
+contract: {strike: 1.0, maturity: 1.0, n_exercise: 50, kind: put}
+simulation: {n_paths: 100000, n_substeps: 4, basis_degree: 3}
+seeds: [620001, 620002, 620003, 620004, 620005]
+grid:
+  # Maturity -> strikes as fractions of spot. 0.9507 is inside the paper's range; its strikes are not.
+  cases:
+    - {maturity: 0.08, strikes: [0.4, 0.7, 1.0, 1.3, 1.8]}
+    - {maturity: 0.9507, strikes: [0.4, 1.8]}
+    - {maturity: 3.0, strikes: [0.4, 0.7, 1.0, 1.3, 1.8]}
+    - {maturity: 5.0, strikes: [0.4, 0.7, 1.0, 1.3, 1.8]}
+  output: results/goog/out_of_range.json
+  note: Model extrapolation with the published 2015 parameters; no market prices exist for these contracts.

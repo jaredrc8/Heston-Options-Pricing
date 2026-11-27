@@ -24,9 +24,9 @@ from hestonpricer.iv import american_implied_vol
 from hestonpricer.lsmc import evaluate_policy, fit_policy
 from hestonpricer.simulate import simulate
 
-TABLE = ROOT / "configs" / "google_2015_american_puts.csv"
-INPUTS = ROOT / "configs" / "market_inputs_goog_2015.yaml"
-PARAMS = ROOT / "configs" / "published_params.yaml"
+TABLE = ROOT / "configs" / "inputs" / "google_2015_american_puts.csv"
+INPUTS = ROOT / "configs" / "inputs" / "market_inputs_goog_2015.yaml"
+PARAMS = ROOT / "configs" / "inputs" / "published_params.yaml"
 SOURCE = "Burkovska, Glau, Mahlstedt and Wohlmuth, arXiv:1611.06452, Appendix A, Table 10"
 SPOT = 523.755
 OFFICIAL_MATURITY = 0.9507
@@ -64,7 +64,7 @@ def newest_result():
 def main():
     parser = argparse.ArgumentParser(description="Compare with the published Feb 2015 Google puts")
     parser.add_argument("--result", default=None)
-    parser.add_argument("--output-dir", default=str(ROOT / "results"))
+    parser.add_argument("--output-dir", default=str(ROOT / "results" / "goog"))
     parser.add_argument("--table", default=str(TABLE))
     parser.add_argument("--n-paths", type=int, default=100_000)
     args = parser.parse_args()
@@ -122,7 +122,7 @@ def main():
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "market_comparison.json").write_text(json.dumps(document, indent=2))
+    (output_dir / "market_comparison_2015.json").write_text(json.dumps(document, indent=2))
     with open(output_dir / "market_comparison_2015.csv", "w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=["maturity", "strike", "market_price", "model_price", "se"])
         writer.writeheader()
