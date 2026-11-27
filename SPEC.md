@@ -165,7 +165,7 @@ Every run MUST declare one mode.
 
 | Mode | Parameter source | Purpose | Licensed data read |
 |---|---|---|---|
-| `synthetic` | Known parameters and `tests/fixtures/` | Tests, CI, reviewer smoke path | None |
+| `synthetic` | Known parameters and `tests/fixtures/` | Tests, reviewer smoke path | None |
 | `published` | `configs/inputs/published_params.yaml` | Comparison model and known-answer checks | None |
 | `market` | `results/goog/calibration.json` | Calibrated result and out-of-sample test | Read only by committed scripts (§15) |
 
@@ -194,7 +194,7 @@ Schemas, classes, and paths are defined by `DATA_CONTRACT.md`; this spec does no
 | Massive minute bars for GOOG and GOOGL, November 2011 to July 2026 (`data/nvda_amd_intc_goog_minute/bars/`) | Raw-data validation only (§11) | Restricted. Not used by the reported analysis. **Pricing MUST NOT read Massive data** |
 | U.S. Treasury CMT yields | `r` | Public |
 | Published parameters and benchmarks | Comparison model and checks | Public |
-| Synthetic fixtures | Tests, CI, smoke path | Public |
+| Synthetic fixtures | Tests, smoke path | Public |
 
 Files for other tickers stay on disk under `DATA_CONTRACT.md`; no reported run reads them.
 
@@ -830,7 +830,7 @@ check_id, status, measured, threshold, run_id, commit, evaluated_at
 | Market fit quality | Aggregate statistics from `calibration.json`; no market data points plotted |
 | Reference-contract price, European value, and premium with uncertainty | `result.json` |
 | Seed robustness table | `per_seed` |
-| Test and CI logs, run manifests | CI and `results/runs/` |
+| Test logs, run manifests | `results/runs/` |
 
 Every principal figure or table MUST state:
 
@@ -881,7 +881,7 @@ This is the plan for the figures in the eight-minute presentation. It is a requi
 .
 ├── SPEC.md  README.md  AI_USE.md  LICENSE  DATA_CONTRACT.md
 ├── pyproject.toml  <pinned lock file>
-├── .gitignore  .claude/settings.json  .github/workflows/
+├── .gitignore  .claude/settings.json
 ├── configs/        governance.yaml, smoke.yaml, inputs/ (market inputs, published parameters), goog/, nvda/, intc/, amd/
 ├── python/         validate_raw.py, make_fixtures.py, hestonpricer/
 ├── scripts/        run.py, verify_outputs.py, make_figures.py, inspect_schema.py, validate_goog_data.py,
@@ -893,14 +893,12 @@ This is the plan for the figures in the eight-minute presentation. It is a requi
 └── data/           Git-ignored; Restricted; never in a commit or submission
 ```
 
-**Tests.** Each check in §16 MUST have a test whose name starts with its ID, such as `test_V03_european_mc_grid`. Statistical tests use fixed seeds. Market-dependent checks are skipped in CI and report `NOT_RUN`, not `PASS`.
+**Tests.** Each check in §16 MUST have a test whose name starts with its ID, such as `test_V03_european_mc_grid`. Statistical tests use fixed seeds. Market-dependent checks are skipped where `data/` is absent and report `NOT_RUN`, not `PASS`.
 
 Tests use one of two pytest markers:
 
 - `fast`: V-01, V-02, V-05, V-07, V-08, V-12, part (a) of V-14, and the synthetic-file tests of `validate_goog_data.py`, using the smoke profile where paths are needed. These run within B3.
 - `slow`: every other check. The owner or an agent runs these, and `verify_outputs.py` records them from completed runs.
-
-**CI.** Every push runs linting, the `fast` test set, `smoke.sh`, and `check_no_data.sh`. CI has no market data and no data-provider secrets.
 
 **README.** It MUST cover the question, scope, test population, data boundary, setup, inputs, run and verify commands, outputs, limitations, and exactly what a reviewer can and cannot reproduce.
 

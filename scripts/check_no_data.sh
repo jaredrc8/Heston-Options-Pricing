@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Stops if anything under data/ is staged, tracked, or in Git history.
-# Used as the pre-commit hook and in CI (DATA_CONTRACT.md section 3.2).
+# Used as the pre-commit hook (DATA_CONTRACT.md section 3.2).
 #
 # Install the hook once with:
 #   ln -sf ../../scripts/check_no_data.sh .git/hooks/pre-commit

@@ -19,6 +19,7 @@ in LaTeX) and .png (Google Slides cannot import SVG or PDF).
     d_maturity_nvda   the same chart for NVDA, INTC and AMD (2026-10-13 calibrations;
     d_maturity_intc     results/<ticker>/market_test.json from scripts/market_test.py)
     d_maturity_amd
+    d_price_gap_tickers  median % gap between model price and mid, GOOG, NVDA, INTC, AMD
     d_surface         calibration slide: the 2026-10-13 GOOG model IV surface (model values only)
 """
 import csv
@@ -183,6 +184,23 @@ for ticker in ("NVDA", "INTC", "AMD"):
     maturity_chart(f"d_maturity_{ticker.lower()}", other["results"]["calibrated_2026_10_13"]["by_maturity"],
                    f"Share of {ticker} Options with Model Price Matching\nMarket Bid-Ask Range (2026 Parameters)")
 
+# Median |model price - mid| / mid on the held-out contracts, per ticker, 2026-10-13 calibrations
+tickers = ["GOOG", "NVDA", "INTC", "AMD"]
+gaps = [json.load(open(repo / f"results/{t.lower()}/market_test.json"))["results"]["calibrated_2026_10_13"]["overall"]
+        ["median_rel_price_error"] * 100 for t in tickers]
+fig, ax = plt.subplots(figsize=(3.7, 2.75))
+x = np.arange(len(tickers))
+ax.bar(x, gaps, width=0.62, color=BLUE, edgecolor="white", linewidth=1)
+for i, v in enumerate(gaps):
+    ax.text(i, v + 0.15, f"{v:.1f}%", ha="center", va="bottom", fontsize=10, weight="bold", color="black")
+ax.set_xticks(x, tickers)
+ax.set_ylim(0, 8)
+ax.set_yticks([0, 2, 4, 6, 8], ["0%", "2%", "4%", "6%", "8%"])
+grid_y(ax)
+ax.set_title("Median Error of Model Prices vs\nMarket Mid-Price (2026 Parameters)", loc="left")
+fig.tight_layout()
+save(fig, "d_price_gap_tickers")
+
 # Model implied-volatility surface from the 2026-10-13 GOOG fit. Model values only: market IV
 # points are Restricted (DATA_CONTRACT.md section 4) and are never plotted.
 document = json.load(open(repo / "results/goog/calibration.json"))
@@ -211,4 +229,4 @@ fig.suptitle(f"GOOG Heston Model IV Surface, {document['snapshot_date']}", fonts
 fig.text(0.5, 0.875, "Model values only; no market quotes shown.", fontsize=6, color="black", ha="center")
 fig.subplots_adjust(left=0.02, right=0.98, bottom=0.03, top=0.93)
 save(fig, "d_surface")
-print("wrote 10 charts (svg, pdf, png) to", out)
+print("wrote 11 charts (svg, pdf, png) to", out)
